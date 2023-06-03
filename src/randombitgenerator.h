@@ -14,7 +14,7 @@ public:
     template<class Iterator>
     void genBits(const Iterator& begin, const Iterator& end)
     {
-        using valuetype = std::iterator_traits<Iterator>::value_type;
+        using valuetype = typename std::iterator_traits<Iterator>::value_type;
         for(Iterator it = begin; it < end; it++)
         {
             *it = gen<valuetype>();
@@ -87,7 +87,7 @@ public:
     template<class V>
     V bits(size_t len = sizeof(V)*8)
     {
-        static_assert(sizeof(V)*8 <= buf.size(), "");
+        static_assert(sizeof(V)*8 <= decltype(buf)::size(), "");
         V res = 0;
         for(size_t n = 0; n < len; n++)
         {
@@ -121,7 +121,7 @@ public:
 
 private:
     stdRNG& rng;
-    stdRNG::result_type current;
+    typename stdRNG::result_type current;
     size_t significantBitsOfCurrent;
     size_t restbits;
     CircularBuffer<bool, 64> buf;

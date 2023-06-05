@@ -6,13 +6,29 @@
 #include<vector>
 #include<random>
 
-class randombitgenerator
+class RandomBitGenerator
+{
+   public:
+        template<class Iterator>
+        void fill(const Iterator& begin, const Iterator& end);
+
+        template<class T>
+        T gen(size_t bits = sizeof(T)*8);
+
+        template<class T>
+        T randi(T min, T max);
+};
+
+template<class stdrngtype>
+class StdRandomBitGenerator: public RandomBitGenerator
 {
 public:
-    randombitgenerator();
+    static_assert (stdrngtype::max() & (stdrngtype::max()+1) == 0, "stdrngtype::max should be 2^k-1");
+
+    StdRandomBitGenerator(stdrngtype &_rng) : rng(_rng) {}
 
     template<class Iterator>
-    void genBits(const Iterator& begin, const Iterator& end)
+    void fill(const Iterator& begin, const Iterator& end)
     {
         using valuetype = typename std::iterator_traits<Iterator>::value_type;
         for(Iterator it = begin; it < end; it++)
@@ -22,46 +38,22 @@ public:
     }
 
     template<class T>
-    T gen()
+    T gen(size_t bits)
     {
+        constexpr size_t nbitssignificant = std::log2(stdrngtype::max()+1);
         T res = 0;
-        for(size_t n = 0; n < (sizeof(T)-1)/sizeof(rngtype::result_type) + 1; n++)
+        for(size_t n = 0; n < (bits - 1)/nbitssignificant + 1; n++)
         {
             res += rng();
-            res <<= sizeof(rngtype::result_type);
+            res <<= nbitssignificant;
         }
+        res = res & ((1<<bits) - 1);
         return res;
     }
 private:
-    using rngtype = std::mt19937;
-    rngtype rng;
+    stdrngtype rng;
 };
 
-class RandomNumberEngine
-{
-public:
-    virtual double operator()() = 0;
-    virtual size_t randi(size_t min, size_t max) = 0;
-};
-
-template<class stdRNG>
-class stdRandomNumberEngine : public RandomNumberEngine
-{
-public:
-    stdRandomNumberEngine(stdRNG& _rng) : rng(_rng) {}
-    virtual double operator()()
-    {
-        std::uniform_real_distribution<double> u(0, 1);
-        return u(rng);
-    }
-    virtual size_t randi(size_t min, size_t max)
-    {
-        std::uniform_int_distribution<size_t> u(min, max);
-        return u(rng);
-    }
-private:
-    stdRNG& rng;
-};
 
 template<class stdRNG>
 class CaterpillarBitGenerator
@@ -87,7 +79,7 @@ public:
     template<class V>
     V bits(size_t len = sizeof(V)*8)
     {
-        static_assert(sizeof(V)*8 <= decltype(buf)::size(), "");
+        static_assert( sizeof(V)*8 <= (decltype(buf)::size()) , "");
         V res = 0;
         for(size_t n = 0; n < len; n++)
         {

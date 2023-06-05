@@ -7,16 +7,17 @@
 #include <random>
 #include <boost/math/distributions/chi_squared.hpp>
 #include <iostream>
+#include "indexgenerator.h"
 
 
-template<class RandomNumberEngine>
 class HypercubeTest
 {
 public:
     HypercubeTest(size_t _dim, size_t _nPoints, size_t _nIntervals) :
         dim(_dim), nPoints(_nPoints), nIntervals(_nIntervals) {}
 
-    double operator()(RandomNumberEngine& rng)
+    template<class rng>
+    double operator()(rng& r)
     {
         size_t ncells = 1;
         for(size_t k = 0; k < dim; k++)
@@ -24,7 +25,7 @@ public:
         std::vector<uint64_t> buf(ncells, 0);
         for(size_t n = 0; n < nPoints; n++)
         {
-            size_t idx = genIndex(rng);
+            size_t idx = genIndex(r);
             buf[idx]++;
         }
         uint64_t sum2 = 0;
@@ -39,12 +40,12 @@ public:
         return boost::math::cdf(dist, chi2);
     }
 
-
-    virtual size_t genIndex(RandomNumberEngine& rng)
+    template<class rng>
+    virtual size_t genIndex(rng &r)
     {
         size_t idx = 0;
         for(size_t k = 0; k < dim; k++)
-            idx = idx*nIntervals + rng.randi(0, nIntervals-1);
+            idx = idx*nIntervals + r.randi(0, nIntervals-1);
         return idx;
     }
     size_t dim, nPoints, nIntervals;
@@ -52,19 +53,21 @@ private:
 
 };
 
-
-template<class RandomBitGenerator>
-class BinaryHypercubeTest : public HypercubeTest<RandomBitGenerator>
+class HypercubeTest2 : public HypercubeTest<RandomNumberEngine>
 {
 public:
-    BinaryHypercubeTest(size_t dim, size_t nPoints) :
-        HypercubeTest<RandomBitGenerator>(dim, nPoints, 2) {}
+    HypercubeTest2(size_t _dim, size_t _nPoints, size_t _mIntervals, IndexGeneratorBase& _indexGenerator) :
+        HypercubeTest(_dim, _nPoints, _mIntervals),
+        indexGenerator(_indexGenerator) {}
 
-    virtual size_t genIndex(RandomBitGenerator& rng) override
+    template<class rng>
+    virtual size_t genIndex(rng& r)
     {
-        return rng.template bits<size_t>(this->dim);
+        return indexGenerator.index(r);
     }
 private:
+    IndexGeneratorBase& indexGenerator;
 };
+
 
 #endif // HYPERCUBETEST_H

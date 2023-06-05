@@ -23,6 +23,3 @@ find_package(Boost 1.7 REQUIRED COMPONENTS program_options) #math_c99
 
 add_executable(teahypercube src/main.cpp)
 target_link_libraries(teahypercube Boost::program_options) # Boost::math_c99)
-
-add_executable(multiplesources multiple_sources.cpp)
-target_link_libraries(multiplesources Boost::program_options) # Boost::math_c99)

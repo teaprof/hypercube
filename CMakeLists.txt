@@ -21,5 +21,5 @@ find_package(Boost 1.7 REQUIRED COMPONENTS program_options) #math_c99
 #    GIT_TAG boost-1.79.0)
 #fetchcontent_makeavailable(BoostProgramOptions)
 
-add_executable(teahypercube src/main.cpp)
-target_link_libraries(teahypercube Boost::program_options) # Boost::math_c99)
+add_executable(hypercube src/main.cpp)
+target_link_libraries(hypercube Boost::program_options) # Boost::math_c99)

@@ -4,120 +4,104 @@
 #include"circularbuffer.h"
 
 #include<vector>
+#include<array>
 #include<random>
+#include<iostream>
+#include<fstream>
+#include<stdexcept>
 
 class RandomBitGenerator
 {
-   public:
-        template<class Iterator>
-        void fill(const Iterator& begin, const Iterator& end);
-
-        template<class T>
-        T gen(size_t bits = sizeof(T)*8);
-
-        template<class T>
-        T randi(T min, T max);
+public:
+    RandomBitGenerator(bool _verbose = false) : count(0), verbose(_verbose), nativebits(0) {};
+    ~RandomBitGenerator()
+    {
+        if(verbose)
+            std::cout<<"rng counter: "<<count<<std::endl;
+    }
+    virtual size_t gen(size_t bits = sizeof(size_t)*8) = 0;
+    virtual size_t genNative() = 0;
+    size_t count;
+    size_t nativebits;
+    bool verbose;
 };
 
 template<class stdrngtype>
 class StdRandomBitGenerator: public RandomBitGenerator
 {
 public:
-    static_assert (stdrngtype::max() & (stdrngtype::max()+1) == 0, "stdrngtype::max should be 2^k-1");
+    static_assert ((stdrngtype::max() & (stdrngtype::max()+1)) == 0, "stdrngtype::max should be 2^k-1");
 
-    StdRandomBitGenerator(stdrngtype &_rng) : rng(_rng) {}
-
-    template<class Iterator>
-    void fill(const Iterator& begin, const Iterator& end)
+    StdRandomBitGenerator(stdrngtype &_rng, bool verbose = false) : RandomBitGenerator(verbose), rng(_rng)
     {
-        using valuetype = typename std::iterator_traits<Iterator>::value_type;
-        for(Iterator it = begin; it < end; it++)
-        {
-            *it = gen<valuetype>();
-        }
+        nativebits = std::log2(stdrngtype::max());
     }
 
-    template<class T>
-    T gen(size_t bits)
+    virtual size_t gen(size_t bits) override
     {
         constexpr size_t nbitssignificant = std::log2(stdrngtype::max()+1);
-        T res = 0;
+        size_t res = 0;
         for(size_t n = 0; n < (bits - 1)/nbitssignificant + 1; n++)
         {
-            res += rng();
             res <<= nbitssignificant;
+            res += genNative();
         }
-        res = res & ((1<<bits) - 1);
+        size_t mask = (static_cast<size_t>(1)<<bits) - 1;
+        res = res & mask;
         return res;
+    }
+    virtual size_t genNative() override
+    {
+        count++;
+        return rng();
     }
 private:
     stdrngtype rng;
 };
 
-
-template<class stdRNG>
-class CaterpillarBitGenerator
+class FileBitGenerator: public RandomBitGenerator
 {
 public:
-    CaterpillarBitGenerator(stdRNG& _rng) : rng(_rng), current(0), restbits(0)
+    FileBitGenerator(const std::string& filename, bool verbose = false) : RandomBitGenerator(verbose), f(filename, std::ios::in),
+        bufRest(0), current(0)
     {
-        typename stdRNG::result_type v = stdRNG::max();
-        significantBitsOfCurrent = 0;
-        while(v > 0)
-        {
-            significantBitsOfCurrent++;
-            v >>= 1;
-        }
-        for(size_t n = 0; n < buf.size(); n++)
-            next();
+        nativebits = 8;
     }
-    virtual double operator()()
+
+    virtual size_t gen(size_t bits) override
     {
-        std::uniform_real_distribution<double> u(0, 1);
-        return u(rng);
-    }
-    template<class V>
-    V bits(size_t len = sizeof(V)*8)
-    {
-        static_assert( sizeof(V)*8 <= (decltype(buf)::size()) , "");
-        V res = 0;
-        for(size_t n = 0; n < len; n++)
+        constexpr size_t nbitssignificant = 8;
+        size_t res = 0;
+        for(size_t n = 0; n < (bits - 1)/nbitssignificant + 1; n++)
         {
-            res <<= 1;
-            res += buf[n];
+            res <<= nbitssignificant;
+            res += genNative();
         }
-        for(size_t n = 0; n < len; n++)
-            next();
+        size_t mask = (static_cast<size_t>(1)<<bits) - 1;
+        res = res & mask;
         return res;
     }
-    void next()
+    virtual size_t genNative() override
     {
-        if(restbits == 0)
+        if(bufRest == 0 || current >= bufRest)
         {
-            restbits = significantBitsOfCurrent;
-            current = rng();
-            next();
-        } else {
-            restbits--;
-            bool res = current % 2;
-            current >>= 1;
-            buf.shiftleft(res);
+            f.read(buf.data(), bufSize);
+            bufRest = f.gcount();
+            if(bufRest == 0)
+                throw std::runtime_error("filesize too small for this test");
+            current = 0;
+        };
+        return buf[current++];
 
-        }
     }
-    virtual size_t randi(size_t min, size_t max)
-    {
-        std::uniform_int_distribution<size_t> u(min, max);
-        return u(rng);
-    }
-
 private:
-    stdRNG& rng;
-    typename stdRNG::result_type current;
-    size_t significantBitsOfCurrent;
-    size_t restbits;
-    CircularBuffer<bool, 64> buf;
+    constexpr static size_t bufSize = 1024;
+    std::array<char, bufSize> buf;
+    size_t current, bufRest;
+    std::ifstream f;
 };
+
+
 
 
 #endif // RANDOMBITGENERATOR_H

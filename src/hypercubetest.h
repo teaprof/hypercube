@@ -25,22 +25,39 @@ public:
         if(verbose)
             std::cout<<"ncells = "<<ncells<<std::endl;
         std::vector<uint64_t> buf(ncells, 0);
-        for(size_t n = 0; n < nPoints; n++)
+
+        size_t NPointsActual = 0;
+        while(true)
         {
-            size_t idx = genIndex(r);
-            buf[idx]++;
+            try {
+                size_t idx = genIndex(r);
+                buf[idx]++;
+            }  catch (const std::runtime_error& err) {
+                if(verbose)
+                    std::cout<<"File reading finished."<<std::endl;
+                break;
+            }
+
+            NPointsActual++;
+            if(nPoints > 0)
+            {
+                if(NPointsActual >= nPoints)
+                    break;
+            }
         }
+
         uint64_t sum2 = 0;
         for(auto nn : buf)
         {
             uint64_t nn64 = nn;
             sum2 += nn64*nn64;
         }
-        double mean = static_cast<double>(nPoints)/ncells;
-        double chi2 = sum2/mean - nPoints;
+        double mean = static_cast<double>(NPointsActual)/ncells;
+        double chi2 = sum2/mean - NPointsActual;
         double dof = ncells-1;
         if(verbose)
         {
+            std::cout<<"NPoints actual: "<<NPointsActual<<std::endl;
             std::cout<<"math expectation: "<<mean<<std::endl;
             std::cout<<"chi2: "<<chi2<<std::endl;
             std::cout<<"dof : "<<dof<<std::endl;

@@ -35,18 +35,26 @@ class HypercubeOptions
 public:
     HypercubeOptions() : visible("Hypercube-test options")
     {
+        NPoints = 0;
         cmdline.add_options()
                 ("dim,d", po::value<int>(&dim)->default_value(3), "dimension, positive integer: 1, 2, ...")
                 ("intervals,m", po::value<int>(&mIntervals)->default_value(16), "split number of each dimension: 2, 3, ...")
-                ("npoints,N", po::value<int>(&NPoints)->default_value(100000), "number of points, positive integer");
+                ("npoints,N", po::value<int>(&NPoints), "number of points, positive integer. Default is mIntervals^dim*100 for"
+                                                        "internal RNG. If input file is specified, npoints will be calculated to"
+                                                        "consume all bytes of this file.");
         visible.add(cmdline);
     }
     void validate(const po::variables_map& vm)
     {
-        if(dim <= 0 || mIntervals <= 1 || NPoints <= 0)
-            throw po::validation_error(po::validation_error::invalid_option_value);        
+        if(dim <= 0)
+            throw po::validation_error(po::validation_error::invalid_option_value, "dim should be positive integer");
+        if(mIntervals <= 0)
+            throw po::validation_error(po::validation_error::invalid_option_value, "mIntervals should be positive integer");
+        if(NPoints < 0)
+            //the default value NPoints = 0 will be processed later
+            throw po::validation_error(po::validation_error::invalid_option_value, "NPoints should be positive integer");
     }
-    int dim, mIntervals, NPoints; //we use signed int because boost::program_options::value don't make difference between signed and unsigned integers.
+    int dim, mIntervals, NPoints;
     po::options_description cmdline;
     po::options_description visible;
 };
@@ -65,9 +73,9 @@ public:
     void validate(const po::variables_map& vm)
     {
         if(stride < 0)
-            throw po::validation_error(po::validation_error::invalid_option_value);
+            throw po::validation_error(po::validation_error::invalid_option_value, "stride should be positive integer.");
         if(bytesPerFloat && bytesPerFloat < 0)
-            throw po::validation_error(po::validation_error::invalid_option_value);
+            throw po::validation_error(po::validation_error::invalid_option_value, "bytesPerFloat should be positive integer.");
         if(binarymode && bytesPerFloat)
             throw po::validation_error(po::validation_error::invalid_option_value, "-f and -b should not be specified simultaneously");
         if(!binarymode)
@@ -83,6 +91,10 @@ public:
 class RandomNumberGeneratorOptions
 {
 public:
+    enum
+    {
+        FileBitGenerator = 0, MT19937
+    };
     RandomNumberGeneratorOptions() : visible("Reandom-number-generator options")
     {
         visible.add_options()
@@ -192,11 +204,11 @@ std::shared_ptr<RandomBitGenerator> createRandomBitGenerator(Options& opt)
 {
     switch(opt.ro.gentype)
     {
-        case 0:
+        case RandomNumberGeneratorOptions::FileBitGenerator:
             assert(opt.ro.filename);
             return std::make_shared<FileBitGenerator>(opt.ro.filename.value(), opt.oo.verbose);
         break;
-        case 1:
+        case RandomNumberGeneratorOptions::MT19937:
             static std::mt19937 mt;
             return std::make_shared<StdRandomBitGenerator<std::mt19937>>(mt, opt.oo.verbose);
         break;
@@ -217,6 +229,10 @@ std::shared_ptr<IndexGeneratorBase<RandomBitGenerator>> createIndexGenerator(Opt
         }
         return std::make_shared<BinaryIndexGenerator>(opt.ho.dim, opt.ho.mIntervals, opt.so.stride);
     } else {
+        if(opt.so.stride == 0)
+            opt.so.stride = opt.ho.dim;
+            if(opt.oo.verbose)
+                std::cout<<"Setting stride to "<<opt.so.stride<<" floats (see bytesPerFloat value)"<<std::endl;
         return std::make_shared<FloatingPointIndexGenerator>(opt.ho.dim, opt.ho.mIntervals, opt.so.stride, opt.so.bytesPerFloat.value());
     }
 }
@@ -225,7 +241,10 @@ double runHypercube(Options& opt)
 {
     if(opt.oo.verbose)
     {
-        std::cout<<"Generator: "<<opt.ro.gentype<<std::endl;
+        if(opt.ro.gentype == RandomNumberGeneratorOptions::FileBitGenerator)
+            std::cout<<"Generator: "<<opt.ro.gentype<<", filename = "<<opt.ro.filename<<std::endl;
+        else
+            std::cout<<"Generator: "<<opt.ro.gentype<<std::endl;
         std::cout<<"Dimension: "<<opt.ho.dim<<std::endl;
         std::cout<<"mIntervals: "<<opt.ho.mIntervals<<std::endl;
         if(opt.so.stride == 0)
@@ -233,6 +252,14 @@ double runHypercube(Options& opt)
         else
             std::cout<<"Stride: "<<opt.so.stride<<std::endl;
         std::cout<<"NPoints: "<<opt.ho.NPoints<<std::endl;
+    }
+    if(opt.ho.NPoints == 0 && opt.ro.gentype != RandomNumberGeneratorOptions::FileBitGenerator)
+    {
+        opt.ho.NPoints = 1;
+        for(size_t k = 0; k < opt.ho.dim; k++)
+            opt.ho.NPoints *= opt.ho.mIntervals;
+        if(opt.oo.verbose)
+            std::cout<<"NPoints was set to "<<opt.ho.NPoints<<std::endl;
     }
     std::shared_ptr<RandomBitGenerator> rng = createRandomBitGenerator(opt);
     std::shared_ptr<IndexGeneratorBase<RandomBitGenerator>> gen = createIndexGenerator(opt);

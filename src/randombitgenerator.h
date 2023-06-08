@@ -39,7 +39,7 @@ public:
 
     virtual size_t gen(size_t bits) override
     {
-        constexpr size_t nbitssignificant = std::log2(stdrngtype::max()+1);
+        size_t nbitssignificant = std::log2(stdrngtype::max()+1);
         size_t res = 0;
         for(size_t n = 0; n < (bits - 1)/nbitssignificant + 1; n++)
         {

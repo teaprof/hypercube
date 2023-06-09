@@ -68,6 +68,7 @@ public:
 
     virtual size_t genIndex(rng &r) = 0;
     /*{
+        //thi implementation is for std::random, it can't be compiled for other kinds of rng
         size_t idx = 0;
         std::uniform_int_distribution<size_t> u(0, nIntervals-1);
         for(size_t k = 0; k < dim; k++)

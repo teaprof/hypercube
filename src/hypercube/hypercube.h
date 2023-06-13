@@ -95,5 +95,13 @@ private:
     IndexGeneratorBase<RandomBitGenerator>& indexGenerator;
 };
 
+class HypercubeTestPy : public HypercubeTest2
+{
+public:
+    HypercubeTestPy(size_t _dim, size_t _nPoints, size_t _mIntervals, IndexGeneratorBase<RandomBitGenerator>& _indexGenerator) :
+        HypercubeTest2(_dim, _nPoints, _mIntervals, _indexGenerator) {};
+
+    void push(const std::vector<char>& bytes);
+};
 
 #endif // HYPERCUBETEST_H

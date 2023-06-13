@@ -5,7 +5,7 @@
 #include <boost/program_options.hpp>
 #include <boost/optional.hpp>
 #include <boost/optional/optional_io.hpp>
-#include "hypercubetest.h"
+#include "hypercube.h"
 #include "randombitgenerator.h"
 
 using namespace std;

@@ -21,8 +21,13 @@ find_package(Boost 1.7 REQUIRED COMPONENTS program_options) #math_c99
 #    GIT_TAG boost-1.79.0)
 #fetchcontent_makeavailable(BoostProgramOptions)
 
-add_executable(hypercube src/main.cpp)
+add_executable(hypercube src/hypercube/main.cpp)
 target_link_libraries(hypercube Boost::program_options) # Boost::math_c99)
 
-add_executable(badgenerator src/badgenerator.cpp)
+add_executable(badgenerator src/badgenerator/badgenerator.cpp src/badgenerator/main.cpp)
 target_link_libraries(badgenerator Boost::program_options)
+
+
+find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
+find_package(pybind11)
+pybind11_add_module(teahypercube src/python/teahypercube.cpp src/badgenerator/badgenerator.cpp)

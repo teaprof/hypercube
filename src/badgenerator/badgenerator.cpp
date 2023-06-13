@@ -1,10 +1,7 @@
 #include "badgenerator.h"
-//#include <boost/program_options.hpp>
 #include <vector>
 #include <random>
 #include <chrono>
-#include <fstream>
-#include <iostream>
 
 BadGenerator::BadGenerator(size_t dim): rng(std::chrono::steady_clock::now().time_since_epoch().count())
 {
@@ -40,14 +37,9 @@ float& BadGenerator::operator[](size_t index) {
     return buf[index];
 }
 
-int main(int argc, char* argv[])
+void BadGenerator::fill(std::vector<char> &v)
 {
-    BadGenerator bg(20);
-    std::ofstream f("out.bin", std::ios::trunc | std::ios::binary);
-    for(size_t n = 0; n < 512*1024*1024; n++)
-    {
-        char b = bg.genbyte();
-        f.write(&b, 1);
-    }
-    return 0;
+    for(auto &it : v)
+        it = genbyte();
 }
+

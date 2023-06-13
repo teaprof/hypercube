@@ -14,6 +14,7 @@ public:
     float& operator[](size_t index);
     bool gen();
     char genbyte();
+    void fill(std::vector<char> &v);
 private:
     std::vector<float> buf;
     size_t index, maxindex;

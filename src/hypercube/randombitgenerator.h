@@ -19,7 +19,18 @@ public:
         if(verbose)
             std::cout<<"rng counter: "<<count<<std::endl;
     }
-    virtual size_t gen(size_t bits = sizeof(size_t)*8) = 0;
+    virtual size_t gen(size_t bits = sizeof(size_t)*8)
+    {
+        size_t res = 0;
+        for(size_t n = 0; n < (bits - 1)/nativebits + 1; n++)
+        {
+            res <<= nativebits;
+            res += genNative();
+        }
+        size_t mask = (static_cast<size_t>(1)<<bits) - 1;
+        res = res & mask;
+        return res;
+    }
     virtual size_t genNative() = 0;
     size_t count;
     size_t nativebits;
@@ -37,19 +48,6 @@ public:
         nativebits = std::log2(stdrngtype::max());
     }
 
-    virtual size_t gen(size_t bits) override
-    {
-        size_t nbitssignificant = std::log2(stdrngtype::max()+1);
-        size_t res = 0;
-        for(size_t n = 0; n < (bits - 1)/nbitssignificant + 1; n++)
-        {
-            res <<= nbitssignificant;
-            res += genNative();
-        }
-        size_t mask = (static_cast<size_t>(1)<<bits) - 1;
-        res = res & mask;
-        return res;
-    }
     virtual size_t genNative() override
     {
         count++;
@@ -68,19 +66,6 @@ public:
         nativebits = 8;
     }
 
-    virtual size_t gen(size_t bits) override
-    {
-        constexpr size_t nbitssignificant = 8;
-        size_t res = 0;
-        for(size_t n = 0; n < (bits - 1)/nbitssignificant + 1; n++)
-        {
-            res <<= nbitssignificant;
-            res += genNative();
-        }
-        size_t mask = (static_cast<size_t>(1)<<bits) - 1;
-        res = res & mask;
-        return res;
-    }
     virtual size_t genNative() override
     {
         if(bufRest == 0 || current >= bufRest)
@@ -92,7 +77,6 @@ public:
             current = 0;
         };
         return buf[current++];
-
     }
 private:
     constexpr static size_t bufSize = 1024;
@@ -101,6 +85,25 @@ private:
     std::ifstream f;
 };
 
+class VectorBitGenerator: public RandomBitGenerator
+{
+public:
+    VectorBitGenerator(bool verbose = false) : RandomBitGenerator(verbose) {};
+
+    void acceptbuffer(const char* buf, size_t size)
+    {
+        p = buf;
+        q = p + size;
+    }
+
+    virtual size_t genNative() override
+    {
+        if(p < q)
+            return *p++;
+    }
+private:
+    const char *p, *q;
+};
 
 
 

@@ -5,12 +5,13 @@
 
 BadGenerator::BadGenerator(size_t dim): rng(std::chrono::steady_clock::now().time_since_epoch().count())
 {
-    buf.assign(static_cast<size_t>(1) << dim, 0);
+    buf.assign(static_cast<size_t>(1) << dim, 0);    
     for(size_t n = 0; n < buf.size(); n++)
         buf[n] = 0; // difference between probabilities of 0 and 1
     maxindex = buf.size() - 1;
     index = rng() & maxindex;
 }
+
 bool BadGenerator::gen() {
     size_t index0 = (index << 1) & maxindex;
     size_t index1 = index0 + 1;
@@ -26,6 +27,7 @@ bool BadGenerator::gen() {
         return true;
     }
 }
+
 char BadGenerator::genbyte()
 {
     char res = 0;
@@ -33,6 +35,7 @@ char BadGenerator::genbyte()
         res = (res << 1) + char(gen());
     return res;
 }
+
 float& BadGenerator::operator[](size_t index) {
     return buf[index];
 }
@@ -43,3 +46,12 @@ void BadGenerator::fill(std::vector<char> &v)
         it = genbyte();
 }
 
+float* BadGenerator::data()
+{
+    return buf.data();
+}
+
+size_t BadGenerator::size()
+{
+    return buf.size();
+}

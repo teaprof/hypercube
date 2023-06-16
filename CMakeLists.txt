@@ -28,6 +28,8 @@ add_executable(badgenerator src/badgenerator/badgenerator.cpp src/badgenerator/m
 target_link_libraries(badgenerator Boost::program_options)
 
 
-find_package(Python 3.6 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11)
 pybind11_add_module(teahypercube src/python/teahypercube.cpp src/badgenerator/badgenerator.cpp)
+target_include_directories(teahypercube PUBLIC ${Python3_INCLUDE_DIRS})
+

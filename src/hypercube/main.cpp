@@ -263,8 +263,8 @@ double runHypercube(Options& opt)
     }
     std::shared_ptr<RandomBitGenerator> rng = createRandomBitGenerator(opt);
     std::shared_ptr<IndexGeneratorBase<RandomBitGenerator>> gen = createIndexGenerator(opt);
-    HypercubeTest2 ht(opt.ho.dim, opt.ho.NPoints, opt.ho.mIntervals, *gen);
-    return ht(*rng, opt.oo.verbose);
+    HypercubeStrategies ht(opt.ho.dim, opt.ho.mIntervals, gen);
+    return ht(opt.ho.NPoints, *rng, opt.oo.verbose);
 }
 
 

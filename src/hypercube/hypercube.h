@@ -14,17 +14,19 @@ template<class rng>
 class HypercubeTest
 {
 public:
-    HypercubeTest(size_t _dim, size_t _nPoints, size_t _nIntervals) :
-        dim(_dim), nPoints(_nPoints), nIntervals(_nIntervals) {}
-
-    double operator()(rng& r, bool verbose = false)
+    HypercubeTest(size_t _dim, size_t _nIntervals) :
+        dim(_dim), nPoints(0), nIntervals(_nIntervals)
     {
         size_t ncells = 1;
         for(size_t k = 0; k < dim; k++)
             ncells *= nIntervals;
+        buf.assign(ncells, 0);
+    }
+
+    double operator()(size_t _nPoints, rng& r, bool verbose = false)
+    {
         if(verbose)
-            std::cout<<"ncells = "<<ncells<<std::endl;
-        std::vector<uint64_t> buf(ncells, 0);
+            std::cout<<"ncells = "<<buf.size()<<std::endl;
 
         size_t NPointsActual = 0;
         while(true)
@@ -36,15 +38,18 @@ public:
                 if(verbose)
                     std::cout<<"File reading finished."<<std::endl;
                 break;
+            } catch (const EndOfBufferException) {
+                break;
             }
 
             NPointsActual++;
-            if(nPoints > 0)
+            if(_nPoints > 0)
             {
-                if(NPointsActual >= nPoints)
+                if(NPointsActual >= _nPoints)
                     break;
             }
         }
+        nPoints += NPointsActual;
 
         uint64_t sum2 = 0;
         for(auto nn : buf)
@@ -52,9 +57,9 @@ public:
             uint64_t nn64 = nn;
             sum2 += nn64*nn64;
         }
-        double mean = static_cast<double>(NPointsActual)/ncells;
+        double mean = static_cast<double>(NPointsActual)/buf.size();
         double chi2 = sum2/mean - NPointsActual;
-        double dof = ncells-1;
+        double dof = buf.size()-1;
         if(verbose)
         {
             std::cout<<"NPoints actual: "<<NPointsActual<<std::endl;
@@ -66,6 +71,7 @@ public:
         return boost::math::cdf(dist, chi2);
     }
 
+
     virtual size_t genIndex(rng &r) = 0;
     /*{
         //thi implementation is for std::random, it can't be compiled for other kinds of rng
@@ -76,32 +82,55 @@ public:
         return idx;
     }*/
     size_t dim, nPoints, nIntervals;
-private:
 
+    size_t* data()
+    {
+        return buf.data();
+    }
+    size_t size()
+    {
+        return buf.size();
+    }
+
+private:
+    std::vector<size_t> buf;
 };
 
-class HypercubeTest2 : public HypercubeTest<RandomBitGenerator>
+class HypercubeStrategies : public HypercubeTest<RandomBitGenerator>
 {
 public:
-    HypercubeTest2(size_t _dim, size_t _nPoints, size_t _mIntervals, IndexGeneratorBase<RandomBitGenerator>& _indexGenerator) :
-        HypercubeTest(_dim, _nPoints, _mIntervals),
-        indexGenerator(_indexGenerator) {}
+    HypercubeStrategies(size_t _dim, size_t _mIntervals, std::shared_ptr<IndexGeneratorBase<RandomBitGenerator>> _indexGenerator = nullptr) :
+        HypercubeTest(_dim, _mIntervals), indexGenerator(_indexGenerator)
+    {}
+
+    void setIndexGenerator(bool binary, size_t stride, size_t bytesPerFloat)
+    {
+        if(binary)
+            indexGenerator = std::make_shared<BinaryIndexGenerator>(dim, nIntervals, stride);
+        else
+            indexGenerator = std::make_shared<FloatingPointIndexGenerator>(dim, nIntervals, stride, bytesPerFloat);
+    }
 
     virtual size_t genIndex(RandomBitGenerator& r) override
     {
-        return indexGenerator.index(r);
+        return indexGenerator->index(r);
     }
 private:
-    IndexGeneratorBase<RandomBitGenerator>& indexGenerator;
+    std::shared_ptr<IndexGeneratorBase<RandomBitGenerator>> indexGenerator;
 };
 
-class HypercubeTestPy : public HypercubeTest2
+class HypercubeTestPy : public HypercubeStrategies
 {
 public:
-    HypercubeTestPy(size_t _dim, size_t _nPoints, size_t _mIntervals, IndexGeneratorBase<RandomBitGenerator>& _indexGenerator) :
-        HypercubeTest2(_dim, _nPoints, _mIntervals, _indexGenerator) {};
+    HypercubeTestPy(size_t _dim, size_t _mIntervals) :
+        HypercubeStrategies(_dim, _mIntervals, nullptr) {}
 
-    void push(const std::vector<char>& bytes);
+    double run(const char* buf, size_t size, bool verbose = false)
+    {
+        BufferedGenerator g;
+        g.acceptbuffer(buf, size);
+        return (*this)(0, g, verbose);
+    }
 };
 
 #endif // HYPERCUBETEST_H

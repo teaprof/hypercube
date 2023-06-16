@@ -9,11 +9,12 @@
 #include<iostream>
 #include<fstream>
 #include<stdexcept>
+#include<pybind11/iostream.h>
 
 class RandomBitGenerator
 {
 public:
-    RandomBitGenerator(bool _verbose = false) : count(0), verbose(_verbose), nativebits(0) {};
+    RandomBitGenerator(bool _verbose = false) : count(0), verbose(_verbose), nativebits(0) {}
     ~RandomBitGenerator()
     {
         if(verbose)
@@ -85,10 +86,12 @@ private:
     std::ifstream f;
 };
 
-class VectorBitGenerator: public RandomBitGenerator
+struct EndOfBufferException {};
+
+class BufferedGenerator: public RandomBitGenerator
 {
 public:
-    VectorBitGenerator(bool verbose = false) : RandomBitGenerator(verbose) {};
+    BufferedGenerator(bool verbose = false) : RandomBitGenerator(verbose) {}
 
     void acceptbuffer(const char* buf, size_t size)
     {
@@ -96,10 +99,17 @@ public:
         q = p + size;
     }
 
+    size_t size()
+    {
+        return q - p;
+    }
+
     virtual size_t genNative() override
     {
+        std::cout<<q-p<<std::endl;
         if(p < q)
             return *p++;
+        throw EndOfBufferException();
     }
 private:
     const char *p, *q;

@@ -15,6 +15,9 @@ public:
     bool gen();
     char genbyte();
     void fill(std::vector<char> &v);
+
+    float* data();
+    size_t size();
 private:
     std::vector<float> buf;
     size_t index, maxindex;

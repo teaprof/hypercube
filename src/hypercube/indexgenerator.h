@@ -41,7 +41,7 @@ public:
     }
 
     size_t gen(RandomBitGenerator& r, size_t bits)
-    {
+    {        
         size_t res = 0;
         while(bits > 0)
         {
@@ -50,7 +50,7 @@ public:
                 current = r.genNative();
                 restbits = r.nativebits;
             }
-            size_t bb = bits < restbits? bits : restbits;
+            size_t bb = bits < restbits? bits : restbits;            
             if(bb > 0)
             {
                 res <<= bb;

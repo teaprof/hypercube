@@ -9,7 +9,10 @@
 #include<iostream>
 #include<fstream>
 #include<stdexcept>
-#include<pybind11/iostream.h>
+
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+
 
 class RandomBitGenerator
 {
@@ -21,15 +24,15 @@ public:
             std::cout<<"rng counter: "<<count<<std::endl;
     }
     virtual size_t gen(size_t bits = sizeof(size_t)*8)
-    {
+    {                
         size_t res = 0;
         for(size_t n = 0; n < (bits - 1)/nativebits + 1; n++)
-        {
+        {            
             res <<= nativebits;
             res += genNative();
         }
         size_t mask = (static_cast<size_t>(1)<<bits) - 1;
-        res = res & mask;
+        res = res & mask;        
         return res;
     }
     virtual size_t genNative() = 0;
@@ -58,13 +61,15 @@ private:
     stdrngtype rng;
 };
 
+struct EndOfBufferException {};
+
 class FileBitGenerator: public RandomBitGenerator
 {
 public:
     FileBitGenerator(const std::string& filename, bool verbose = false) : RandomBitGenerator(verbose), f(filename, std::ios::in),
         bufRest(0), current(0)
     {
-        nativebits = 8;
+        nativebits = sizeof(char);
     }
 
     virtual size_t genNative() override
@@ -74,7 +79,7 @@ public:
             f.read(buf.data(), bufSize);
             bufRest = f.gcount();
             if(bufRest == 0)
-                throw std::runtime_error("filesize too small for this test");
+                throw EndOfBufferException();
             current = 0;
         };
         return buf[current++];
@@ -86,12 +91,14 @@ private:
     std::ifstream f;
 };
 
-struct EndOfBufferException {};
 
 class BufferedGenerator: public RandomBitGenerator
 {
 public:
-    BufferedGenerator(bool verbose = false) : RandomBitGenerator(verbose) {}
+    BufferedGenerator(bool verbose = false) : RandomBitGenerator(verbose)
+    {
+        nativebits = 8;
+    }
 
     void acceptbuffer(const char* buf, size_t size)
     {
@@ -106,7 +113,6 @@ public:
 
     virtual size_t genNative() override
     {
-        std::cout<<q-p<<std::endl;
         if(p < q)
             return *p++;
         throw EndOfBufferException();

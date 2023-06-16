@@ -32,7 +32,7 @@ PYBIND11_MODULE(teahypercube, m)
                     self->setIndexGenerator(bin, stride, bytesPerFloat);
                 })
             .def("run", [](HypercubeTestPy* self, py::buffer v)->double
-                {
+                {                    
                     py::buffer_info info = v.request();
                     if(info.format != py::format_descriptor<uint8_t>::format())
                         throw std::runtime_error("Incompatible format: expected array of uint8");
@@ -40,6 +40,10 @@ PYBIND11_MODULE(teahypercube, m)
                         throw std::runtime_error("Incompatible buffer dimension");
                     size_t size = info.size/info.itemsize;
                     return self->run(static_cast<const char*>(info.ptr), size);
+                })
+            .def("size", [](HypercubeTestPy* self)
+                {
+                    return self->size();
                 })
             .def_buffer([](HypercubeTestPy& self) -> py::buffer_info
                 {

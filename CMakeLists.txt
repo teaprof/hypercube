@@ -21,15 +21,19 @@ find_package(Boost 1.7 REQUIRED COMPONENTS program_options) #math_c99
 #    GIT_TAG boost-1.79.0)
 #fetchcontent_makeavailable(BoostProgramOptions)
 
-add_executable(hypercube src/hypercube/main.cpp)
-target_link_libraries(hypercube Boost::program_options) # Boost::math_c99)
+#add_executable(hypercube src/hypercube/main.cpp)
+#target_link_libraries(hypercube Boost::program_options) # Boost::math_c99)
 
-add_executable(badgenerator src/badgenerator/badgenerator.cpp src/badgenerator/main.cpp)
-target_link_libraries(badgenerator Boost::program_options)
+#add_executable(badgenerator src/badgenerator/badgenerator.cpp src/badgenerator/main.cpp)
+#target_link_libraries(badgenerator Boost::program_options)
 
 
-find_package(Python 3.8 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python 3 COMPONENTS Interpreter Development REQUIRED)
+message("PYTHON: ${Python_Interpreter_FOUND}")
+message("PYTHON: ${Python_INCLUDE_DIRS}")
 find_package(pybind11)
 pybind11_add_module(teahypercube src/python/teahypercube.cpp src/badgenerator/badgenerator.cpp)
-target_include_directories(teahypercube PUBLIC ${Python3_INCLUDE_DIRS})
-
+#target_include_directories(teahypercube PUBLIC ${Python_INCLUDE_DIRS})
+include_directories(${Python_INCLUDE_DIRS})
+link_libraries(${Python_LIBRARIES})
+target_link_libraries(teahypercube PRIVATE pybind11::module pybind11::lto pybind11::windows_extras)

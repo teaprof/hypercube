@@ -8,6 +8,9 @@
 #include <boost/math/distributions/chi_squared.hpp>
 #include <iostream>
 #include "indexgenerator.h"
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
 
 
 template<class rng>
@@ -34,10 +37,6 @@ public:
             try {
                 size_t idx = genIndex(r);
                 buf[idx]++;
-            }  catch (const std::runtime_error& err) {
-                if(verbose)
-                    std::cout<<"File reading finished."<<std::endl;
-                break;
             } catch (const EndOfBufferException) {
                 break;
             }
@@ -113,6 +112,8 @@ public:
 
     virtual size_t genIndex(RandomBitGenerator& r) override
     {
+        if(indexGenerator == nullptr)
+            throw std::runtime_error("indexGenerator is nullptr, please, call ::setIndexGenerator");
         return indexGenerator->index(r);
     }
 private:
@@ -128,7 +129,7 @@ public:
     double run(const char* buf, size_t size, bool verbose = false)
     {
         BufferedGenerator g;
-        g.acceptbuffer(buf, size);
+        g.acceptbuffer(buf, size);        
         return (*this)(0, g, verbose);
     }
 };

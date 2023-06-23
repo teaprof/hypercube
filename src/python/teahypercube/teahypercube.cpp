@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/buffer_info.h>
-#include "../badgenerator/badgenerator.h"
-#include "../hypercube/hypercube.h"
+#include "../../badgenerator/badgenerator.h"
+#include "../../hypercube/hypercube.h"
 
 namespace py = pybind11;
 

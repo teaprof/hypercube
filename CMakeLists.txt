@@ -28,12 +28,14 @@ find_package(Boost 1.7 REQUIRED COMPONENTS program_options) #math_c99
 #target_link_libraries(badgenerator Boost::program_options)
 
 
-find_package(Python 3 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python 3.10 COMPONENTS Interpreter Development REQUIRED) #pybind11 is incompatible with python3.11 [may be fixed in the future]
 message("PYTHON: ${Python_Interpreter_FOUND}")
 message("PYTHON: ${Python_INCLUDE_DIRS}")
 find_package(pybind11)
-pybind11_add_module(teahypercube src/python/teahypercube.cpp src/badgenerator/badgenerator.cpp)
+pybind11_add_module(teahypercube src/python/teahypercube/teahypercube.cpp src/badgenerator/badgenerator.cpp)
 #target_include_directories(teahypercube PUBLIC ${Python_INCLUDE_DIRS})
 include_directories(${Python_INCLUDE_DIRS})
 link_libraries(${Python_LIBRARIES})
-target_link_libraries(teahypercube PRIVATE pybind11::module pybind11::lto pybind11::windows_extras)
+#target_link_libraries(teahypercube PRIVATE pybind11::module pybind11::lto pybind11::windows_extras)
+target_link_libraries(teahypercube PRIVATE pybind11::module)
+install(TARGETS teahypercube LIBRARY DESTINATION teahypercube)

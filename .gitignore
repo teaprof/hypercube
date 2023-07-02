@@ -72,6 +72,9 @@ CMakeLists.txt.user*
 *.dll
 *.exe
 
+#Test files with random digits
+*.bin
+
 
 #SkBuild build folders:
 /_skbuild/

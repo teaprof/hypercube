@@ -7,7 +7,6 @@ from numba import jit
 import tqdm, scipy
 from matplotlib import pyplot as plt
 
-
 def runTest(dim, mean, corr = 0.5):
     H = Hypercube(dim)
     N = H.datasize * mean

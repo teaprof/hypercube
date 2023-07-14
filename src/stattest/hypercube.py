@@ -1,5 +1,5 @@
 import numpy as np
-import scipy
+import scipy, re, numba
 from numba import jit
 
 class Hypercube:
@@ -52,6 +52,44 @@ class Hypercube:
             if p > 0:
                 h2 -= p*np.log2(p)
         return h2/self.dim
+
+    def sampleInitialIndex(self):
+        return Hypercube._sampleInitialIndex(self.data, 10*self.datasize, self.datasize)
+
+    @jit(nopython=True)
+    def _sampleInitialIndex(data, nIters, datasize):
+        index = 0
+        for n in range(nIters):
+            index = _chain(index, np.random.randint(numba.u8(0), numba.u8(2)), datasize)
+        return index
+
+    def sampleNextBit(self, curidx):
+        return Hypercube._sampleNextBit(curidx, self.data, self.datasize)
+
+
+    #jit(nopython=True)
+    def _sampleNextBit(curidx, data, datasize):
+        chain0 = _chain(curidx, 0, datasize)
+        chain1 = _chain(curidx, 1, datasize)
+        logp0 = data[chain0]
+        logp1 = data[chain1]
+        s = logp1 - logp0
+        p0 = 1/(float(2)**s + 1)
+        if np.random.rand() < p0:
+            return chain0, 0
+        else:
+            return chain1, 1
+
+    def modifyProbabilities(self, patternstr: str, delta):
+        formatstr = "{{:0{0}b}}".format(self.dim)
+        pattern = re.compile(patternstr)
+        count = 0
+        for index in range(self.datasize):
+            indexstr = formatstr.format(index)
+            if pattern.fullmatch(indexstr):
+                self.data[index] += delta
+                count += 1
+        print(f"Modification with regex {patternstr} applied {count} times")
 
 
 def _group(expected, data, idx0, idx1):
@@ -107,4 +145,8 @@ def _fill(data, dim, bits):
     for n in range(dim-1, len(bits)):
         index = _chain(len(data), index, bits[n])
         data[index] += 1
+
+@jit(nopython=True)
+def _chain(index, bit, datasize):
+    return (index << 1) % datasize + bit
 

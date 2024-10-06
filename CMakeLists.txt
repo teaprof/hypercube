@@ -56,3 +56,5 @@ target_link_libraries(teahypercube PRIVATE pybind11::module)
 install(TARGETS teahypercube LIBRARY DESTINATION .)
 
 set(ignoreMe "${SKBUILD}")
+
+add_subdirectory(src)

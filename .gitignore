@@ -4,6 +4,8 @@
 #Build directory itself
 build
 
+.vscode
+
 
 *~
 *.autosave

@@ -2,6 +2,7 @@
 #define STATISTICAL_TEST_BASE_
 
 #include "RandomNumberWrapper.h"
+#include "Histogram.h"
 
 #include <map>
 #include <vector>
@@ -31,15 +32,15 @@ struct Chi2BasedProblem {
 };
 
 
+template<class Histogram>
 class Chi2BasedTest {
 public:
-    Chi2BasedTest();
-    virtual ~Chi2BasedTest();
+    Chi2BasedTest() {}
+    virtual ~Chi2BasedTest() {}
 
     template<class RandomNumberWrapperT, class MultiindexGeneratorT>
     TaskResults run(const Chi2BasedProblem &task, const SubtaskParameters& subtask, RandomNumberWrapperT& rng, MultiindexGeneratorT& sampler) {
-        TaskResults res{.sum=0,.sum2=0};
-        data.assign(task.m_intervals_total, 0);
+        data.allocate(task.m_intervals_total);
         std::vector<std::thread> threads;
         for(size_t thread_id = 0; thread_id < subtask.n_threads; thread_id++) {
             //Chi2BasedTest::runThread<RandomNumberWrapperT, MultiindexGeneratorT>(task, subtask, rng, sampler, subtask.n_threads, thread_id);
@@ -48,28 +49,52 @@ public:
         }
         for(auto &it : threads)
             it.join();        
-        res = getResults();
-        data.clear();
-        data.shrink_to_fit();    
+        TaskResults res = getResults();
+        //data.clear();
+        //data.shrink_to_fit();    
         return res;
     }
 
-    StatiscticalTestResults collect(const Chi2BasedProblem& task,  size_t n_subtasks, const std::vector<TaskResults>& subtask_results);
+    StatiscticalTestResults collect(const Chi2BasedProblem& task,  size_t n_subtasks, const std::vector<TaskResults>& subtask_results){
+        assert(n_subtasks == subtask_results.size());
+        StatiscticalTestResults res{.dof=0,.chi2=0,.sum=0,.sum2=0,.N=0};
+        res.dof = task.m_intervals_total - 1;
+        res.N = task.N;
+        res.sum = std::accumulate(subtask_results.begin(), subtask_results.end(), 0, [](auto sum, auto& it) { return sum + it.sum;});
+        res.sum2 = std::accumulate(subtask_results.begin(), subtask_results.end(), 0, [](auto sum2, auto& it) { return sum2 + it.sum2;});
+        res.chi2 = 0;
+        return res;
+    }
 private:
+    std::pair<size_t, size_t> split(size_t N, size_t total_tasks, size_t cur_task) {
+        size_t start = N*(cur_task)/total_tasks;
+        size_t end = N*(cur_task+1)/total_tasks;
+        return {start, end};
+    }
+
+    TaskResults getResults() {
+        size_t sum = 0, sum2 = 0;
+        for(size_t n = 0; n < data.size(); n++) {
+            sum += data[n];
+            sum2 += data[n]*data[n];
+
+        }
+        return {sum, sum2};
+    }
+
     template<class RandomNumberWrapperT, class MultiindexGeneratorT>
     void runThread(const Chi2BasedProblem &task, const SubtaskParameters& subtask, RandomNumberWrapperT rng, MultiindexGeneratorT sampler, size_t nthreads, size_t thread_id) {
         TaskResults res{.sum=0,.sum2=0};
         auto [start, end] = split(task.N, subtask.Ntasks, subtask.cur_task);
-        auto [thread_start, thread_end] = split(end - start - 1, nthreads, thread_id);
+        auto [thread_start, thread_end] = split(end - start, nthreads, thread_id);
         rng.discardN(start + thread_start);
-        for(size_t n = 0; n < thread_end - thread_start - 1; n++) {
+        for(size_t n = 0; n < thread_end - thread_start; n++) {
             size_t idx = sampler(rng);
-            data[idx]++;
+            assert(idx < data.size());
+            data.increment(idx);
         }
     }
-    std::vector<size_t> data;
-    TaskResults getResults();
-    static std::pair<size_t, size_t> split(size_t N, size_t total_tasks, size_t cur_task);
+    Histogram data;
 };
 
 

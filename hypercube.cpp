@@ -9,24 +9,36 @@ void tic() {
     tstart = std::chrono::high_resolution_clock::now();
 }
 
-void toc() {
+double toc() {
     auto tend = std::chrono::high_resolution_clock::now();
 
     auto period = std::chrono::high_resolution_clock::period();
     double dt = static_cast<double>(period.num)/period.den;
     double t = (tend - tstart).count()*dt;
-    std::cout<<"t "<<t*1000<<" ms"<<std::endl;
+    return t;
 }
 
 
 int main() {
-    HypercubeTestParameters task(2, 100, 1000000);
-    SubtaskParameters subtask{.Ntasks=1,.cur_task=0,.n_threads=1};
-    Chi2BasedTest test;
+    HypercubeTestParameters task(3, 100, 200000000);
+    SubtaskParameters subtask{.Ntasks=1,.cur_task=0,.n_threads=10};
+    Chi2BasedTest<Histogram> test;
+    Chi2BasedTest<HistogramAtomic> test_atomic;
+    Chi2BasedTest<HistogramMutexed> test_mutexed;
     MT19937Wrapper rng;
     KIndependentGenerator sampler(task.dim, task.m_intervals_per_dim);
     tic();
-    auto res = test.run<MT19937Wrapper, KIndependentGenerator>(task, subtask, rng, sampler);
-    toc();
+    auto res1 = test.run<MT19937Wrapper, KIndependentGenerator>(task, subtask, rng, sampler);    
+    double t1 = toc();
+    tic();
+    auto res2 = test_atomic.run<MT19937Wrapper, KIndependentGenerator>(task, subtask, rng, sampler);    
+    double t2 = toc();
+    tic();
+    auto res3 = test_mutexed.run<MT19937Wrapper, KIndependentGenerator>(task, subtask, rng, sampler);    
+    double t3 = toc();
+    std::cout<<"nthreads = "<<subtask.n_threads<<std::endl;
+    std::cout<<"Simple: "<<res1.sum<<" "<<res1.sum2<<"; elapsed = "<<t1*1000<<" ms"<<std::endl;
+    std::cout<<"Atomic: "<<res2.sum<<" "<<res2.sum2<<"; elapsed = "<<t2*1000<<" ms"<<std::endl;
+    std::cout<<"Mutexs: "<<res3.sum<<" "<<res3.sum2<<"; elapsed = "<<t3*1000<<" ms"<<std::endl;    
     return 0;
 }

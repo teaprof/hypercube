@@ -34,12 +34,12 @@ public:
             }
         }
         std::ifstream f(filename_, std::ios::in | std::ios::binary);
-        f.seekg(best_idx*sizeof());
+        //f.seekg(best_idx*sizeof());
     }    
     Header header;
     std::vector<StateHeader> state_headers;
     std::string filename_;
-}
+};
 
 int main() {
 

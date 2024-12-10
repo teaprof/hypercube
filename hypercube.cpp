@@ -1,25 +1,25 @@
 #include "StatisticalTestBase.h"
+#include "progress/tictoc.h"
 #include<cassert>
-#include<chrono>
 #include<iostream>
+#include "options/BasicOptions.h"
 
-auto tstart = std::chrono::high_resolution_clock::now();
-
-void tic() {
-    tstart = std::chrono::high_resolution_clock::now();
-}
-
-double toc() {
-    auto tend = std::chrono::high_resolution_clock::now();
-
-    auto period = std::chrono::high_resolution_clock::period();
-    double dt = static_cast<double>(period.num)/period.den;
-    double t = (tend - tstart).count()*dt;
-    return t;
-}
-
-
-int main() {
+int main(int arcg, char* argv[]) {
+    /*try {        
+        HypercubeOptions options(argc, argv);
+        if(options.needHelp)
+        {
+            options.help();
+            return 0;
+        }
+        options.validate();
+        return 0;
+    } catch (std::runtime_error& r) {
+        std::cerr<<"Error:"<<std::endl;
+        std::cerr<<r.what()<<std::endl;
+        return 1;
+    }*/
+    
     HypercubeTestParameters task(3, 100, 200000000);
     SubtaskParameters subtask{.Ntasks=1,.cur_task=0,.n_threads=10};
     Chi2BasedTest<Histogram> test;

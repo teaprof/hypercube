@@ -1,4 +1,4 @@
-#include <gtest>
+#include <gtest/gtest.h>
 
 TEST(A, B) {
     

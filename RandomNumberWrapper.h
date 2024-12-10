@@ -13,6 +13,7 @@ public:
         for(size_t i = 0; i < n; i++)
             discard();
     };
+    virtual void getState(std::vector<uint8_t>& state) = 0;
 };
 
 template<class Rng> 
@@ -26,6 +27,12 @@ public:
         rng();
     }
 };
+
+template<>
+class RandomNumberWrapperStd<std::mt19937>::getState(std::vector<uint8_t>& state) {
+    mt19937 rng;
+    rng.
+}
 
 class MultiindexGenerator {
     public:

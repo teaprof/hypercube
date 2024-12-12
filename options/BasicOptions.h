@@ -32,12 +32,13 @@ class PartialOptions {
         }
         void addPositionalVisible(std::string name, int count, const boost::program_options::value_semantic* s, std::string description) {
             addPositionalHidden(name, count, s);
+            partial_.add_options()(name.c_str(), s);
             visible_.add_options()(name.c_str(), s, description.c_str());
         }
         virtual void validate() {
             //nothing to do
         }        
-    private:
+
         //These vars are used only for parsing arguments
         boost::program_options::options_description partial_;
         boost::program_options::positional_options_description  positional_;        
@@ -45,12 +46,15 @@ class PartialOptions {
         //These vars are used only for printing help message
         boost::program_options::options_description visible_;
         boost::program_options::options_description hidden_;
+
+        boost::program_options::variables_map vm;
 };
 
 class BasicOptions : public PartialOptions {
     public:
         BasicOptions() : PartialOptions("Basic options") {
-            addPartialVisible("help", "produce help");
+            namespace po = boost::program_options;
+            addPartialVisible("help", po::value<bool>(&need_help)->default_value(false), "produce help");
         }
         bool need_help;
 };
@@ -82,51 +86,34 @@ class HypercubeOptions : public PartialOptions {
         size_t nSamples;
 };
 
-class Options {
+class Options : protected PartialOptions {
     public:
-        void parse(int argc, char* argv[]) {
-
+        Options() : PartialOptions("") {}
+        virtual void addGroup(PartialOptions& options) {
+            partial_.add(options.partial_);
+            visible_.add(options.visible_);
+            hidden_.add(options.hidden_);
+            options_.push_back(std::ref(options));
+            if(options.positional_.max_total_count() != 0) {
+                //positional arguments should be added only once
+                assert(positional_.max_total_count() == 0);
+                positional_ = options.positional_;
+            }
+        }
+        virtual void parse(int argc, char* argv[]) {
+            namespace po = boost::program_options;
+            po::store(po::command_line_parser(argc, argv).options(partial_).positional(positional_).run(), vm);
+            boost::program_options::notify(vm);
         }
         void validate() {
-            for(auto it : options) 
+            for(auto it : options_) 
                 it.get().validate();
         }
         void help() {
-            auto visible_options = visible();
-            std::cout<<visible_options<<std::endl;
+            std::cout<<visible_<<std::endl;
         }
-        void add(PartialOptions& partial_options) {
-            options.push_back(partial_options);
-        }
-        boost::program_options::options_description partial() {
-            boost::program_options::options_description res;        
-            for(auto it : options)
-                res.add(it.get().partial());
-            return res;
-        }
-        boost::program_options::options_description visible() {
-            boost::program_options::options_description res;        
-            for(auto it : options)
-                res.add(it.get().visible());
-            return res;
-
-        }
-        boost::program_options::options_description hidden() {
-            return {};
-        }
-        boost::program_options::positional_options_description positional() {
-            return {};
-        }
-        boost::program_options::options_description all() {
-            boost::program_options::options_description all;
-            for(auto it : options) {
-                all.add(it.get().partial());
-            }
-            return all;
-        }
-
     private:
-        std::vector<std::reference_wrapper<PartialOptions>> options;
+        std::vector<std::reference_wrapper<PartialOptions>> options_;
 };
 
 class HypercubeTestOptions {

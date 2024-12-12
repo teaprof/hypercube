@@ -12,6 +12,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 #add_subdirectory(src)
 
 add_executable(hypercube hypercube.cpp StatisticalTestBase.cpp progress/tictoc.cpp)
+target_link_libraries(hypercube Boost::program_options)
 add_executable(rewind rewind.cpp)
 
 find_package(GTest REQUIRED)

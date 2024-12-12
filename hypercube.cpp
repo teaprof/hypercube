@@ -4,10 +4,17 @@
 #include<iostream>
 #include "options/BasicOptions.h"
 
-int main(int arcg, char* argv[]) {
-    /*try {        
-        HypercubeOptions options(argc, argv);
-        if(options.needHelp)
+int main(int argc, char* argv[]) {
+    try {        
+        BasicOptions basic_options;
+        MultithreadOptions multithread_options;
+        HypercubeOptions hypercube_options;
+        Options options;
+        options.addGroup(hypercube_options);
+        options.addGroup(multithread_options);
+        options.addGroup(basic_options);
+        options.parse(argc, argv);
+        if(basic_options.need_help)
         {
             options.help();
             return 0;
@@ -18,7 +25,7 @@ int main(int arcg, char* argv[]) {
         std::cerr<<"Error:"<<std::endl;
         std::cerr<<r.what()<<std::endl;
         return 1;
-    }*/
+    }
     
     HypercubeTestParameters task(3, 100, 200000000);
     SubtaskParameters subtask{.Ntasks=1,.cur_task=0,.n_threads=10};

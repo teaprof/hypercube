@@ -9,35 +9,24 @@
 
 class PartialOptions {
     public:
-        PartialOptions(std::string caption) : visible_(caption) {}
-        boost::program_options::options_description partial() {
-            return partial_;
-        }
-        boost::program_options::options_description visible() {
-            return visible_;
-        }
-        boost::program_options::options_description hidden() {
-            return hidden_;
-        }
-        boost::program_options::positional_options_description positional() {
-            return positional_;
-        }
+        PartialOptions(std::string caption) : visible(caption) {}        
         template<class...Args>
         void addPartialVisible(Args ... args) {
             auto option = boost::make_shared<boost::program_options::option_description>(args...);
-            partial_.add(option);
-            visible_.add(option);
+            partial.add(option);
+            visible.add(option);
         }
         void addPositionalHidden(std::string name, int count, const boost::program_options::value_semantic* s) {
-            positional_.add(name.c_str(), count);
-            partial_.add_options()(name.c_str(), s);
+            positional.add(name.c_str(), count);
+            partial.add_options()(name.c_str(), s);
         }
         void addPositionalVisible(std::string name, int count, const boost::program_options::value_semantic* s, std::string description) {
             addPositionalHidden(name, count, s);
             auto option = boost::make_shared<boost::program_options::option_description>(name.c_str(), s, description.c_str());
-            partial_.add(option);
-            visible_.add(option);            
+            partial.add(option);
+            visible.add(option);            
         }
+
         virtual void update(const boost::program_options::variables_map& vm) {
             //nothing to do
         }
@@ -46,12 +35,12 @@ class PartialOptions {
         }        
 
         //These vars are used only for parsing arguments
-        boost::program_options::options_description partial_;
-        boost::program_options::positional_options_description  positional_;        
+        boost::program_options::options_description partial;
+        boost::program_options::positional_options_description  positional;        
 
         //These vars are used only for printing help message
-        boost::program_options::options_description visible_;
-        boost::program_options::options_description hidden_;        
+        boost::program_options::options_description visible;
+        boost::program_options::options_description hidden;        
 };
 
 class BasicOptions : public PartialOptions {
@@ -77,6 +66,13 @@ class MultithreadOptions : public PartialOptions {
             str<<"number of threads, if 0 then std::threads::hardware_concurrency will be used ["<<concurency<<" on this machine]";
             addPartialVisible("nthreads,t", po::value<size_t>(&nthreads_)->default_value(defaultThreads_), str.str().c_str());
         }
+        size_t nThreads() {
+            if(nthreads_ == 0) {
+                return std::thread::hardware_concurrency();
+            }
+            return nthreads_;
+        }
+    private:
         size_t defaultThreads_, nthreads_;
 };
 
@@ -85,32 +81,43 @@ class HypercubeOptions : public PartialOptions {
     public:
         HypercubeOptions() : PartialOptions("Hypercube test options") {
             namespace po = boost::program_options;
-            addPartialVisible("dim,d", po::value<size_t>(&dim), "hypercube dimension");
-            addPartialVisible("nintervals,m", po::value<size_t>(&nIntervals)->default_value(100), "hypercube dimension");
-            addPartialVisible("nsamples,N", po::value<size_t>(&nIntervals)->default_value(100), "hypercube dimension");
+            addPartialVisible("dim,d", po::value<size_t>(&dim)->default_value(2), "hypercube dimension");
+            addPartialVisible("nintervals,m", po::value<size_t>(&nIntervals)->default_value(100), "number of intervals per each dimension");
+            addPartialVisible("nsamples,N", po::value<size_t>(&nSamples)->default_value(10000), "number of samples");
         }
         size_t dim;
         size_t nIntervals;
         size_t nSamples;
 };
 
+class SubtaskOptions : public PartialOptions {
+    public:
+        SubtaskOptions() : PartialOptions("Subtast options") {
+            namespace po = boost::program_options;
+            addPartialVisible("nsubtasks", po::value<size_t>(&nSubtasks)->default_value(1), "total count of subtasks");
+            addPartialVisible("subtask", po::value<size_t>(&curSubtask)->default_value(0), "number of the current subtask");
+        }
+        size_t nSubtasks;
+        size_t curSubtask;
+};
+
 class Options : protected PartialOptions {
     public:
         Options() : PartialOptions("") {}
         virtual void addGroup(PartialOptions& options) {
-            partial_.add(options.partial_);
-            visible_.add(options.visible_);
-            hidden_.add(options.hidden_);
+            partial.add(options.partial);
+            visible.add(options.visible);
+            hidden.add(options.hidden);
             options_.push_back(std::ref(options));
-            if(options.positional_.max_total_count() != 0) {
+            if(options.positional.max_total_count() != 0) {
                 //positional arguments should be added only once
-                assert(positional_.max_total_count() == 0);
-                positional_ = options.positional_;
+                assert(positional.max_total_count() == 0);
+                positional = options.positional;
             }
         }
         virtual void parse(int argc, char* argv[]) {
             namespace po = boost::program_options;
-            po::store(po::command_line_parser(argc, argv).options(partial_).positional(positional_).run(), vm);
+            po::store(po::command_line_parser(argc, argv).options(partial).positional(positional).run(), vm);
             boost::program_options::notify(vm);
             for(auto it : options_) {
                 it.get().update(vm);
@@ -122,7 +129,7 @@ class Options : protected PartialOptions {
                 it.get().validate();
         }
         void help() {
-            std::cout<<visible_<<std::endl;
+            std::cout<<visible<<std::endl;
         }
     private:
         std::vector<std::reference_wrapper<PartialOptions>> options_;

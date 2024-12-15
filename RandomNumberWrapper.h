@@ -32,6 +32,24 @@ class MultiindexGenerator {
     virtual size_t operator()(RandomNumberWrapper& rng) = 0;
 };
 
+class IndexGenerator {
+    public:
+    virtual size_t operator()(RandomNumberWrapper& rng) {
+
+    };
+}
+
+class ChainGenerator : public MultiindexGenerator {
+    public:
+    ChainGenerator(size_t dim, size_t shift, size_t maxval) : dim_(dim), shift_(shift), maxval_(maxval) {
+
+    }
+    private:
+    size_t dim_;
+    size_t shift_;
+    size_t maxval_;
+};
+
 class KIndependentGenerator : public MultiindexGenerator {
     public:
     KIndependentGenerator(size_t dim, size_t maxval) : dim_(dim), maxval_(maxval) {}

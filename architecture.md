@@ -8,7 +8,6 @@
 - total subtasks
 - subtask number
 
-
 # Strategies
 
 ## Histogtam data container
@@ -16,6 +15,15 @@
 * simple no-multithread
 * mutex protected blocks
 * atomic protected block 
+
+
+## BitToFloat
+
+## BitToInt
+
+## BitToBool
+
+for a special case when nIntervals = 2
 
 ## MultiindexGenerator
 

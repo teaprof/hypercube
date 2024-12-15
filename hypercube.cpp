@@ -14,8 +14,7 @@ int main(int argc, char* argv[]) {
         options.addGroup(multithread_options);
         options.addGroup(basic_options);
         options.parse(argc, argv);
-        if(basic_options.need_help)
-        {
+        if(basic_options.need_help) {
             options.help();
             return 0;
         }

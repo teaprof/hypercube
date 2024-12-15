@@ -2,6 +2,7 @@
 #define BASIC_OPTIONS_H
 
 #include <boost/program_options.hpp>
+#include <boost/make_shared.hpp>
 #include <thread>
 #include <vector>
 #include <iostream>
@@ -22,9 +23,10 @@ class PartialOptions {
             return positional_;
         }
         template<class...Args>
-        void addPartialVisible(Args...args) {
-            partial_.add_options()(args...);
-            visible_.add_options()(args...);
+        void addPartialVisible(Args ... args) {
+            auto option = boost::make_shared<boost::program_options::option_description>(args...);
+            partial_.add(option);
+            visible_.add(option);
         }
         void addPositionalHidden(std::string name, int count, const boost::program_options::value_semantic* s) {
             positional_.add(name.c_str(), count);
@@ -32,8 +34,12 @@ class PartialOptions {
         }
         void addPositionalVisible(std::string name, int count, const boost::program_options::value_semantic* s, std::string description) {
             addPositionalHidden(name, count, s);
-            partial_.add_options()(name.c_str(), s);
-            visible_.add_options()(name.c_str(), s, description.c_str());
+            auto option = boost::make_shared<boost::program_options::option_description>(name.c_str(), s, description.c_str());
+            partial_.add(option);
+            visible_.add(option);            
+        }
+        virtual void update(const boost::program_options::variables_map& vm) {
+            //nothing to do
         }
         virtual void validate() {
             //nothing to do
@@ -45,18 +51,20 @@ class PartialOptions {
 
         //These vars are used only for printing help message
         boost::program_options::options_description visible_;
-        boost::program_options::options_description hidden_;
-
-        boost::program_options::variables_map vm;
+        boost::program_options::options_description hidden_;        
 };
 
 class BasicOptions : public PartialOptions {
     public:
         BasicOptions() : PartialOptions("Basic options") {
             namespace po = boost::program_options;
-            addPartialVisible("help", po::value<bool>(&need_help)->default_value(false), "produce help");
+            addPartialVisible("help", new po::untyped_value(true), "produce help");
         }
-        bool need_help;
+        virtual void update(const boost::program_options::variables_map& vm) {
+            need_help = vm.count("help") > 0;
+        }
+        bool need_help{false};
+        
 };
 
 class MultithreadOptions : public PartialOptions {
@@ -104,6 +112,10 @@ class Options : protected PartialOptions {
             namespace po = boost::program_options;
             po::store(po::command_line_parser(argc, argv).options(partial_).positional(positional_).run(), vm);
             boost::program_options::notify(vm);
+            for(auto it : options_) {
+                it.get().update(vm);
+                it.get().validate();
+            }            
         }
         void validate() {
             for(auto it : options_) 
@@ -114,6 +126,7 @@ class Options : protected PartialOptions {
         }
     private:
         std::vector<std::reference_wrapper<PartialOptions>> options_;
+        boost::program_options::variables_map vm;
 };
 
 class HypercubeTestOptions {

@@ -31,6 +31,12 @@ struct Chi2BasedProblem {
     size_t m_intervals_total;
 };
 
+class Sampler {
+    public:
+    virtual size_t operator()() = 0;
+    virtual size_t max() = 0;
+    virtual void discardN(size_t N) = 0;    
+};
 
 template<class Histogram>
 class Chi2BasedTest {
@@ -38,13 +44,13 @@ public:
     Chi2BasedTest() {}
     virtual ~Chi2BasedTest() {}
 
-    template<class RandomNumberWrapperT, class MultiindexGeneratorT>
-    TaskResults run(const Chi2BasedProblem &task, const SubtaskParameters& subtask, RandomNumberWrapperT& rng, MultiindexGeneratorT& sampler) {
+    TaskResults run(const Chi2BasedProblem &task, const SubtaskParameters& subtask, Sampler& sampler) {
+        assert(task.m_intervals_total == sampler.max() + 1);
         data.allocate(task.m_intervals_total);
         std::vector<std::thread> threads;
         for(size_t thread_id = 0; thread_id < subtask.n_threads; thread_id++) {
             //Chi2BasedTest::runThread<RandomNumberWrapperT, MultiindexGeneratorT>(task, subtask, rng, sampler, subtask.n_threads, thread_id);
-            std::thread thread(&Chi2BasedTest::runThread<RandomNumberWrapperT, MultiindexGeneratorT>, this, task, subtask, rng, sampler, subtask.n_threads, thread_id);
+            std::thread thread(&Chi2BasedTest::runThread, this, task, subtask, sampler, thread_id);
             threads.emplace_back(std::move(thread));
         }
         for(auto &it : threads)
@@ -82,14 +88,13 @@ private:
         return {sum, sum2};
     }
 
-    template<class RandomNumberWrapperT, class MultiindexGeneratorT>
-    void runThread(const Chi2BasedProblem &task, const SubtaskParameters& subtask, RandomNumberWrapperT rng, MultiindexGeneratorT sampler, size_t nthreads, size_t thread_id) {
+    void runThread(const Chi2BasedProblem &task, const SubtaskParameters& subtask, Sampler& sampler, size_t thread_id) {
         TaskResults res{.sum=0,.sum2=0};
         auto [start, end] = split(task.N, subtask.Ntasks, subtask.cur_task);
-        auto [thread_start, thread_end] = split(end - start, nthreads, thread_id);
-        rng.discardN(start + thread_start);
+        auto [thread_start, thread_end] = split(end - start, subtask.n_threads, thread_id);
+        sampler.discardN(start + thread_start);
         for(size_t n = 0; n < thread_end - thread_start; n++) {
-            size_t idx = sampler(rng);
+            size_t idx = sampler();
             assert(idx < data.size());
             data.increment(idx);
         }
@@ -98,14 +103,6 @@ private:
 };
 
 
-class HypercubeTestParameters : public Chi2BasedProblem {
-public:
-    HypercubeTestParameters(size_t dim, size_t m_intervals_per_dim, size_t N);
-    size_t dim;
-    size_t m_intervals_per_dim;
-};
-
-
-using HypercubeSampler = KIndependentGenerator;
+//using HypercubeSampler = KIndependentGenerator;
 
 #endif

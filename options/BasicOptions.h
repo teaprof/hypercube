@@ -76,6 +76,47 @@ class MultithreadOptions : public PartialOptions {
         size_t defaultThreads_, nthreads_;
 };
 
+class SubtaskOptions : public PartialOptions {
+    public:
+        SubtaskOptions() : PartialOptions("Subtast options") {
+            namespace po = boost::program_options;
+            addPartialVisible("nsubtasks", po::value<size_t>(&nSubtasks)->default_value(1), "total count of subtasks");
+            addPartialVisible("subtask", po::value<size_t>(&curSubtask)->default_value(0), "number of the current subtask");
+        }
+        size_t nSubtasks;
+        size_t curSubtask;
+};
+
+class SrcParseOptions : public PartialOptions {
+    public:
+        SrcParseOptions() : PartialOptions("Source bit stream parser options") {
+            namespace po = boost::program_options;
+            addPartialVisible("srcLittleEndian", po::value<bool>(&littleEndian)->default_value(1), "is source little endian?");
+            addPartialVisible("srcSampleBits", po::value<uint16_t>(&sampleBits)->default_value(0), "bits per sample, 0 for natural");
+        }
+        bool littleEndian;
+        uint16_t sampleBits;
+};
+
+class IndexOptions : public PartialOptions {
+    public:
+        IndexOptions() : PartialOptions("Int create options") {
+            namespace po = boost::program_options;
+            addPartialVisible("dstLittleEndian", po::value<bool>(&littleEndian)->default_value(1), "is dest little endian?");
+            addPartialVisible("dstIndexBits", po::value<uint16_t>(&nBits)->default_value(64), "bits per sample");
+        }
+        bool littleEndian;
+        uint16_t nBits;
+};
+
+class ChainOptions : public PartialOptions {
+    public:
+        ChainOptions() : PartialOptions("Chain options") {
+            namespace po = boost::program_options;
+            addPartialVisible("stride", po::value<size_t>(&stride)->default_value(0), "stride, default is equal to dimension");
+        }
+        size_t stride;
+};
 
 class HypercubeOptions : public PartialOptions {
     public:
@@ -88,17 +129,6 @@ class HypercubeOptions : public PartialOptions {
         size_t dim;
         size_t nIntervals;
         size_t nSamples;
-};
-
-class SubtaskOptions : public PartialOptions {
-    public:
-        SubtaskOptions() : PartialOptions("Subtast options") {
-            namespace po = boost::program_options;
-            addPartialVisible("nsubtasks", po::value<size_t>(&nSubtasks)->default_value(1), "total count of subtasks");
-            addPartialVisible("subtask", po::value<size_t>(&curSubtask)->default_value(0), "number of the current subtask");
-        }
-        size_t nSubtasks;
-        size_t curSubtask;
 };
 
 class Options : protected PartialOptions {

@@ -1,5 +1,6 @@
 #include "StatisticalTestBase.h"
 #include "progress/tictoc.h"
+#include "IndexGenerator.h"
 #include<cassert>
 #include<iostream>
 #include "options/BasicOptions.h"
@@ -10,11 +11,18 @@ int main(int argc, char* argv[]) {
         MultithreadOptions multithread_options;
         HypercubeOptions hypercube_options;
         SubtaskOptions subtask_options;
+        ChainOptions chain_options;
+        IndexOptions index_options;
+        SrcParseOptions src_parse_options;
+        
         Options options;
         options.addGroup(hypercube_options);
         options.addGroup(multithread_options);        
         options.addGroup(subtask_options);
         options.addGroup(basic_options);
+        options.addGroup(chain_options);
+        options.addGroup(index_options);
+        options.addGroup(src_parse_options);
         options.parse(argc, argv);
         if(basic_options.need_help) {
             options.help();
@@ -32,15 +40,18 @@ int main(int argc, char* argv[]) {
         Chi2BasedTest<HistogramAtomic> test_atomic;
         Chi2BasedTest<HistogramMutexed> test_mutexed;
         MT19937Wrapper rng;
-        KIndependentGenerator sampler(task.dim, task.m_intervals_per_dim);
+        BitsRepack bits_generator(rng, src_parse_options.sampleBits, src_parse_options.littleEndian, index_options.littleEndian);
+        UniformIntDistribution int_generator(bits_generator, index_options.nBits);
+        ChainGenerator chain_generator(int_generator, hypercube_options.dim, hypercube_options.nIntervals, chain_options.stride);
+        
         tic();
-        auto res1 = test.run<MT19937Wrapper, KIndependentGenerator>(task, subtask, rng, sampler);    
+        auto res1 = test.run(task, subtask, chain_generator);
         double t1 = toc();
         tic();
-        auto res2 = test_atomic.run<MT19937Wrapper, KIndependentGenerator>(task, subtask, rng, sampler);    
+        auto res2 = test_atomic.run(task, subtask, chain_generator);
         double t2 = toc();
         tic();
-        auto res3 = test_mutexed.run<MT19937Wrapper, KIndependentGenerator>(task, subtask, rng, sampler);    
+        auto res3 = test_mutexed.run(task, subtask, chain_generator);
         double t3 = toc();
         std::cout<<"nthreads = "<<subtask.n_threads<<std::endl;
         std::cout<<"Simple: "<<res1.sum<<" "<<res1.sum2<<"; elapsed = "<<t1*1000<<" ms"<<std::endl;

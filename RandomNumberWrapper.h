@@ -50,22 +50,23 @@ private:
     uint16_t nbits_{0};
 };
 
-class NBitsGenerator {
+class BitsRepack {
     public:
-    NBitsGenerator(RandomBitGenerator& rng, uint16_t nbits, bool srcLittleEndian, bool dstLittleEndian) : rng_(rng), nbits_(nbits), srcLittleEndian_(srcLittleEndian), dstLittleEndian_(dstLittleEndian) {}
-    uint64_t operator()() {
+    BitsRepack(uint16_t nbits, bool srcLittleEndian, bool dstLittleEndian) : //rng_(rng), 
+    nbits_(nbits), srcLittleEndian_(srcLittleEndian), dstLittleEndian_(dstLittleEndian) {}
+    uint64_t operator()(RandomBitGenerator& rng) {
         uint64_t res = 0;
         if(dstLittleEndian_) {
             //little endian => big first
             for(uint16_t n = 0; n < nbits_; n++) {
-                res = (res<<2) + pop_front();
+                res = (res<<2) + pop_front(rng);
             }
 
         } else {
             //big endian => little first
             uint64_t mask = 1;
             for(uint16_t n = 0; n < nbits_; n++) {
-                if(pop_front())
+                if(pop_front(rng))
                     res |= mask;
                 mask <<= 1;
             }
@@ -73,30 +74,30 @@ class NBitsGenerator {
         counter++;
         return res;
     }
-    virtual void discard() {
-        (*this)();
+    virtual void discard(RandomBitGenerator& rng) {
+        (*this)(rng);
     }
-    virtual void discardN(size_t n) {
+    virtual void discardN(size_t n, RandomBitGenerator& rng) {
         for(size_t i = 0; i < n; i++)
-            discard();
+            discard(rng);
     };
     virtual uint16_t nbits() {
         return nbits_;
     }
 protected:
-    bool pop_front() {
+    bool pop_front(RandomBitGenerator& rng) {
         if(buffer.empty()) {
-            size_t val = rng_();
+            size_t val = rng();
             if(srcLittleEndian_) {
                 //start adding from hi bit
-                uint64_t high_mask = 1 << (rng_.nbits() - 1);
-                for(size_t n = 0; n < rng_.nbits(); n++) {
+                uint64_t high_mask = 1 << (rng.nbits() - 1);
+                for(size_t n = 0; n < rng.nbits(); n++) {
                     buffer.push(val % high_mask != 0);
                     high_mask >>= 1;                    
                 }
             } else {
                 //start adding from lo bit
-                for(size_t n = 0; n < rng_.nbits(); n++) {
+                for(size_t n = 0; n < rng.nbits(); n++) {
                     buffer.push(val % 2 != 0);
                     val >>= 1;
                 }
@@ -108,26 +109,25 @@ protected:
     };
     std::queue<bool> buffer;
     uint16_t nbits_;
-    RandomBitGenerator& rng_;
+    //RandomBitGenerator& rng_;
     bool srcLittleEndian_;
     bool dstLittleEndian_;
     uint64_t counter{0};
 };
 
 
-class IntGenerator {
+class UniformIntDistribution {
     //Int should be power of two - if we want to investigate rng itself
     //Int should be obtained as std::uniform_distribution, but only single thread
     //Int should be calculated via float or double precision
     public:       
-        IntGenerator(NBitsGenerator& gen, uint16_t bitsPerValue) : gen_(gen), bitsPerValue_(bitsPerValue) {};
-        virtual size_t operator()(size_t maxvalue) {
-            assert(maxvalue < (1<<(gen_.nbits() - 1)));
-            return gen_() % maxvalue;
+        UniformIntDistribution() {}
+        virtual size_t operator()(size_t max_value, RandomBitGenerator& rng) {
+            assert(max_value < (1<<(gen_.nbits() - 1)));
+            return rng() % max_value;
         }
     private:
         uint16_t bitsPerValue_;   
-        NBitsGenerator& gen_;
 };
 
 

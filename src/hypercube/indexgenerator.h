@@ -13,10 +13,10 @@ public:
     virtual size_t index(rng& r) = 0;
 };
 
-class BinaryIndexGenerator : public IndexGeneratorBase<RandomBitGenerator>
+class HypercubeBinSampler : public IndexGeneratorBase<RandomBitGenerator>
 {
 public:
-    BinaryIndexGenerator(size_t _dim, size_t _mIntervals, size_t _stride) :
+    HypercubeBinSampler(size_t _dim, size_t _mIntervals, size_t _stride) :
         dim(_dim), mIntervals(_mIntervals), stride(_stride), _index(0), indexInitialized(false), restbits(0)
     {
         assert((mIntervals & (mIntervals-1)) == 0); // "mIntervals should be power of two"

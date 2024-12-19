@@ -227,7 +227,7 @@ std::shared_ptr<IndexGeneratorBase<RandomBitGenerator>> createIndexGenerator(Opt
             if(opt.oo.verbose)
                 std::cout<<"Setting stride to "<<opt.so.stride<<" bits"<<std::endl;
         }
-        return std::make_shared<BinaryIndexGenerator>(opt.ho.dim, opt.ho.mIntervals, opt.so.stride);
+        return std::make_shared<HypercubeBinSampler>(opt.ho.dim, opt.ho.mIntervals, opt.so.stride);
     } else {
         if(opt.so.stride == 0)
             opt.so.stride = opt.ho.dim;

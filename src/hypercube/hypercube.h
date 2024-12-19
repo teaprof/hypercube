@@ -105,7 +105,7 @@ public:
     void setIndexGenerator(bool binary, size_t stride, size_t bytesPerFloat)
     {
         if(binary)
-            indexGenerator = std::make_shared<BinaryIndexGenerator>(dim, nIntervals, stride);
+            indexGenerator = std::make_shared<HypercubeBinSampler>(dim, nIntervals, stride);
         else
             indexGenerator = std::make_shared<FloatingPointIndexGenerator>(dim, nIntervals, stride, bytesPerFloat);
     }

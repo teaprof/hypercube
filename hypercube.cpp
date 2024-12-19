@@ -1,6 +1,6 @@
 #include "StatisticalTestBase.h"
 #include "progress/tictoc.h"
-#include "IndexGenerator.h"
+#include "HypercubeTest.h"
 #include<cassert>
 #include<iostream>
 #include "options/BasicOptions.h"
@@ -12,8 +12,8 @@ int main(int argc, char* argv[]) {
         HypercubeOptions hypercube_options;
         SubtaskOptions subtask_options;
         ChainOptions chain_options;
-        IndexOptions index_options;
-        SrcParseOptions src_parse_options;
+        SampleToIntOptions index_options;
+        BitsRepackOptions bits_repack_options;
         
         Options options;
         options.addGroup(hypercube_options);
@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
         options.addGroup(basic_options);
         options.addGroup(chain_options);
         options.addGroup(index_options);
-        options.addGroup(src_parse_options);
+        options.addGroup(bits_repack_options);
         options.parse(argc, argv);
         if(basic_options.need_help) {
             options.help();
@@ -34,24 +34,24 @@ int main(int argc, char* argv[]) {
         std::cout<<"nIntervals = "<<hypercube_options.nIntervals<<std::endl;
         std::cout<<"nSamples = "<<hypercube_options.nSamples<<std::endl;
    
-        HypercubeTestParameters task(hypercube_options.dim, hypercube_options.nIntervals, hypercube_options.nSamples);
+        HypercubeProblem problem(hypercube_options.dim, hypercube_options.nIntervals, hypercube_options.nSamples);
         SubtaskParameters subtask{.Ntasks=subtask_options.nSubtasks,.cur_task=subtask_options.curSubtask,.n_threads=multithread_options.nThreads()};
         Chi2BasedTest<Histogram> test;
         Chi2BasedTest<HistogramAtomic> test_atomic;
         Chi2BasedTest<HistogramMutexed> test_mutexed;
         MT19937Wrapper rng;
-        BitsRepack bits_generator(rng, src_parse_options.sampleBits, src_parse_options.littleEndian, index_options.littleEndian);
-        UniformIntDistribution int_generator(bits_generator, index_options.nBits);
-        ChainGenerator chain_generator(int_generator, hypercube_options.dim, hypercube_options.nIntervals, chain_options.stride);
+        BitsRepack bits_generator(bits_repack_options.sampleBits, bits_repack_options.littleEndian, index_options.littleEndian);
+        UniformIntDistribution int_generator;
+        HypercubeIntSampler hypercube_int_sampler(problem, chain_options.stride);
         
         tic();
-        auto res1 = test.run(task, subtask, chain_generator);
+        auto res1 = test.run(problem, subtask, hypercube_int_sampler, rng);
         double t1 = toc();
         tic();
-        auto res2 = test_atomic.run(task, subtask, chain_generator);
+        auto res2 = test_atomic.run(problem, subtask, hypercube_int_sampler, rng);
         double t2 = toc();
         tic();
-        auto res3 = test_mutexed.run(task, subtask, chain_generator);
+        auto res3 = test_mutexed.run(problem, subtask, hypercube_int_sampler, rng);
         double t3 = toc();
         std::cout<<"nthreads = "<<subtask.n_threads<<std::endl;
         std::cout<<"Simple: "<<res1.sum<<" "<<res1.sum2<<"; elapsed = "<<t1*1000<<" ms"<<std::endl;

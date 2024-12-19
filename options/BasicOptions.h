@@ -87,25 +87,27 @@ class SubtaskOptions : public PartialOptions {
         size_t curSubtask;
 };
 
-class SrcParseOptions : public PartialOptions {
+class BitsRepackOptions : public PartialOptions {
     public:
-        SrcParseOptions() : PartialOptions("Source bit stream parser options") {
+        BitsRepackOptions() : PartialOptions("Bits repack options") {
             namespace po = boost::program_options;
-            addPartialVisible("srcLittleEndian", po::value<bool>(&littleEndian)->default_value(1), "is source little endian?");
-            addPartialVisible("srcSampleBits", po::value<uint16_t>(&sampleBits)->default_value(0), "bits per sample, 0 for natural");
+            addPartialVisible("srcLittleEndian", po::value<bool>(&src_little_endian)->default_value(true), "is source little endian?");
+            addPartialVisible("srcSampleBits", po::value<uint16_t>(&src_sample_bits)->default_value(0), "src bits per sample, 0 for natural");
+            addPartialVisible("dstLittleEndian", po::value<bool>(&dst_little_endian)->default_value(true), "is dest little endian?");
+            addPartialVisible("dstSampleBits", po::value<uint16_t>(&dst_sample_bits)->default_value(32), "dst bits per sample");
         }
-        bool littleEndian;
-        uint16_t sampleBits;
+        bool src_little_endian, dst_little_endian;
+        uint16_t src_sample_bits, dst_sample_bits;
 };
 
-class IndexOptions : public PartialOptions {
+class SampleToIntOptions : public PartialOptions {
     public:
-        IndexOptions() : PartialOptions("Int create options") {
+        SampleToIntOptions() : PartialOptions("Int create options") {
             namespace po = boost::program_options;
-            addPartialVisible("dstLittleEndian", po::value<bool>(&littleEndian)->default_value(1), "is dest little endian?");
-            addPartialVisible("dstIndexBits", po::value<uint16_t>(&nBits)->default_value(64), "bits per sample");
+            //addPartialVisible("dstLittleEndian", po::value<bool>(&littleEndian)->default_value(true), "is dest little endian?");
+            addPartialVisible("dstIndexBits", po::value<uint16_t>(&nBits)->default_value(64), "how many bits is used for single scalar index");
         }
-        bool littleEndian;
+        //bool littleEndian;
         uint16_t nBits;
 };
 

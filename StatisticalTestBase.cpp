@@ -3,4 +3,3 @@
 
 #include <cassert>
 #include <numeric>
-

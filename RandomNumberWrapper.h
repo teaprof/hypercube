@@ -5,6 +5,7 @@
 #include <queue>
 #include <random>
 #include <vector>
+#include<memory>
 
 class RandomBitGenerator {
 public:
@@ -44,21 +45,15 @@ private:
 
 class RandomBitAdaptor : public RandomBitGenerator {
     public:
-    RandomBitAdaptor(RandomBitGenerator& rng) : rng_(rng) {}
+    RandomBitAdaptor(std::shared_ptr<RandomBitGenerator> rng) : rng_(rng) {}
     virtual uint64_t operator()(RandomBitGenerator& rng) = 0;
-    virtual uint64_t operator()() {return (*this)(rng_);};
-    virtual uint64_t max() = 0;
-    virtual uint16_t nbits() {
-        uint16_t res = 0;
-        uint64_t m = max();
-        while(m) {
-            res++;
-            m>>=1;
-        }
-        return res;
+    virtual uint64_t operator()() {return (*this)(*rng_);};
+    virtual uint64_t max() {
+        return (1<<(nbits())) - 1;
     }
+    virtual uint16_t nbits() = 0;
 private:
-    RandomBitGenerator& rng_;
+    std::shared_ptr<RandomBitGenerator> rng_;
 };
 
 class BitsUnpack {
@@ -107,6 +102,9 @@ public:
     uint64_t max() {
         return (1<<sample_size_bits_) - 1;
     }
+    uint16_t nbits() {
+        return sample_size_bits_;
+    }
 private:
     uint64_t packLittleEndian(BitsUnpack& bits_unpacked, RandomBitGenerator& rng) {
         uint64_t res = 0;
@@ -130,7 +128,8 @@ private:
 };
 
 class BitsRepack : public RandomBitAdaptor {
-    BitsRepack(RandomBitGenerator& rng, uint16_t src_sample_size, uint16_t dst_sample_size, bool src_little_endian, bool dst_little_endian) : RandomBitAdaptor(rng),
+public:
+    BitsRepack(std::shared_ptr<RandomBitGenerator> rng, uint16_t src_sample_size, uint16_t dst_sample_size, bool src_little_endian, bool dst_little_endian) : RandomBitAdaptor(rng),
         bits_unpacker(src_sample_size, src_little_endian), bits_packer(dst_sample_size, dst_little_endian) {}
     virtual uint64_t operator()(RandomBitGenerator& rng) override {
         return bits_packer(bits_unpacker, rng);
@@ -138,27 +137,12 @@ class BitsRepack : public RandomBitAdaptor {
     uint64_t max() override {
         return bits_packer.max();
     }
-public:
-    BitsUnpack bits_unpacker;
-    BitsPack bits_packer;
-};
-
-class UniformIntDistribution : public RandomBitAdaptor {
-    // Int should be power of two - if we want to investigate rng itself
-    // Int should be obtained as std::uniform_distribution, but only single thread
-    // Int should be calculated via float or double precision
-public:
-    UniformIntDistribution(RandomBitGenerator& rng, uint64_t max_value) : RandomBitAdaptor(rng), max_value_(max_value) {}
-    virtual uint64_t operator()(RandomBitGenerator &rng) override {
-        assert(max_value_ < (1 << (rng.nbits() - 1)));
-        return rng() % (max_value_ + 1);
-    }
-    uint64_t max() override {
-        return max_value_;
+    uint16_t nbits() override {
+        return bits_packer.nbits();
     }
 private:
-    uint16_t bitsPerValue_;
-    uint64_t max_value_;
+    BitsUnpack bits_unpacker;
+    BitsPack bits_packer;
 };
 
 using MT19937Wrapper = RandomNumberWrapperStd<std::mt19937>;

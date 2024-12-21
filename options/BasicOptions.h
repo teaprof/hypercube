@@ -9,7 +9,8 @@
 
 class PartialOptions {
     public:
-        PartialOptions(std::string caption) : visible(caption) {}        
+        static constexpr uint16_t text_width = 140;
+        PartialOptions(std::string caption) : visible(caption, text_width) {}        
         template<class...Args>
         void addPartialVisible(Args ... args) {
             auto option = boost::make_shared<boost::program_options::option_description>(args...);
@@ -105,19 +106,10 @@ class SampleToIntOptions : public PartialOptions {
         SampleToIntOptions() : PartialOptions("Int create options") {
             namespace po = boost::program_options;
             //addPartialVisible("dstLittleEndian", po::value<bool>(&littleEndian)->default_value(true), "is dest little endian?");
-            addPartialVisible("dstIndexBits", po::value<uint16_t>(&nBits)->default_value(64), "how many bits is used for single scalar index");
+            addPartialVisible("bitsPerInt", po::value<uint16_t>(&nBits)->default_value(64), "how many bits is used for single scalar index");
         }
         //bool littleEndian;
         uint16_t nBits;
-};
-
-class ChainOptions : public PartialOptions {
-    public:
-        ChainOptions() : PartialOptions("Chain options") {
-            namespace po = boost::program_options;
-            addPartialVisible("stride", po::value<size_t>(&stride)->default_value(0), "stride, default is equal to dimension");
-        }
-        size_t stride;
 };
 
 class HypercubeOptions : public PartialOptions {
@@ -127,10 +119,12 @@ class HypercubeOptions : public PartialOptions {
             addPartialVisible("dim,d", po::value<size_t>(&dim)->default_value(2), "hypercube dimension");
             addPartialVisible("nintervals,m", po::value<size_t>(&nIntervals)->default_value(100), "number of intervals per each dimension");
             addPartialVisible("nsamples,N", po::value<size_t>(&nSamples)->default_value(10000), "number of samples");
+            addPartialVisible("stride,s", po::value<size_t>(&stride)->default_value(0), "stride, default is equal to dimension");
         }
         size_t dim;
         size_t nIntervals;
         size_t nSamples;
+        size_t stride;
 };
 
 class Options : protected PartialOptions {
@@ -166,10 +160,6 @@ class Options : protected PartialOptions {
     private:
         std::vector<std::reference_wrapper<PartialOptions>> options_;
         boost::program_options::variables_map vm;
-};
-
-class HypercubeTestOptions {
-
 };
 
 

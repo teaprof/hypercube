@@ -32,6 +32,7 @@ struct Chi2BasedProblem {
 
 class DistributionSampler {
 public:
+    virtual ~DistributionSampler() {}
     virtual size_t operator()(RandomBitGenerator &rng) = 0;
     virtual size_t max() = 0;
     virtual void discardN(size_t N, RandomBitGenerator &rng) = 0;
@@ -42,9 +43,9 @@ public:
     Chi2BasedTest() {}
     virtual ~Chi2BasedTest() {}
 
-    TaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler &sampler,
-                    RandomBitGenerator &rng) {
-        assert(problem.m_intervals_total == sampler.max() + 1);
+    TaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
+                    std::shared_ptr<RandomBitGenerator> rng) {
+        assert(problem.m_intervals_total == sampler->max() + 1);
         data.allocate(problem.m_intervals_total);
         std::vector<std::thread> threads;
         for (size_t thread_id = 0; thread_id < subtask.n_threads; thread_id++) {
@@ -76,7 +77,6 @@ public:
         res.chi2 = 0;
         return res;
     }
-
 private:
     std::pair<size_t, size_t> split(size_t N, size_t total_tasks, size_t cur_task) {
         size_t start = N * (cur_task) / total_tasks;
@@ -93,14 +93,14 @@ private:
         return {sum, sum2};
     }
 
-    void runThread(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler &sampler,
-                   RandomBitGenerator &rng, size_t thread_id) {
+    void runThread(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
+                   std::shared_ptr<RandomBitGenerator> rng, size_t thread_id) {
         TaskResults res{.sum = 0, .sum2 = 0};
         auto [start, end] = split(problem.N, subtask.Ntasks, subtask.cur_task);
         auto [thread_start, thread_end] = split(end - start, subtask.n_threads, thread_id);
-        sampler.discardN(start + thread_start, rng);
+        sampler->discardN(start + thread_start, *rng);
         for (size_t n = 0; n < thread_end - thread_start; n++) {
-            size_t idx = sampler(rng);
+            size_t idx = (*sampler)(*rng);
             assert(idx < data.size());
             data.increment(idx);
         }

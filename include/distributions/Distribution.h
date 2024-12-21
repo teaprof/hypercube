@@ -1,7 +1,7 @@
 #ifndef __DISTRIBUTION_H__
 #define __DISTRIBUTION_H__
 
-#include"RandomNumberWrapper.h"
+#include"rng/RandomNumberWrapper.h"
 
 class Distribution {
     public:

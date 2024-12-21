@@ -1,4 +1,4 @@
-#include "HypercubeTest.h"
+#include "stat_tests/hypercube/HypercubeTest.h"
 
 #include <gtest/gtest.h>
 

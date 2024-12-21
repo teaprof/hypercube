@@ -1,4 +1,5 @@
-#include "RandomNumberWrapper.h"
+#include <rng/RandomNumberWrapper.h>
+
 #include <benchmark/benchmark.h>
 
 

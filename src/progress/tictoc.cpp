@@ -1,4 +1,4 @@
- #include "tictoc.h"
+ #include "progress/tictoc.h"
 
  void Timer::tic() {
     tstart = TClock::now();

@@ -1,8 +1,8 @@
 #ifndef STATISTICAL_TEST_BASE_
 #define STATISTICAL_TEST_BASE_
 
-#include "Histogram.h"
-#include "RandomNumberWrapper.h"
+#include "arrays/Histogram.h"
+#include "rng/RandomNumberWrapper.h"
 
 #include <map>
 #include <thread>

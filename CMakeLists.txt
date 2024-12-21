@@ -23,3 +23,9 @@ add_executable(FooTest test.cpp)
 target_link_libraries(FooTest GTest::gtest_main)
 target_include_directories(FooTest PUBLIC GTEST_INCLUDE_DIRS)
 gtest_discover_tests(FooTest)
+
+find_package(benchmark REQUIRED)
+
+add_executable(bench bench.cpp)
+target_link_libraries(bench PRIVATE benchmark::benchmark_main)
+target_include_directories(bench PRIVATE benchmark::include_directories)

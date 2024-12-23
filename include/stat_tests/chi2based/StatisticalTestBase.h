@@ -7,6 +7,7 @@
 #include <map>
 #include <thread>
 #include <vector>
+#include <iostream>
 
 struct StatiscticalTestResults {
     size_t dof; // degrees of freedom
@@ -46,7 +47,8 @@ public:
     TaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
                     std::shared_ptr<RandomBitGenerator> rng) {
         assert(problem.m_intervals_total == sampler->max() + 1);
-        data.allocate(problem.m_intervals_total);
+        size_t data_size = getSubarraySize(problem, subtask);
+        data.allocate(data_size);
         std::vector<std::thread> threads;
         for (size_t thread_id = 0; thread_id < subtask.n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
@@ -85,24 +87,39 @@ private:
     }
 
     TaskResults getResults() {
-        size_t sum = 0, sum2 = 0;
+        uint64_t sum = 0, sum2 = 0;
         for (size_t n = 0; n < data.size(); n++) {
-            sum += data[n];
-            sum2 += data[n] * data[n];
+            uint64_t v = data[n];
+            sum += v;
+            sum2 += v * v;
         }
         return {sum, sum2};
+    }
+
+    size_t getSubarraySize(const Chi2BasedProblem problem, const SubtaskParameters& subtask) {
+        size_t res = 0;
+        for(size_t n = 0; n < problem.m_intervals_total; n++)
+            if(n % subtask.Ntasks == subtask.cur_task)
+                res++;
+        return res;
+    }
+
+    void increment(const SubtaskParameters& subtask, size_t idx) {
+        if(idx % subtask.Ntasks == subtask.cur_task) {
+            size_t idx2 = idx/subtask.Ntasks;
+            assert(idx2 < data.size());
+            data.increment(idx2);
+        }
     }
 
     void runThread(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
                    std::shared_ptr<RandomBitGenerator> rng, size_t thread_id) {
         TaskResults res{.sum = 0, .sum2 = 0};
-        auto [start, end] = split(problem.N, subtask.Ntasks, subtask.cur_task);
-        auto [thread_start, thread_end] = split(end - start, subtask.n_threads, thread_id);
-        sampler->discardN(start + thread_start, *rng);
+        auto [thread_start, thread_end] = split(problem.N, subtask.n_threads, thread_id);
+        sampler->discardN(thread_start, *rng);
         for (size_t n = 0; n < thread_end - thread_start; n++) {
             size_t idx = (*sampler)(*rng);
-            assert(idx < data.size());
-            data.increment(idx);
+            increment(subtask, idx);
         }
     }
     Histogram data;

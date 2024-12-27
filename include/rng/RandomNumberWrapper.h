@@ -1,11 +1,13 @@
 #ifndef RANDOM_NUMBER_WRAPPER_H
 #define RANDOM_NUMBER_WRAPPER_H
 
+#include <rng/dynamic/random.h>
+
 #include <cassert>
 #include <queue>
 #include <random>
 #include <vector>
-#include<memory>
+#include <memory>
 
 class RandomBitGenerator {
 public:

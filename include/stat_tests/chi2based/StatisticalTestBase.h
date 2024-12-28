@@ -9,6 +9,11 @@
 #include <vector>
 #include <iostream>
 
+struct Chi2BasedProblem {
+    size_t N;
+    size_t m_intervals_total;
+};
+
 struct StatiscticalTestResults {
     size_t dof; // degrees of freedom
     double chi2;
@@ -22,13 +27,8 @@ struct SubtaskParameters {
     size_t n_threads;
 };
 
-struct TaskResults {
+struct SubtaskResults {
     size_t sum, sum2;
-};
-
-struct Chi2BasedProblem {
-    size_t N;
-    size_t m_intervals_total;
 };
 
 class DistributionSampler {
@@ -39,12 +39,13 @@ public:
     virtual void discardN(size_t N, RandomBitGenerator &rng) = 0;
 };
 
-template <class Histogram> class Chi2BasedTest {
+template <class Histogram> 
+class Chi2BasedTest {
 public:
     Chi2BasedTest() {}
     virtual ~Chi2BasedTest() {}
 
-    TaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
+    SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
                     std::shared_ptr<RandomBitGenerator> rng) {
         assert(problem.m_intervals_total == sampler->max() + 1);
         size_t data_size = getSubarraySize(problem, subtask);
@@ -60,14 +61,14 @@ public:
         }
         for (auto &it : threads)
             it.join();
-        TaskResults res = getResults();
+        SubtaskResults res = getResults();
         // data.clear();
         // data.shrink_to_fit();
         return res;
     }
 
     StatiscticalTestResults collect(const Chi2BasedProblem &task, size_t n_subtasks,
-                                    const std::vector<TaskResults> &subtask_results) {
+                                    const std::vector<SubtaskResults> &subtask_results) {
         assert(n_subtasks == subtask_results.size());
         StatiscticalTestResults res{.dof = 0, .chi2 = 0, .sum = 0, .sum2 = 0, .N = 0};
         res.dof = task.m_intervals_total - 1;
@@ -86,7 +87,7 @@ private:
         return {start, end};
     }
 
-    TaskResults getResults() {
+    SubtaskResults getResults() {
         uint64_t sum = 0, sum2 = 0;
         for (size_t n = 0; n < data.size(); n++) {
             uint64_t v = data[n];
@@ -114,7 +115,7 @@ private:
 
     void runThread(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
                    std::shared_ptr<RandomBitGenerator> rng, size_t thread_id) {
-        TaskResults res{.sum = 0, .sum2 = 0};
+        SubtaskResults res{.sum = 0, .sum2 = 0};
         auto [thread_start, thread_end] = split(problem.N, subtask.n_threads, thread_id);
         sampler->discardN(thread_start, *rng);
         for (size_t n = 0; n < thread_end - thread_start; n++) {

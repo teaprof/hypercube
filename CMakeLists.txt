@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.20)
 
 project(teahypercube LANGUAGES CXX)
 
@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-find_package(Boost 1.72.0 COMPONENTS program_options)
+find_package(Boost 1.80.0 NO_MODULE) #COMPONENTS program_options json)
 include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(GTest REQUIRED)

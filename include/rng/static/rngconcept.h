@@ -76,7 +76,7 @@ concept uint_random_generator0 = std::uniform_random_bit_generator<Gen> && (Gen:
  */
 template<typename Gen>
 concept uniform_random_bit_generator =
-		uint_random_generator0<Gen> && (nsignificantbits<Gen::max()>::mask  == Gen::max());
+		uint_random_generator0<Gen> && (nsignificantbits_max(Gen::max())  == Gen::max());
 
 
 /* Uniform random bit generator with full width.
@@ -89,7 +89,7 @@ concept uniform_random_bit_generator =
  */
 template<typename Gen>
 concept uniform_random_bit_generator_full_width =
-		uniform_random_bit_generator<Gen> && (nsignificantbits<Gen::max()>::nbits  == sizeof(typename Gen::result_type)*8);
+		uniform_random_bit_generator<Gen> && (nsignificantbits(Gen::max()) == sizeof(typename Gen::result_type)*8);
 
 
 template<typename Gen>

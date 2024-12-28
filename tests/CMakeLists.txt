@@ -1,4 +1,4 @@
-add_executable(hypercube_tests test.cpp arithmetics_test)
+add_executable(hypercube_tests test.cpp arithmetics_test.cpp)
 target_link_libraries(hypercube_tests GTest::gtest_main)
 target_include_directories(hypercube_tests PUBLIC GTEST_INCLUDE_DIRS)
 gtest_discover_tests(hypercube_tests)

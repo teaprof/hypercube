@@ -71,14 +71,12 @@ protected:
     }
 };
 
-constexpr uint32_t const2pow31 = powerOfTwo<31>::val; //2147483647
-
-using tea_MINSTD = LCG<uint32_t, 48271, 0, const2pow31 - 1, 1, uint64_t>;
-using tea_MINSTD2 = LCG<uint_fast32_t, 48271, 0, const2pow31 - 1, 1, uint64_t>;
+using tea_MINSTD = LCG<uint32_t, 48271, 0, powerOfTwo(31) - 1, 1, uint64_t>;
+using tea_MINSTD2 = LCG<uint_fast32_t, 48271, 0, powerOfTwo(31) - 1, 1, uint64_t>;
 
 //this generator's are local implementation of std::minstdrand0 and std::minstd_rand
-using tea_minstd_rand0 = LCG<uint_fast32_t, 16807, 0, const2pow31 - 1, 1, uint_fast64_t>;
-using tea_minstd_rand = LCG<uint_fast32_t, 48271, 0, const2pow31 - 1, 1, uint_fast64_t>;
+using tea_minstd_rand0 = LCG<uint_fast32_t, 16807, 0, powerOfTwo(31) - 1, 1, uint_fast64_t>;
+using tea_minstd_rand = LCG<uint_fast32_t, 48271, 0, powerOfTwo(31) - 1, 1, uint_fast64_t>;
 
 
 static_assert(uint_random_generator0<tea_MINSTD>);

@@ -1,6 +1,7 @@
 #include "stat_tests/chi2based/StatisticalTestBase.h"
 #include "progress/tictoc.h"
 #include "stat_tests/hypercube/HypercubeTest.h"
+#include "TestResultsDB/TestResultsDB.h"
 #include<cassert>
 #include<iostream>
 #include "options/BasicOptions.h"
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]) {
         
         tic();
         auto res1 = test.run(problem, subtask, sampler, rng);
-        double t1 = toc();
+        double t1 = toc();        
         tic();
         auto res2 = test_atomic.run(problem, subtask, sampler, rng);
         double t2 = toc();
@@ -66,6 +67,12 @@ int main(int argc, char* argv[]) {
         std::cout<<"Simple: "<<res1.sum<<" "<<res1.sum2<<"; elapsed = "<<t1*1000<<" ms"<<std::endl;
         std::cout<<"Atomic: "<<res2.sum<<" "<<res2.sum2<<"; elapsed = "<<t2*1000<<" ms"<<std::endl;
         std::cout<<"Mutexs: "<<res3.sum<<" "<<res3.sum2<<"; elapsed = "<<t3*1000<<" ms"<<std::endl;    
+
+        TestResultsDB results_db;
+        results_db.push_back(problem, subtask, res1);
+        results_db.push_back(problem, subtask, res2);
+        results_db.push_back(problem, subtask, res3);
+        results_db.writeToFile("data.json");
         return 0;
     } catch (std::runtime_error& r) {
         std::cerr<<"Error:"<<std::endl;

@@ -64,14 +64,14 @@ class HypercubeTestSuite : public testing::TestWithParam<std::tuple<size_t, size
             }
         }
 
-        TaskResults expected;
+        SubtaskResults expected;
         void calculateExpected() {
             ReferenceTest reference_test{.dim=dim,.m_intervals_per_dim=mIntervals,.stride=stride,.Nsamples=NPoints};
             auto expected_cur = reference_test();
             expected = {expected_cur.first, expected_cur.second};
         }
 
-        TaskResults received;
+        SubtaskResults received;
         void calcuateReceived() {
             HypercubeProblem problem{dim, mIntervals, stride, NPoints};
             received = {0, 0};

@@ -12,6 +12,9 @@
 struct Chi2BasedProblem {
     size_t N;
     size_t m_intervals_total;
+    bool operator==(const Chi2BasedProblem& other) const {
+        return N == other.N && m_intervals_total == other.m_intervals_total;
+    }
 };
 
 struct StatiscticalTestResults {
@@ -25,10 +28,16 @@ struct SubtaskParameters {
     size_t Ntasks;
     size_t cur_task;
     size_t n_threads;
+    bool operator==(const SubtaskParameters& other) const {
+        return Ntasks == other.Ntasks && cur_task == other.cur_task && n_threads == other.n_threads;
+    }
 };
 
 struct SubtaskResults {
     size_t sum, sum2;
+    bool operator==(const SubtaskResults& other) const {
+        return sum == other.sum && sum2 == other.sum2;
+    }
 };
 
 class DistributionSampler {

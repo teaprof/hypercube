@@ -69,9 +69,11 @@ int main(int argc, char* argv[]) {
         std::cout<<"Mutexs: "<<res3.sum<<" "<<res3.sum2<<"; elapsed = "<<t3*1000<<" ms"<<std::endl;    
 
         TestResultsDB results_db;
+        results_db.readFromFile("data.json");
         results_db.push_back(problem, subtask, res1);
         results_db.push_back(problem, subtask, res2);
         results_db.push_back(problem, subtask, res3);
+        results_db.sanitize();
         results_db.writeToFile("data.json");
         return 0;
     } catch (std::runtime_error& r) {

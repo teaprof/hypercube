@@ -17,6 +17,10 @@ public:
     size_t dim;
     size_t m_intervals_per_dim;
     size_t stride;
+    bool operator==(const HypercubeProblem& other) const {
+        return dim == other.dim && m_intervals_per_dim == other.m_intervals_per_dim && stride == other.stride && 
+        static_cast<Chi2BasedProblem>(*this) == other;
+    }
 };
 
 class HypercubeSampler : public DistributionSampler {

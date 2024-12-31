@@ -20,7 +20,7 @@ public:
         return max_value_;
     }
 private:
-    uint16_t bitsPerValue_;
+    //uint16_t bitsPerValue_;
     uint64_t max_value_;
 };
 

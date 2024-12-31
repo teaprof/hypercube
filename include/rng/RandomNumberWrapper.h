@@ -19,6 +19,7 @@ public:
         for (size_t i = 0; i < n; i++)
             discard();
     };
+    virtual std::shared_ptr<RandomBitGenerator> copy() = 0;
     virtual void jumpTo(uint64_t pos) { discardN(pos - counter); }
     uint64_t counter{0};
 };
@@ -35,12 +36,16 @@ public:
             m /= 2;
         }
     }
-    virtual uint64_t operator()() {
+    RandomNumberWrapperStd(const RandomNumberWrapperStd<Rng>& other) : RandomBitGenerator(other), rng{other.rng}, nbits_{other.nbits_} {}
+    uint64_t operator()() override {
         counter++;
         return rng();
     }
-    virtual uint64_t max() { return rng.max(); }
-    virtual uint16_t nbits() { return nbits_; }
+    uint64_t max() override { return rng.max(); }
+    uint16_t nbits() override { return nbits_; }
+    std::shared_ptr<RandomBitGenerator> copy() override {
+        return std::make_shared<RandomNumberWrapperStd<Rng>>(*this);
+    }
 private:
     uint16_t nbits_{0};
 };
@@ -48,6 +53,7 @@ private:
 class RandomBitAdaptor : public RandomBitGenerator {
     public:
     RandomBitAdaptor(std::shared_ptr<RandomBitGenerator> rng) : rng_(rng) {}
+    RandomBitAdaptor(const RandomBitAdaptor& other) : rng_(other.rng_->copy()) {}
     virtual uint64_t operator()(RandomBitGenerator& rng) = 0;
     virtual uint64_t operator()() {return (*this)(*rng_);};
     virtual uint64_t max() {
@@ -61,6 +67,7 @@ private:
 class BitsUnpack {
 public:
     BitsUnpack(uint16_t samlpe_size_bits, bool little_endian): little_endian_{little_endian}, sample_size_bits_{samlpe_size_bits}{ }
+    BitsUnpack(const BitsUnpack& other) : buffer_(other.buffer_), little_endian_{other.little_endian_}, sample_size_bits_{other.sample_size_bits_} {}
     bool pop_front(RandomBitGenerator &rng) {
         if (buffer_.empty()) {
             refill(rng);
@@ -80,9 +87,9 @@ private:
             }
         } else {
             // start adding from hi bit
-            uint64_t high_mask = 1 << (rng.nbits() - 1);
+            uint64_t high_mask = static_cast<uint64_t>(1) << (rng.nbits() - 1);
             for (size_t n = 0; n < rng.nbits(); n++) {
-                buffer_.push(val % high_mask != 0);
+                buffer_.push((val & high_mask) != 0);
                 high_mask >>= 1;
             }
         }
@@ -95,6 +102,7 @@ private:
 class BitsPack {
 public:
     BitsPack(uint16_t sample_size_bits, bool little_endian): little_endian_{little_endian}, sample_size_bits_{sample_size_bits}{ }
+    BitsPack(const BitsPack& other) : little_endian_{other.little_endian_}, sample_size_bits_{other.sample_size_bits_} {}
     uint64_t operator()(BitsUnpack& bits_unpacked, RandomBitGenerator& rng) {
         if(little_endian_) {
             return packLittleEndian(bits_unpacked, rng);
@@ -110,7 +118,7 @@ public:
 private:
     uint64_t packLittleEndian(BitsUnpack& bits_unpacked, RandomBitGenerator& rng) {
         uint64_t res = 0;
-        uint64_t mask = 0;
+        uint64_t mask = 1;
         for(uint16_t n = 0; n < sample_size_bits_; n++) {
             if(bits_unpacked.pop_front(rng))
                 res |= mask;
@@ -133,6 +141,7 @@ class BitsRepack : public RandomBitAdaptor {
 public:
     BitsRepack(std::shared_ptr<RandomBitGenerator> rng, uint16_t src_sample_size, uint16_t dst_sample_size, bool src_little_endian, bool dst_little_endian) : RandomBitAdaptor(rng),
         bits_unpacker(src_sample_size, src_little_endian), bits_packer(dst_sample_size, dst_little_endian) {}
+    BitsRepack(const BitsRepack& r) : RandomBitAdaptor(r), bits_unpacker(r.bits_unpacker), bits_packer(r.bits_packer) {}
     virtual uint64_t operator()(RandomBitGenerator& rng) override {
         return bits_packer(bits_unpacker, rng);
     }
@@ -141,6 +150,9 @@ public:
     }
     uint16_t nbits() override {
         return bits_packer.nbits();
+    }
+    std::shared_ptr<RandomBitGenerator> copy() override {
+        return std::make_shared<BitsRepack>(*this);
     }
 private:
     BitsUnpack bits_unpacker;

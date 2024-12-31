@@ -6,6 +6,7 @@
 #include<set>
 #include<boost/json.hpp>
 #include<stat_tests/chi2based/StatisticalTestBase.h>
+#include<serializers/serializers.h>
 
 class TestResultsDB {
     public:
@@ -18,13 +19,19 @@ class TestResultsDB {
         TestResultsDB() = default;
         void readFromFile(std::string path) {
             std::ifstream f(path, std::ios::in);
+            if(!f) {
+                return;
+            }
             std::string str;
             f>>str;
+            if(str.length() == 0) {
+                return;
+            }
             auto value = boost::json::parse(str);
             boost::json::value results_value = value.at("results");
             auto array = results_value.as_array();
-            for(auto it : array) {
-                auto r = fromJSONobject(it);
+            for(auto it : array) {                
+                auto r = fromJSONobject(it.as_object());
                 records.push_back(std::move(r));
             }
         }
@@ -119,32 +126,14 @@ class TestResultsDB {
 
         boost::json::object toJSONObject(const Record& r) {
             boost::json::object obj;
-            obj["dim"] = r.problem.dim;
-            obj["m_intervals_per_dim"] = r.problem.m_intervals_per_dim;
-            obj["stride"] = r.problem.stride;
-            obj["N"] = r.problem.N;
-            obj["m_intervals_total"] = r.problem.m_intervals_total;
-            obj["Ntask"] = r.subtask.Ntasks;
-            obj["cur_task"] = r.subtask.cur_task;
-            obj["n_threads"] = r.subtask.n_threads;
-            obj["sum"] = r.results.sum;
-            obj["sum2"] = r.results.sum2;
+            obj<<r.problem<<r.subtask<<r.results;
             return obj;
         }
-        Record fromJSONobject(const boost::json::value& obj) {
-            size_t dim = obj.at("dim").as_int64();
-            size_t m_intervals_per_dim = obj.at("m_intervals_per_dim").as_int64();
-            size_t stride = obj.at("stride").as_int64();
-            size_t N = obj.at("N").as_int64();
-            size_t m_intervals_totsl = obj.at("m_intervals_total").as_int64();
-            size_t Ntasks = obj.at("Ntask").as_int64();
-            size_t cur_task = obj.at("cur_task").as_int64();
-            size_t n_threads = obj.at("n_threads").as_int64();
-            uintmax_t sum = obj.at("sum").as_int64();
-            uintmax_t sum2 = obj.at("sum2").as_int64();
-            HypercubeProblem problem(dim, m_intervals_per_dim, stride, N);
-            SubtaskParameters subtask{.Ntasks=Ntasks,.cur_task=cur_task,.n_threads=n_threads};
-            SubtaskResults results{.sum=sum,.sum2=sum2};
+        Record fromJSONobject(const boost::json::object& obj) {            
+            HypercubeProblem problem{0, 0, 0, 0};
+            SubtaskParameters subtask{0, 0, 0};
+            SubtaskResults results{0, 0};
+            obj>>problem>>subtask>>results;
             return {problem, subtask, results};
         }
 };

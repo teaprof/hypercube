@@ -2,44 +2,37 @@
 #include "progress/tictoc.h"
 #include "stat_tests/hypercube/HypercubeTest.h"
 #include "TestResultsDB/TestResultsDB.h"
+#include "options/RngOptions.h"
+#include "options/HypercubeOptions.h"
 #include<cassert>
 #include<iostream>
 #include "options/BasicOptions.h"
 
 #include<memory>
 
-std::shared_ptr<RandomBitGenerator> createGenerator(const BitsRepackOptions& opts) {
-    auto rng = std::make_shared<MT19937Wrapper>();
-    auto res = std::make_shared<BitsRepack>(rng, opts.src_sample_bits, opts.dst_sample_bits, opts.src_little_endian, opts.dst_little_endian);
-    return res;
-}
-
-std::shared_ptr<HypercubeSampler>  createHypercubeSampler(HypercubeProblem problem) {
-    return std::make_shared<HypercubeSampler>(problem);
-}
-
 int main(int argc, char* argv[]) {
     try {        
         BasicOptions basic_options;
+        RNGOptions rng_options;
+        BitsRepackOptions bits_repack_options;
         MultithreadOptions multithread_options;
         HypercubeOptions hypercube_options;
         SubtaskOptions subtask_options;
-        SampleToIntOptions index_options;
-        BitsRepackOptions bits_repack_options;
         
         Options options;
-        options.addGroup(hypercube_options);
+        options.addGroup(rng_options);
+        options.addGroup(bits_repack_options);
+        options.addGroup(hypercube_options);        
         options.addGroup(multithread_options);        
         options.addGroup(subtask_options);
         options.addGroup(basic_options);
-        options.addGroup(index_options);
-        options.addGroup(bits_repack_options);
         options.parse(argc, argv);
         if(basic_options.need_help) {
             options.help();
             return 0;
         }
         options.validate();
+        std::cout<<"rng = "<<rng_options.name<<std::endl;
         std::cout<<"threads = "<<multithread_options.nThreads()<<std::endl;
         std::cout<<"dim = "<<hypercube_options.dim<<std::endl;
         std::cout<<"nIntervals = "<<hypercube_options.nIntervals<<std::endl;
@@ -47,7 +40,7 @@ int main(int argc, char* argv[]) {
         
         HypercubeProblem problem(hypercube_options.dim, hypercube_options.nIntervals, hypercube_options.stride, hypercube_options.nSamples);
 
-        auto rng = createGenerator(bits_repack_options);
+        auto rng = createGenerator(rng_options, bits_repack_options);
         auto sampler = createHypercubeSampler(problem);
         SubtaskParameters subtask{.Ntasks=subtask_options.nSubtasks,.cur_task=subtask_options.curSubtask,.n_threads=multithread_options.nThreads()};
         Chi2BasedTest<Histogram> test;
@@ -55,13 +48,13 @@ int main(int argc, char* argv[]) {
         Chi2BasedTest<HistogramMutexed> test_mutexed;
         
         tic();
-        auto res1 = test.run(problem, subtask, sampler, rng);
+        auto res1 = test.run(problem, subtask, sampler, rng->copy());
         double t1 = toc();        
         tic();
-        auto res2 = test_atomic.run(problem, subtask, sampler, rng);
+        auto res2 = test_atomic.run(problem, subtask, sampler, rng->copy());
         double t2 = toc();
         tic();
-        auto res3 = test_mutexed.run(problem, subtask, sampler, rng);
+        auto res3 = test_mutexed.run(problem, subtask, sampler, rng->copy());
         double t3 = toc();
         std::cout<<"nthreads = "<<subtask.n_threads<<std::endl;
         std::cout<<"Simple: "<<res1.sum<<" "<<res1.sum2<<"; elapsed = "<<t1*1000<<" ms"<<std::endl;

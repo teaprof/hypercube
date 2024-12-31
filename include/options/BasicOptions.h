@@ -13,7 +13,7 @@ class PartialOptions {
         PartialOptions(std::string caption) : visible(caption, text_width) {}        
         template<class...Args>
         void addPartialVisible(Args ... args) {
-            auto option = boost::make_shared<boost::program_options::option_description>(args...);
+            auto option = boost::make_shared<boost::program_options::option_description>(args...);            
             partial.add(option);
             visible.add(option);
         }
@@ -33,8 +33,7 @@ class PartialOptions {
         }
         virtual void validate() {
             //nothing to do
-        }        
-
+        }
         //These vars are used only for parsing arguments
         boost::program_options::options_description partial;
         boost::program_options::positional_options_description  positional;        
@@ -50,7 +49,7 @@ class BasicOptions : public PartialOptions {
             namespace po = boost::program_options;
             addPartialVisible("help", new po::untyped_value(true), "produce help");
         }
-        virtual void update(const boost::program_options::variables_map& vm) {
+        void update(const boost::program_options::variables_map& vm) override {
             need_help = vm.count("help") > 0;
         }
         bool need_help{false};
@@ -86,45 +85,6 @@ class SubtaskOptions : public PartialOptions {
         }
         size_t nSubtasks;
         size_t curSubtask;
-};
-
-class BitsRepackOptions : public PartialOptions {
-    public:
-        BitsRepackOptions() : PartialOptions("Bits repack options") {
-            namespace po = boost::program_options;
-            addPartialVisible("srcLittleEndian", po::value<bool>(&src_little_endian)->default_value(true), "is source little endian?");
-            addPartialVisible("srcSampleBits", po::value<uint16_t>(&src_sample_bits)->default_value(0), "src bits per sample, 0 for natural");
-            addPartialVisible("dstLittleEndian", po::value<bool>(&dst_little_endian)->default_value(true), "is dest little endian?");
-            addPartialVisible("dstSampleBits", po::value<uint16_t>(&dst_sample_bits)->default_value(32), "dst bits per sample");
-        }
-        bool src_little_endian, dst_little_endian;
-        uint16_t src_sample_bits, dst_sample_bits;
-};
-
-class SampleToIntOptions : public PartialOptions {
-    public:
-        SampleToIntOptions() : PartialOptions("Int create options") {
-            namespace po = boost::program_options;
-            //addPartialVisible("dstLittleEndian", po::value<bool>(&littleEndian)->default_value(true), "is dest little endian?");
-            addPartialVisible("bitsPerInt", po::value<uint16_t>(&nBits)->default_value(64), "how many bits is used for single scalar index");
-        }
-        //bool littleEndian;
-        uint16_t nBits;
-};
-
-class HypercubeOptions : public PartialOptions {
-    public:
-        HypercubeOptions() : PartialOptions("Hypercube test options") {
-            namespace po = boost::program_options;
-            addPartialVisible("dim,d", po::value<size_t>(&dim)->default_value(2), "hypercube dimension");
-            addPartialVisible("nintervals,m", po::value<size_t>(&nIntervals)->default_value(100), "number of intervals per each dimension");
-            addPartialVisible("nsamples,N", po::value<size_t>(&nSamples)->default_value(10000), "number of samples");
-            addPartialVisible("stride,s", po::value<size_t>(&stride)->default_value(0), "stride, default is equal to dimension");
-        }
-        size_t dim;
-        size_t nIntervals;
-        size_t nSamples;
-        size_t stride;
 };
 
 class Options : protected PartialOptions {

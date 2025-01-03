@@ -13,3 +13,6 @@ add_executable(rewind rewind.cpp)
 add_executable(bench bench.cpp)
 target_link_libraries(bench PRIVATE tearng benchmark::benchmark_main)
 target_include_directories(bench PRIVATE benchmark::include_directories)
+
+add_executable(mybench mybench.cpp)
+target_link_libraries(mybench PRIVATE tearng)

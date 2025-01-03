@@ -41,6 +41,101 @@ private:
     size_t end_{0};
 };
 
+template<class ValueT>
+class CircularQueue
+{
+	/* CircularQueue with limited max capacity. If capacity is exceeded, the new values will overwrite the old ones.
+	 *
+	 * writeIterator - the iterator pointing to the place where new element should be stored.
+	 * readIterator  - the iterator pointing to the place where new element should be read from.
+	 * if readIterator == writeIterator then buffer considered to be empty.
+	 *
+	 * The size of underlying std::vector should be equal to the required size of buffer plus 1 due to
+	 * the following reason:
+	 * Consider the full buffer. The element, writeIterator pointing to, contains a valid value that will
+	 * be overwritten on the next call of push(). But we cannot extract it, because if readIterator == writeIterator
+	 * the buffer is considered to be empty.
+	 */
+	public:
+		CircularQueue() {};
+		CircularQueue(size_t maxsize)
+		{
+            setCapacity(maxsize);
+		}
+
+        void setCapacity(size_t maxsize) {
+            if(maxsize == this->maxsize) {
+                return;
+            }
+			//we require one more element due to the reason described above
+			this->maxsize = maxsize + 1;
+
+			//we reserve all memory needed to avoid reallocating memory in the
+			//future because this makes iterators invalid.
+			buf.reserve(maxsize+1);
+        }
+
+		/* Pushes v into circular buffer.
+		 * If it is possible, implementation uses ValueT::swap operation. Otherwise it uses copy
+		 * constructor to build new element in the buffer.
+		 * */
+		void push_back(ValueT v)
+		{
+			assert(maxsize > 0);
+			if(buf.size() < maxsize)
+			{
+				//adding the next element
+				buf.push_back(v);
+				if(buf.size() == 1)
+					readIterator = buf.begin();
+				if(buf.size() < maxsize)
+					writeIterator = buf.end();
+				else
+					writeIterator = buf.begin();
+			} else {
+				//replace the element
+				*writeIterator = v;
+				//increase write iterator
+				if(++writeIterator == buf.end())
+					writeIterator = buf.begin();
+			}
+			//increase read iterator if needed
+			if(writeIterator == readIterator)
+			{
+				readIterator++;
+				if(readIterator == buf.end())
+					readIterator = buf.begin();
+			}
+		}
+		/// Remove an element from the front of the buffer
+		void pop_front()
+		{
+			assert(!buf.empty());
+			assert(readIterator != writeIterator);
+			if(++readIterator == buf.end() && writeIterator != buf.end())
+				readIterator = buf.begin();
+		}
+		/// Return front element from the buffer
+        ValueT front() {
+			assert(!buf.empty());
+			assert(readIterator != writeIterator);
+			return *readIterator;
+
+        }
+		bool empty()
+		{
+			if(buf.empty())
+				return true;
+			return readIterator == writeIterator;
+		}
+	private:
+		std::vector<ValueT> buf;
+		//typename std::vector<Byte>::contiguous_iterator writeIterator, readIterator;
+		typename std::vector<ValueT>::iterator writeIterator, readIterator;
+		size_t maxsize{0};
+};
+
+
 
 template<class ostream, class T>
 ostream& operator<<(ostream& str, const CircularBuffer<T>& buf)

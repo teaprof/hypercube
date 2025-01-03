@@ -29,17 +29,26 @@ class FixedSequenceGenerator : public RandomBitGenerator {
     uint16_t nbits_;
 };
 
-TEST(BitsUnpackTest, Simple)
+template <class T>
+class RepackTest : public testing::Test {
+};
+
+typedef testing::Types<std::deque<bool>, CircularQueue<bool>> Implementations;
+
+TYPED_TEST_SUITE(RepackTest, Implementations);
+
+
+TYPED_TEST(RepackTest, BitsUnpackTestSimple)
 {    
     FixedSequenceGenerator gen1(8, {0b00000001, 0b00000010});
-    BitsUnpack unpackerBigEndian(false);
+    BitsUnpackT<TypeParam> unpackerBigEndian(false);
     std::stringstream str1;
     for(size_t n = 0; n < 16; n++)
         str1<<unpackerBigEndian.pop_front(gen1);
     ASSERT_EQ(str1.str(), "0000000100000010");
 
     FixedSequenceGenerator gen2(8, {0b00000001, 0b00000010});
-    BitsUnpack unpackerLittleEndian(true);
+    BitsUnpackT<TypeParam> unpackerLittleEndian(true);
     std::stringstream str2;
     for(size_t n = 0; n < 16; n++)
         str2<<unpackerLittleEndian.pop_front(gen2);
@@ -47,10 +56,11 @@ TEST(BitsUnpackTest, Simple)
 }
 
 
-TEST(BitsPack, SimpleLittleEndian) {
+
+TYPED_TEST(RepackTest, BitsPackSimpleLittleEndian) {
     FixedSequenceGenerator gen1(8, {0x00, 0x08, 0x10, 0x55});
-    BitsUnpack unpacker(true);
-    BitsPack packerLittleEndian(8, true);
+    BitsUnpackT<TypeParam> unpacker(true);
+    BitsPackT<TypeParam> packerLittleEndian(8, true);
     auto res1 = packerLittleEndian(unpacker, gen1);
     auto res2 = packerLittleEndian(unpacker, gen1);
     auto res3 = packerLittleEndian(unpacker, gen1);
@@ -62,10 +72,10 @@ TEST(BitsPack, SimpleLittleEndian) {
 }
 
 
-TEST(BitsPack, SimpleBigEndian) {
+TYPED_TEST(RepackTest, BitsPackSimpleBigEndian) {
     FixedSequenceGenerator gen1(8, {0b00110011, 0b11000000});
-    BitsUnpack unpacker(true);
-    BitsPack packerBigEndian(8, false);
+    BitsUnpackT<TypeParam> unpacker(true);
+    BitsPackT<TypeParam> packerBigEndian(8, false);
     auto res1 = packerBigEndian(unpacker, gen1);
     auto res2 = packerBigEndian(unpacker, gen1);
     ASSERT_EQ(res1, 0b11001100);
@@ -73,40 +83,41 @@ TEST(BitsPack, SimpleBigEndian) {
 }
 
 
-TEST(BitsPack, DoubleLittleEndian) {
+TYPED_TEST(RepackTest, BitsPackDoubleLittleEndian) {
     FixedSequenceGenerator gen1(8, {0x00, 0x08, 0x10, 0x55});
-    BitsUnpack unpacker(true);
-    BitsPack packerLittleEndian(16, true);
+    BitsUnpackT<TypeParam> unpacker(true);
+    BitsPackT<TypeParam> packerLittleEndian(16, true);
     auto res1 = packerLittleEndian(unpacker, gen1);
     auto res2 = packerLittleEndian(unpacker, gen1);
     ASSERT_EQ(res1, 0x0800);
     ASSERT_EQ(res2, 0x5510);
 }
 
-TEST(BitsPack, DoubleBigEndian) {
+TYPED_TEST(RepackTest, BitsPackDoubleBigEndian) {
     FixedSequenceGenerator gen1(8, {0b10000011, 0b10100001});
-    BitsUnpack unpacker(true);
-    BitsPack packerBigEndian(16, false);
+    BitsUnpackT<TypeParam> unpacker(true);
+    BitsPackT<TypeParam> packerBigEndian(16, false);
     auto res1 = packerBigEndian(unpacker, gen1);
     ASSERT_EQ(res1, 0b1100000110000101);
 }
 
-TEST(BitsPack, SameOrderLittleEndian) {
+TYPED_TEST(RepackTest, BitsPackSameOrderLittleEndian) {
     FixedSequenceGenerator gen1(16, {0xCAFE, 0xABCD});
-    BitsUnpack unpacker(true);
-    BitsPack packerLittleEndian(16, true);
+    BitsUnpackT<TypeParam> unpacker(true);
+    BitsPackT<TypeParam> packerLittleEndian(16, true);
     auto res1 = packerLittleEndian(unpacker, gen1);
     auto res2 = packerLittleEndian(unpacker, gen1);
     ASSERT_EQ(res1, 0xCAFE);
     ASSERT_EQ(res2, 0xABCD);
 }
 
-TEST(BitsPack, SameOrderBigEndian) {
+TYPED_TEST(RepackTest, BitsPackSameOrderBigEndian) {
     FixedSequenceGenerator gen1(16, {0xCAFE, 0xABCD});
-    BitsUnpack unpacker(false);
-    BitsPack packerBigEndian(16, false);
+    BitsUnpackT<TypeParam> unpacker(false);
+    BitsPackT<TypeParam> packerBigEndian(16, false);
     auto res1 = packerBigEndian(unpacker, gen1);
     auto res2 = packerBigEndian(unpacker, gen1);
     ASSERT_EQ(res1, 0xCAFE);
     ASSERT_EQ(res2, 0xABCD);
 }
+

@@ -22,9 +22,18 @@ static void teaMT19937(benchmark::State& state) {
     state.counters["rate"] = benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
 }
 
-static void bitsRepack(benchmark::State& state) {
+static void bitsRepackStd(benchmark::State& state) {
     auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
-    BitsRepack repacker(rng, 32, true, true);
+    BitsRepackStd repacker(rng, 32, true, true);
+    for(auto _: state) {
+        repacker(*rng);
+    }
+    state.counters["rate"] = benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);        
+}
+
+static void bitsRepackCircular(benchmark::State& state) {
+    auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
+    BitsRepackCircular repacker(rng, 32, true, true);
     for(auto _: state) {
         repacker(*rng);
     }
@@ -90,7 +99,8 @@ static void hypercubeBenchMutexed(benchmark::State& state) {
 
 BENCHMARK(stdMT19937);
 BENCHMARK(teaMT19937);
-BENCHMARK(bitsRepack);
+BENCHMARK(bitsRepackStd);
+BENCHMARK(bitsRepackCircular);
 BENCHMARK(hypercubeBenchSingleThread);
 BENCHMARK(hypercubeBenchAtomic);
 BENCHMARK(hypercubeBenchMutexed);

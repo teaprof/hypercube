@@ -2,7 +2,8 @@
 #define __RNG_OPTIONS_H__
 
 #include <options/BasicOptions.h>
-#include <rng/RandomNumberWrapper.h>
+#include <rng/dynamic/adaptors/bitsrepack.h>
+#include <rng/dynamic/generators/RandomNumberWrapper.h>
 #include <cstdint>
 
 class RNGOptions : public PartialOptions {
@@ -34,7 +35,6 @@ class BitsRepackOptions : public PartialOptions {
             namespace po = boost::program_options;
             addPartialVisible("repack", po::value<bool>(&use_repack)->default_value(false), "set to true to repack rng samples");
             addPartialVisible("srcLittleEndian", po::value<bool>(&src_little_endian)->default_value(true), "is source little endian?");
-            addPartialVisible("srcSampleBits", po::value<uint16_t>(&src_sample_bits)->default_value(0), "src bits per sample, 0 for natural");
             addPartialVisible("dstLittleEndian", po::value<bool>(&dst_little_endian)->default_value(true), "is dest little endian?");
             addPartialVisible("dstSampleBits", po::value<uint16_t>(&dst_sample_bits)->default_value(32), "dst bits per sample");
         }
@@ -49,7 +49,7 @@ class BitsRepackOptions : public PartialOptions {
 std::shared_ptr<RandomBitGenerator> createGenerator(const RNGOptions rng_opts, const BitsRepackOptions& repack_opts) {
     auto rng = std::make_shared<MT19937Wrapper>();
     if(repack_opts.use_repack) {
-        auto res = std::make_shared<BitsRepack>(rng, repack_opts.src_sample_bits, repack_opts.dst_sample_bits, repack_opts.src_little_endian, repack_opts.dst_little_endian);
+        auto res = std::make_shared<BitsRepack>(rng, repack_opts.dst_sample_bits, repack_opts.src_little_endian, repack_opts.dst_little_endian);
         return res;
     }
     return rng;

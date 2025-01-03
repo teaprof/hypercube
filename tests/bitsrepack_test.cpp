@@ -1,0 +1,112 @@
+#include<rng/dynamic/adaptors/bitsrepack.h>
+#include<vector>
+#include<sstream>
+#include<gtest/gtest.h>
+
+class FixedSequenceGenerator : public RandomBitGenerator {
+    public:
+    FixedSequenceGenerator(uint16_t nbits, const std::vector<uint64_t>& buf) : buf_(buf), nbits_{nbits} 
+    {
+        for(auto it : buf_) {
+            assert(it <= max());
+        }
+    }
+    uint64_t operator()() override {
+        assert(!buf_.empty());
+        auto res = buf_.front();
+        buf_.erase(buf_.begin());
+        return res;
+    }
+    uint16_t nbits() override {
+        return nbits_;
+    }
+    std::shared_ptr<RandomBitGenerator> copy() override {
+        return std::make_shared<FixedSequenceGenerator>(*this);
+    }
+
+    private:
+    std::vector<uint64_t> buf_;
+    uint16_t nbits_;
+};
+
+TEST(BitsUnpackTest, Simple)
+{    
+    FixedSequenceGenerator gen1(8, {0b00000001, 0b00000010});
+    BitsUnpack unpackerBigEndian(false);
+    std::stringstream str1;
+    for(size_t n = 0; n < 16; n++)
+        str1<<unpackerBigEndian.pop_front(gen1);
+    ASSERT_EQ(str1.str(), "0000000100000010");
+
+    FixedSequenceGenerator gen2(8, {0b00000001, 0b00000010});
+    BitsUnpack unpackerLittleEndian(true);
+    std::stringstream str2;
+    for(size_t n = 0; n < 16; n++)
+        str2<<unpackerLittleEndian.pop_front(gen2);
+    ASSERT_EQ(str2.str(), "1000000001000000");
+}
+
+
+TEST(BitsPack, SimpleLittleEndian) {
+    FixedSequenceGenerator gen1(8, {0x00, 0x08, 0x10, 0x55});
+    BitsUnpack unpacker(true);
+    BitsPack packerLittleEndian(8, true);
+    auto res1 = packerLittleEndian(unpacker, gen1);
+    auto res2 = packerLittleEndian(unpacker, gen1);
+    auto res3 = packerLittleEndian(unpacker, gen1);
+    auto res4 = packerLittleEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 0x00);
+    ASSERT_EQ(res2, 0x08);
+    ASSERT_EQ(res3, 0x10);
+    ASSERT_EQ(res4, 0x55);
+}
+
+
+TEST(BitsPack, SimpleBigEndian) {
+    FixedSequenceGenerator gen1(8, {0b00110011, 0b11000000});
+    BitsUnpack unpacker(true);
+    BitsPack packerBigEndian(8, false);
+    auto res1 = packerBigEndian(unpacker, gen1);
+    auto res2 = packerBigEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 0b11001100);
+    ASSERT_EQ(res2, 0b00000011);
+}
+
+
+TEST(BitsPack, DoubleLittleEndian) {
+    FixedSequenceGenerator gen1(8, {0x00, 0x08, 0x10, 0x55});
+    BitsUnpack unpacker(true);
+    BitsPack packerLittleEndian(16, true);
+    auto res1 = packerLittleEndian(unpacker, gen1);
+    auto res2 = packerLittleEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 0x0800);
+    ASSERT_EQ(res2, 0x5510);
+}
+
+TEST(BitsPack, DoubleBigEndian) {
+    FixedSequenceGenerator gen1(8, {0b10000011, 0b10100001});
+    BitsUnpack unpacker(true);
+    BitsPack packerBigEndian(16, false);
+    auto res1 = packerBigEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 0b1100000110000101);
+}
+
+TEST(BitsPack, SameOrderLittleEndian) {
+    FixedSequenceGenerator gen1(16, {0xCAFE, 0xABCD});
+    BitsUnpack unpacker(true);
+    BitsPack packerLittleEndian(16, true);
+    auto res1 = packerLittleEndian(unpacker, gen1);
+    auto res2 = packerLittleEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 0xCAFE);
+    ASSERT_EQ(res2, 0xABCD);
+}
+
+TEST(BitsPack, SameOrderBigEndian) {
+    FixedSequenceGenerator gen1(16, {0xCAFE, 0xABCD});
+    BitsUnpack unpacker(false);
+    BitsPack packerBigEndian(16, false);
+    auto res1 = packerBigEndian(unpacker, gen1);
+    auto res2 = packerBigEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 0xCAFE);
+    ASSERT_EQ(res2, 0xABCD);
+}

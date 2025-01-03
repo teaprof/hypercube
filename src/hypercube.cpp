@@ -15,6 +15,7 @@ int main(int argc, char* argv[]) {
         BasicOptions basic_options;
         RNGOptions rng_options;
         BitsRepackOptions bits_repack_options;
+        //SamplingOptions sampling_options;
         MultithreadOptions multithread_options;
         HypercubeOptions hypercube_options;
         SubtaskOptions subtask_options;
@@ -22,6 +23,7 @@ int main(int argc, char* argv[]) {
         Options options;
         options.addGroup(rng_options);
         options.addGroup(bits_repack_options);
+        //options.addGroup(sampling_options);
         options.addGroup(hypercube_options);        
         options.addGroup(multithread_options);        
         options.addGroup(subtask_options);
@@ -38,34 +40,25 @@ int main(int argc, char* argv[]) {
         std::cout<<"nIntervals = "<<hypercube_options.nIntervals<<std::endl;
         std::cout<<"nSamples = "<<hypercube_options.nSamples<<std::endl;
         
-        HypercubeProblem problem(hypercube_options.dim, hypercube_options.nIntervals, hypercube_options.stride, hypercube_options.nSamples);
-
-        auto rng = createGenerator(rng_options, bits_repack_options);
+        auto rng = createGenerator(rng_options, bits_repack_options);        
+        auto problem = createHypercubeProblem(hypercube_options);
         auto sampler = createHypercubeSampler(problem);
         SubtaskParameters subtask{.Ntasks=subtask_options.nSubtasks,.cur_task=subtask_options.curSubtask,.n_threads=multithread_options.nThreads()};
-        Chi2BasedTest<Histogram> test;
-        Chi2BasedTest<HistogramAtomic> test_atomic;
-        Chi2BasedTest<HistogramMutexed> test_mutexed;
+        //Chi2BasedTest<Histogram> test;
+        Chi2BasedTest<HistogramAtomic> test;
+        //Chi2BasedTest<HistogramMutexed> test;
         
         tic();
-        auto res1 = test.run(problem, subtask, sampler, rng->copy());
+        auto res = test.run(problem, subtask, sampler, rng->copy());
         double t1 = toc();        
         tic();
-        auto res2 = test_atomic.run(problem, subtask, sampler, rng->copy());
-        double t2 = toc();
-        tic();
-        auto res3 = test_mutexed.run(problem, subtask, sampler, rng->copy());
-        double t3 = toc();
         std::cout<<"nthreads = "<<subtask.n_threads<<std::endl;
-        std::cout<<"Simple: "<<res1.sum<<" "<<res1.sum2<<"; elapsed = "<<t1*1000<<" ms"<<std::endl;
-        std::cout<<"Atomic: "<<res2.sum<<" "<<res2.sum2<<"; elapsed = "<<t2*1000<<" ms"<<std::endl;
-        std::cout<<"Mutexs: "<<res3.sum<<" "<<res3.sum2<<"; elapsed = "<<t3*1000<<" ms"<<std::endl;    
+        std::cout<<"sum = "<<res.sum<<", sum2 = "<<res.sum2<<std::endl;
+        std::cout<<"elapsed: "<<t1*1000<<" ms"<<std::endl;
 
         TestResultsDB results_db;
         results_db.readFromFile("data.json");
-        results_db.push_back(problem, subtask, res1);
-        results_db.push_back(problem, subtask, res2);
-        results_db.push_back(problem, subtask, res3);
+        results_db.push_back(problem, subtask, res);
         results_db.sanitize();
         results_db.writeToFile("data.json");
         return 0;

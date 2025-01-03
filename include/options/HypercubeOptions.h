@@ -27,14 +27,19 @@ class HypercubeOptions : public PartialOptions {
         size_t stride;
 };
 
-class SamplingOptions : public PartialOptions {
+//todo: this class is redundant. The number of bits used to sample 1D index can be specified as an output of BitsRepack
+/*class SamplingOptions : public PartialOptions {
     public:
         SamplingOptions() : PartialOptions("Sampling options") {
             namespace po = boost::program_options;
-            addPartialVisible("samples_per_index", po::value<size_t>(&samples_per_index)->default_value(1), "hypercube dimension");
+            addPartialVisible("samples_per_index", po::value<size_t>(&samples_per_index)->default_value(1), "how many samples after bitsrepack should be used to sample each 1D hyperindex");
         }
         size_t samples_per_index;
-};
+};*/
+
+HypercubeProblem createHypercubeProblem(const HypercubeOptions hypercube_options) {
+    return HypercubeProblem(hypercube_options.dim, hypercube_options.nIntervals, hypercube_options.stride, hypercube_options.nSamples);
+}
 
 std::shared_ptr<HypercubeSampler>  createHypercubeSampler(HypercubeProblem problem) {
     return std::make_shared<HypercubeSampler>(problem);

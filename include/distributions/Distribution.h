@@ -1,7 +1,9 @@
 #ifndef __DISTRIBUTION_H__
 #define __DISTRIBUTION_H__
 
-#include"rng/RandomNumberWrapper.h"
+#include<rng/dynamic/generators/RandomBitGenerator.h>
+
+#include <cassert>
 
 class Distribution {
     public:

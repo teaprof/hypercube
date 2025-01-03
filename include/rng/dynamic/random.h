@@ -1,6 +1,9 @@
-#ifndef _DYNAMIC_RANDOM_H_
-#define _DYNAMIC_RANDOM_H_
+#ifndef __DYNAMIC_RANDOM_H__
+#define __DYNAMIC_RANDOM_H__
 
-#include <rng/static/lcg.h>
+#include <rng/dynamic/generators/RandomBitGenerator.h>
+#include <rng/dynamic/generators/RandomNumberWrapper.h>
+#include <rng/dynamic/adaptors/adaptor.h>
+#include <rng/dynamic/adaptors/bitsrepack.h>
 
 #endif

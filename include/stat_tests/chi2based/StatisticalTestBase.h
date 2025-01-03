@@ -1,13 +1,14 @@
 #ifndef STATISTICAL_TEST_BASE_
 #define STATISTICAL_TEST_BASE_
 
-#include "arrays/Histogram.h"
-#include "rng/RandomNumberWrapper.h"
+#include <arrays/Histogram.h>
+#include <rng/dynamic/generators/RandomBitGenerator.h>
 
 #include <map>
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <cassert>
 
 struct Chi2BasedProblem {
     size_t N;

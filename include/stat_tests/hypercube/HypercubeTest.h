@@ -1,8 +1,8 @@
 #ifndef __HYPERCUBE_TEST_H__
 #define __HYPERCUBE_TEST_H__
-#include "distributions/Distribution.h"
-#include "rng/RandomNumberWrapper.h"
-#include "stat_tests/chi2based/StatisticalTestBase.h"
+#include <distributions/Distribution.h>
+#include <rng/dynamic/generators/RandomNumberWrapper.h>
+#include <stat_tests/chi2based/StatisticalTestBase.h>
 #include <deque>
 
 

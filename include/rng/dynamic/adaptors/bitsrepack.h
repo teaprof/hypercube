@@ -1,73 +1,15 @@
-#ifndef RANDOM_NUMBER_WRAPPER_H
-#define RANDOM_NUMBER_WRAPPER_H
+#ifndef __BITS_REPACK_H__
+#define __BITS_REPACK_H__
 
-#include <rng/dynamic/random.h>
-
-#include <cassert>
+#include <rng/dynamic/adaptors/adaptor.h>
+#include <rng/dynamic/adaptors/circularbuffer.h>
 #include <queue>
-#include <random>
-#include <vector>
-#include <memory>
 
-class RandomBitGenerator {
-public:
-    virtual uint64_t operator()() = 0;
-    virtual uint64_t max() = 0;
-    virtual uint16_t nbits() = 0;
-    virtual void discard() { (*this)(); }
-    virtual void discardN(size_t n) {
-        for (size_t i = 0; i < n; i++)
-            discard();
-    };
-    virtual std::shared_ptr<RandomBitGenerator> copy() = 0;
-    virtual void jumpTo(uint64_t pos) { discardN(pos - counter); }
-    uint64_t counter{0};
-};
-
-template <class Rng>
-class RandomNumberWrapperStd : public RandomBitGenerator {
-public:
-    Rng rng;
-    RandomNumberWrapperStd() {
-        nbits_ = 0;
-        auto m = max();
-        while (m > 0) {
-            nbits_++;
-            m /= 2;
-        }
-    }
-    RandomNumberWrapperStd(const RandomNumberWrapperStd<Rng>& other) : RandomBitGenerator(other), rng{other.rng}, nbits_{other.nbits_} {}
-    uint64_t operator()() override {
-        counter++;
-        return rng();
-    }
-    uint64_t max() override { return rng.max(); }
-    uint16_t nbits() override { return nbits_; }
-    std::shared_ptr<RandomBitGenerator> copy() override {
-        return std::make_shared<RandomNumberWrapperStd<Rng>>(*this);
-    }
-private:
-    uint16_t nbits_{0};
-};
-
-class RandomBitAdaptor : public RandomBitGenerator {
-    public:
-    RandomBitAdaptor(std::shared_ptr<RandomBitGenerator> rng) : rng_(rng) {}
-    RandomBitAdaptor(const RandomBitAdaptor& other) : rng_(other.rng_->copy()) {}
-    virtual uint64_t operator()(RandomBitGenerator& rng) = 0;
-    virtual uint64_t operator()() {return (*this)(*rng_);};
-    virtual uint64_t max() {
-        return (1<<(nbits())) - 1;
-    }
-    virtual uint16_t nbits() = 0;
-private:
-    std::shared_ptr<RandomBitGenerator> rng_;
-};
 
 class BitsUnpack {
 public:
-    BitsUnpack(uint16_t samlpe_size_bits, bool little_endian): little_endian_{little_endian}, sample_size_bits_{samlpe_size_bits}{ }
-    BitsUnpack(const BitsUnpack& other) : buffer_(other.buffer_), little_endian_{other.little_endian_}, sample_size_bits_{other.sample_size_bits_} {}
+    BitsUnpack(bool little_endian): little_endian_{little_endian} { }
+    BitsUnpack(const BitsUnpack& other) : buffer_(other.buffer_), little_endian_{other.little_endian_} {}
     bool pop_front(RandomBitGenerator &rng) {
         if (buffer_.empty()) {
             refill(rng);
@@ -95,8 +37,8 @@ private:
         }
     }
     std::queue<bool> buffer_;
+    //CircularBuffer<bool> buffer_;
     bool little_endian_;
-    uint16_t sample_size_bits_;
 };
 
 class BitsPack {
@@ -139,8 +81,8 @@ private:
 
 class BitsRepack : public RandomBitAdaptor {
 public:
-    BitsRepack(std::shared_ptr<RandomBitGenerator> rng, uint16_t src_sample_size, uint16_t dst_sample_size, bool src_little_endian, bool dst_little_endian) : RandomBitAdaptor(rng),
-        bits_unpacker(src_sample_size, src_little_endian), bits_packer(dst_sample_size, dst_little_endian) {}
+    BitsRepack(std::shared_ptr<RandomBitGenerator> rng, uint16_t dst_sample_size, bool src_little_endian, bool dst_little_endian) : RandomBitAdaptor(rng),
+        bits_unpacker(src_little_endian), bits_packer(dst_sample_size, dst_little_endian) {}
     BitsRepack(const BitsRepack& r) : RandomBitAdaptor(r), bits_unpacker(r.bits_unpacker), bits_packer(r.bits_packer) {}
     virtual uint64_t operator()(RandomBitGenerator& rng) override {
         return bits_packer(bits_unpacker, rng);
@@ -158,7 +100,4 @@ private:
     BitsUnpack bits_unpacker;
     BitsPack bits_packer;
 };
-
-using MT19937Wrapper = RandomNumberWrapperStd<std::mt19937>;
-
 #endif

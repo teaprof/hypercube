@@ -3,6 +3,7 @@
 
 #include <boost/program_options.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/optional.hpp>
 #include <thread>
 #include <vector>
 #include <iostream>
@@ -12,20 +13,22 @@ class PartialOptions {
         static constexpr uint16_t text_width = 140;
         PartialOptions(std::string caption) : visible(caption, text_width) {}        
         template<class...Args>
-        void addPartialVisible(Args ... args) {
+        auto addPartialVisible(Args ... args) {
             auto option = boost::make_shared<boost::program_options::option_description>(args...);            
             partial.add(option);
             visible.add(option);
+            return option;
         }
         void addPositionalHidden(std::string name, int count, const boost::program_options::value_semantic* s) {
             positional.add(name.c_str(), count);
             partial.add_options()(name.c_str(), s);
         }
-        void addPositionalVisible(std::string name, int count, const boost::program_options::value_semantic* s, std::string description) {
-            addPositionalHidden(name, count, s);
+        auto addPositionalVisible(std::string name, int count, const boost::program_options::value_semantic* s, std::string description) {
             auto option = boost::make_shared<boost::program_options::option_description>(name.c_str(), s, description.c_str());
+            positional.add(name.c_str(), count);
             partial.add(option);
-            visible.add(option);            
+            visible.add(option);
+            return option;
         }
 
         virtual void update(const boost::program_options::variables_map& vm) {
@@ -47,13 +50,18 @@ class BasicOptions : public PartialOptions {
     public:
         BasicOptions() : PartialOptions("Basic options") {
             namespace po = boost::program_options;
-            addPartialVisible("help", new po::untyped_value(true), "produce help");
+            //addPartialVisible("help", new po::untyped_value(true), "produce help");
+            //addPartialVisible("help", po::value(&need_help), "produce help");
+            addPartialVisible("help", po::bool_switch(&need_help), "produce help");
         }
-        void update(const boost::program_options::variables_map& vm) override {
-            need_help = vm.count("help") > 0;
+        void update(const boost::program_options::variables_map& vm) override {            
+            //need_help = vm.count("help") > 0;
         }
-        bool need_help{false};
-        
+        bool needHelp() {
+            return need_help;
+        }
+    private:
+        bool need_help;
 };
 
 class MultithreadOptions : public PartialOptions {

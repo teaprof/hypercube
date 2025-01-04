@@ -7,17 +7,30 @@
 #include<boost/json.hpp>
 #include<stat_tests/chi2based/StatisticalTestBase.h>
 #include<serializers/serializers.h>
+#include<TestResultsDB/MetaData.h>
+#include<TestResultsDB/TaskDB.h>
+
+struct TestResultsRecord : public TaskRecord {
+    SubtaskResults results;
+};
+
+boost::json::object& operator<<(boost::json::object& object, const TestResultsRecord& record) {
+    object<<static_cast<const TaskRecord&>(record);
+    object<<record.results;
+    return object;
+}
+
+const boost::json::object& operator>>(const boost::json::object& object, TestResultsRecord& record) {
+    object>>static_cast<TaskRecord&>(record);
+    object>>record.results;
+    return object;
+}
+
 
 class TestResultsDB {
     public:
-        struct Record {
-            HypercubeProblem problem;
-            SubtaskParameters subtask;
-            SubtaskResults results;
-        };
 
-        TestResultsDB() = default;
-        void readFromFile(std::string path) {
+        void readFromFile(const std::string& path) {
             std::ifstream f(path, std::ios::in);
             if(!f) {
                 return;
@@ -31,23 +44,25 @@ class TestResultsDB {
             boost::json::value results_value = value.at("results");
             auto array = results_value.as_array();
             for(auto it : array) {                
-                auto r = fromJSONobject(it.as_object());
+                TestResultsRecord r;
+                it.as_object() >> r;
                 records.push_back(std::move(r));
             }
         }
-        void writeToFile(std::string path) {
+        void writeToFile(const std::string& path) const {
             boost::json::object data;
             boost::json::array array;            
             for(auto it : records) {
-                auto obj = toJSONObject(it);
+                boost::json::object obj;
+                obj << it;
                 array.push_back(obj);
             }
             data["results"] = array;
             std::ofstream f(path, std::ios::out | std::ios::trunc);
             f<<data;
         }        
-        void push_back(const HypercubeProblem& problem, const SubtaskParameters& subtask, const SubtaskResults& results) {
-            records.push_back({problem, subtask, results});
+        void push_back(const std::optional<MetaData> meta, const RandomNumberGeneratorDescription& rng, const std::optional<BitsRepackDescription> repack, HypercubeProblem& problem, const SubtaskParameters& subtask, const SubtaskResults& results) {
+            records.push_back({meta, rng, repack, problem, subtask, results});
         }
         void sanitize() {
             std::set<int> idx_to_remove;
@@ -70,8 +85,8 @@ class TestResultsDB {
                 records.erase(records.begin() + idx);
             }
         }
-        std::vector<Record> getSimilar(const HypercubeProblem& problem, const SubtaskParameters& subtasks) {
-            std::vector<Record> results;
+        std::vector<TestResultsRecord> getSimilar(const HypercubeProblem& problem, const SubtaskParameters& subtasks) {
+            std::vector<TestResultsRecord> results;
             for(auto it : records) {
                 if(it.problem == problem && it.subtask.Ntasks == subtasks.Ntasks) {
                     results.push_back(it);
@@ -79,8 +94,8 @@ class TestResultsDB {
             }
             return results;
         }
-        std::vector<Record> getUnique() {
-            std::vector<Record> results;
+        std::vector<TestResultsRecord> getUnique() {
+            std::vector<TestResultsRecord> results;
             for(auto it : records) {
                 auto pos = std::find_if(results.begin(), results.end(), [&it](auto v1) {
                     return it.problem == v1.problem && it.subtask.Ntasks == v1.subtask.Ntasks;
@@ -91,8 +106,8 @@ class TestResultsDB {
             }
             return results;
         }
-        std::vector<std::vector<Record>> getFinished() {
-            std::vector<std::vector<Record>> res;
+        std::vector<std::vector<TestResultsRecord>> getFinished() {
+            std::vector<std::vector<TestResultsRecord>> res;
             auto uniq = getUnique();
             for(auto it : uniq) {
                 auto similar = getSimilar(it.problem, it.subtask);
@@ -102,7 +117,7 @@ class TestResultsDB {
             }
             return res;
         }
-        bool checkComplete(const std::vector<Record>& r) {
+        bool checkComplete(const std::vector<TestResultsRecord>& r) {
             if(r.empty()) {
                 return false;
             }
@@ -122,20 +137,7 @@ class TestResultsDB {
             return true;
         }
     private:
-        std::vector<Record> records;
-
-        boost::json::object toJSONObject(const Record& r) {
-            boost::json::object obj;
-            obj<<r.problem<<r.subtask<<r.results;
-            return obj;
-        }
-        Record fromJSONobject(const boost::json::object& obj) {            
-            HypercubeProblem problem{0, 0, 0, 0};
-            SubtaskParameters subtask{0, 0, 0};
-            SubtaskResults results{0, 0};
-            obj>>problem>>subtask>>results;
-            return {problem, subtask, results};
-        }
+        std::vector<TestResultsRecord> records;
 };
 
 #endif

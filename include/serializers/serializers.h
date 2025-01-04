@@ -3,6 +3,47 @@
 #include<boost/json.hpp>
 #include<stat_tests/chi2based/StatisticalTestBase.h>
 #include<stat_tests/hypercube/HypercubeTest.h>
+#include<stat_tests/rng.h>
+#include<TestResultsDB/MetaData.h>
+
+boost::json::object& operator<<(boost::json::object& object, const RandomNumberGeneratorDescription& rng_descr) {
+    object.emplace("rng_id", rng_descr.rng_id);
+    if(rng_descr.seed) {
+        object.emplace("seed", *rng_descr.seed);
+    } else {
+        object["seed"].emplace_null();
+    }
+    object.emplace("offset", rng_descr.offset);
+    return object;
+}
+
+const boost::json::object& operator>>(const boost::json::object& object, RandomNumberGeneratorDescription& rng_descr) {
+    rng_descr.rng_id = object.at("rng_id").as_int64();
+    auto v = object.at("seed");
+    if(v.is_null()) {
+        rng_descr.seed = std::nullopt;
+    } else {
+        assert(v.is_int64());
+        rng_descr.seed = v.as_int64();
+    }
+    rng_descr.offset = object.at("offset").as_int64();
+    return object;
+}
+
+boost::json::object& operator<<(boost::json::object& object, const BitsRepackDescription& bits_repack_descr) {
+    object.emplace("repack_bits_per_sample", bits_repack_descr.bits_per_sample);
+    object.emplace("repack_src_little_endian", bits_repack_descr.src_little_endian);
+    object.emplace("repack_dst_little_endian", bits_repack_descr.dst_little_endian);
+    return object;
+}
+
+const boost::json::object& operator>>(const boost::json::object& object, BitsRepackDescription& bits_repack_descr) {
+    bits_repack_descr.bits_per_sample = object.at("repack_bits_per_sample").as_uint64();
+    bits_repack_descr.src_little_endian = object.at("repack_src_little_endian").as_bool();
+    bits_repack_descr.dst_little_endian =object.at("repack_dst_little_endian").as_bool();
+    return object;
+}
+
 
 boost::json::object& operator<<(boost::json::object& object, const Chi2BasedProblem& problem) {
     object.emplace("N", problem.N);
@@ -74,6 +115,58 @@ const boost::json::object& operator>>(const boost::json::object& object, Hypercu
     problem.m_intervals_per_dim = object.at("m_intervals_per_dim").as_int64();
     problem.stride = object.at("stride").as_int64();
     object >> static_cast<Chi2BasedProblem&>(problem);
+    return object;
+}
+
+boost::json::object& operator<<(boost::json::object& object, const MetaData& meta) {
+    object.emplace("taskID", meta.taskId);
+    if(meta.parentId) {
+        object.emplace("parentId", *meta.parentId);
+    } else {
+        object["parentId"].emplace_null();
+    }
+    boost::json::array childIds;
+    for(auto it : meta.childIds) {
+        childIds.emplace_back(it);
+    }
+    object.emplace("childIds", childIds);
+    return object;
+}
+
+const boost::json::object& operator>>(const boost::json::object& object, MetaData& meta) {
+    meta.taskId = object.at("taskID").as_int64();
+    auto v = object.at("parentId");
+    if(v.is_null()) {
+        meta.parentId = std::nullopt;
+    } else {
+        assert(v.is_int64());
+        meta.parentId = v.as_int64();
+    }
+    boost::json::array childIds = object.at("childIds").as_array();
+    meta.childIds.clear();
+    for(auto it : childIds) {
+        meta.childIds.push_back(it.as_int64());
+    }
+    return object;
+}
+
+template<class T>
+boost::json::object& operator<<(boost::json::object& object, const std::optional<T> value_opt) {
+    if(value_opt) {
+        object<<*value_opt;
+    }
+    return object;
+}
+
+template<class T>
+const boost::json::object& operator>>(const boost::json::object& object, std::optional<T>& value_opt) {
+    try {
+        T value;
+        object>>value;
+        value_opt = value;
+    } catch (const boost::system::system_error&) {
+        value_opt = std::nullopt;
+    }    
     return object;
 }
 

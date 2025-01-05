@@ -44,13 +44,14 @@ static void hypercubeBenchSingleThread(benchmark::State& state) {
     const size_t Nsamples = 1'000'000;
     HypercubeProblem problem(3, 16, 16, Nsamples);
     auto sampler = std::make_shared<HypercubeSampler>(problem);
-    SubtaskParameters subtask{.Ntasks=1,.cur_task=0, .n_threads=1};
+    SubtaskParameters subtask{.Ntasks=1,.cur_task=0};
     auto rng = std::make_shared<MT19937Wrapper>();
     Chi2BasedTest<Histogram> test;
         
     //tic();
+    const size_t n_threads = 1;
     for(auto _ : state) {
-        test.run(problem, subtask, sampler, rng->copy());
+        test.run(problem, subtask, sampler, rng->copy(), n_threads);
     }
     state.counters["rate"] = benchmark::Counter(state.iterations()*Nsamples, benchmark::Counter::kIsRate);
     //double t1 = toc();        
@@ -64,13 +65,13 @@ static void hypercubeBenchAtomic(benchmark::State& state) {
     const size_t threads = 8;
     HypercubeProblem problem(3, 16, 16, Nsamples);
     auto sampler = std::make_shared<HypercubeSampler>(problem);
-    SubtaskParameters subtask{.Ntasks=1,.cur_task=0, .n_threads=threads};
+    SubtaskParameters subtask{.Ntasks=1,.cur_task=0};
     auto rng = std::make_shared<MT19937Wrapper>();
     Chi2BasedTest<HistogramAtomic> test_atomic;
         
     //tic();
     for(auto _ : state) {
-        test_atomic.run(problem, subtask, sampler, rng->copy());
+        test_atomic.run(problem, subtask, sampler, rng->copy(), threads);
     }
     state.counters["rate"] = benchmark::Counter(state.iterations()*Nsamples, benchmark::Counter::kIsRate);
     //double t1 = toc();        
@@ -83,13 +84,13 @@ static void hypercubeBenchMutexed(benchmark::State& state) {
     const size_t threads = 8;
     HypercubeProblem problem(3, 16, 16, Nsamples);
     auto sampler = std::make_shared<HypercubeSampler>(problem);
-    SubtaskParameters subtask{.Ntasks=1,.cur_task=0, .n_threads=threads};
+    SubtaskParameters subtask{.Ntasks=1,.cur_task=0};
     auto rng = std::make_shared<MT19937Wrapper>();
     Chi2BasedTest<HistogramMutexed> test_mutexed;
         
     //tic();
     for(auto _ : state) {
-        test_mutexed.run(problem, subtask, sampler, rng->copy());
+        test_mutexed.run(problem, subtask, sampler, rng->copy(), threads);
     }
     state.counters["rate"] = benchmark::Counter(state.iterations()*Nsamples, benchmark::Counter::kIsRate);
     //double t1 = toc();        

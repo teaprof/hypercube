@@ -68,31 +68,20 @@ class MultithreadOptions : public PartialOptions {
     public:
         MultithreadOptions() : PartialOptions("multithreading options") {
             namespace po = boost::program_options;
-            defaultThreads_ = 0;
+            concurency = std::thread::hardware_concurrency();
             std::stringstream str;
-            auto concurency = std::thread::hardware_concurrency();
-            str<<"number of threads, if 0 then std::threads::hardware_concurrency will be used ["<<concurency<<" on this machine]";
-            addPartialVisible("nthreads,t", po::value<size_t>(&nthreads_)->default_value(defaultThreads_), str.str().c_str());
+            str<<"number of threads, if not set then std::threads::hardware_concurrency will be used ["<<concurency<<" on this machine]";
+            addPartialVisible("nthreads,t", po::value(&nthreads_), str.str().c_str());
         }
         size_t nThreads() {
-            if(nthreads_ == 0) {
-                return std::thread::hardware_concurrency();
+            if(nthreads_) {
+                return *nthreads_;
             }
-            return nthreads_;
+            return concurency;
         }
     private:
-        size_t defaultThreads_, nthreads_;
-};
-
-class SubtaskOptions : public PartialOptions {
-    public:
-        SubtaskOptions() : PartialOptions("Subtast options") {
-            namespace po = boost::program_options;
-            addPartialVisible("nsubtasks", po::value<size_t>(&nSubtasks)->default_value(1), "total count of subtasks");
-            addPartialVisible("subtask", po::value<size_t>(&curSubtask)->default_value(0), "number of the current subtask");
-        }
-        size_t nSubtasks;
-        size_t curSubtask;
+        size_t concurency;
+        boost::optional<size_t> nthreads_;
 };
 
 class Options : protected PartialOptions {

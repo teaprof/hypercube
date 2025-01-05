@@ -78,14 +78,12 @@ const boost::json::object& operator>>(const boost::json::object& object, Statisc
 boost::json::object& operator<<(boost::json::object& object, const SubtaskParameters& subtask) {
     object.emplace("Ntasks", subtask.Ntasks);
     object.emplace("cur_task", subtask.cur_task);
-    object.emplace("n_threads", subtask.n_threads);
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, SubtaskParameters& subtask) {
     subtask.Ntasks = object.at("Ntasks").as_int64();
     subtask.cur_task = object.at("cur_task").as_int64();
-    subtask.n_threads = object.at("n_threads").as_int64();
     return object;
 }
 

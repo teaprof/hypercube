@@ -8,6 +8,9 @@ add_library(tearng
 add_executable(hypercube hypercube.cpp)
 target_link_libraries(hypercube tearng Boost::program_options Boost::json)
 
+add_executable(taskgenerator taskgenerator.cpp)
+target_link_libraries(taskgenerator tearng Boost::program_options Boost::json)
+
 add_executable(rewind rewind.cpp)
 
 add_executable(bench bench.cpp)

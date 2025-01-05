@@ -75,12 +75,13 @@ class HypercubeTestSuite : public testing::TestWithParam<std::tuple<size_t, size
         void calcuateReceived() {
             HypercubeProblem problem{dim, mIntervals, stride, NPoints};
             received = {0, 0};
+            const size_t n_threads = 1;
             for(size_t n = 0; n < nSubtasks; n++) {
                 auto sampler = std::make_shared<HypercubeSampler>(problem);
                 auto rng = std::make_shared<MT19937Wrapper>();
-                SubtaskParameters subtask{.Ntasks=nSubtasks,.cur_task=n,.n_threads=1};
+                SubtaskParameters subtask{.Ntasks=nSubtasks,.cur_task=n};
                 Chi2BasedTest<Histogram> test;
-                auto cur_received = test.run(problem, subtask, sampler, rng);
+                auto cur_received = test.run(problem, subtask, sampler, rng, n_threads);
                 received.sum += cur_received.sum;
                 received.sum2 += cur_received.sum2;
             }

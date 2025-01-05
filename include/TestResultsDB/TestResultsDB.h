@@ -12,17 +12,20 @@
 
 struct TestResultsRecord : public TaskRecord {
     SubtaskResults results;
+    double time;
 };
 
 boost::json::object& operator<<(boost::json::object& object, const TestResultsRecord& record) {
     object<<static_cast<const TaskRecord&>(record);
     object<<record.results;
+    object["time"] = record.time;
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, TestResultsRecord& record) {
     object>>static_cast<TaskRecord&>(record);
     object>>record.results;
+    record.time = object.at("time").as_double();
     return object;
 }
 
@@ -35,12 +38,7 @@ class TestResultsDB {
             if(!f) {
                 return;
             }
-            std::string str;
-            f>>str;
-            if(str.length() == 0) {
-                return;
-            }
-            auto value = boost::json::parse(str);
+            auto value = boost::json::parse(f);
             boost::json::value results_value = value.at("results");
             auto array = results_value.as_array();
             for(auto it : array) {                
@@ -61,8 +59,8 @@ class TestResultsDB {
             std::ofstream f(path, std::ios::out | std::ios::trunc);
             f<<data;
         }        
-        void push_back(const std::optional<MetaData> meta, const RandomNumberGeneratorDescription& rng, const std::optional<BitsRepackDescription> repack, HypercubeProblem& problem, const SubtaskParameters& subtask, const SubtaskResults& results) {
-            records.push_back({meta, rng, repack, problem, subtask, results});
+        void push_back(const std::optional<MetaData> meta, const RandomNumberGeneratorDescription& rng, const std::optional<BitsRepackDescription> repack, HypercubeProblem& problem, const SubtaskParameters& subtask, const SubtaskResults& results, double time) {
+            records.push_back({meta, rng, repack, problem, subtask, results, time});
         }
         void sanitize() {
             std::set<int> idx_to_remove;

@@ -34,14 +34,9 @@ class TaskDB {
         void readFromFile(const std::string& path) {
             std::ifstream f(path, std::ios::in);
             if(!f) {
-                return;
+                throw std::runtime_error("Can't open file for reading");
             }
-            std::string str;
-            f>>str;
-            if(str.length() == 0) {
-                return;
-            }
-            auto value = boost::json::parse(str);
+            auto value = boost::json::parse(f);
             boost::json::value results_value = value.at("tasks");
             auto array = results_value.as_array();
             for(auto it : array) {                
@@ -63,6 +58,9 @@ class TaskDB {
             }
             data["tasks"] = array;
             std::ofstream f(path, std::ios::out | std::ios::trunc);
+            if(!f) {
+                throw std::runtime_error("can't open file for writing");
+            }
             f<<data;
         }        
         std::optional<TaskRecord> find(uint64_t taskId) const {

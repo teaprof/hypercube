@@ -28,9 +28,8 @@ struct StatiscticalTestResults {
 struct SubtaskParameters {
     size_t Ntasks;
     size_t cur_task;
-    size_t n_threads;
     bool operator==(const SubtaskParameters& other) const {
-        return Ntasks == other.Ntasks && cur_task == other.cur_task && n_threads == other.n_threads;
+        return Ntasks == other.Ntasks && cur_task == other.cur_task;
     }
 };
 
@@ -56,17 +55,17 @@ public:
     virtual ~Chi2BasedTest() {}
 
     SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
-                    std::shared_ptr<RandomBitGenerator> rng) {
+                    std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
         assert(problem.m_intervals_total == sampler->max() + 1);
         size_t data_size = getSubarraySize(problem, subtask);
         data.allocate(data_size);
         std::vector<std::thread> threads;
-        for (size_t thread_id = 0; thread_id < subtask.n_threads; thread_id++) {
+        for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
             // MultiindexGeneratorT>(task, subtask, rng, sampler, subtask.n_threads,
             // thread_id);
             // std::thread thread(&Chi2BasedTest::runThread, this, task, subtask, sampler, rng, thread_id);
-            Chi2BasedTest::runThread(problem, subtask, sampler, rng, thread_id);
+            Chi2BasedTest::runThread(problem, subtask, sampler, rng->copy(), n_threads, thread_id);
             // threads.emplace_back(std::move(thread));
         }
         for (auto &it : threads)
@@ -124,9 +123,9 @@ private:
     }
 
     void runThread(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
-                   std::shared_ptr<RandomBitGenerator> rng, size_t thread_id) {
+                   std::shared_ptr<RandomBitGenerator> rng, size_t n_threads, size_t thread_id) {
         SubtaskResults res{.sum = 0, .sum2 = 0};
-        auto [thread_start, thread_end] = split(problem.N, subtask.n_threads, thread_id);
+        auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
         sampler->discardN(thread_start, *rng);
         for (size_t n = 0; n < thread_end - thread_start; n++) {
             size_t idx = (*sampler)(*rng);

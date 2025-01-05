@@ -38,9 +38,9 @@ class RNGOptions : public PartialOptions {
             return {number, to_std_optional(seed), offset};
         }
         std::string name;
-        size_t number;
+        size_t number{0};
         boost::optional<size_t> seed;
-        size_t offset;
+        size_t offset{0};
 };
 
 class BitsRepackOptions : public PartialOptions {
@@ -78,17 +78,6 @@ class BitsRepackOptions : public PartialOptions {
         boost::optional<bool> src_little_endian, dst_little_endian;
         boost::optional<uint16_t> dst_sample_bits;
 };
-
-std::shared_ptr<RandomBitGenerator> createGenerator(const RNGOptions rng_opts, const BitsRepackOptions& repack_opts) {
-    auto rng = std::make_shared<MT19937Wrapper>();
-    if(repack_opts.useRepack()) {
-        auto descr = repack_opts.description();
-        assert(descr);
-        auto res = std::make_shared<BitsRepack>(rng, descr->bits_per_sample, descr->src_little_endian, descr->dst_little_endian);
-        return res;
-    }
-    return rng;
-}
 
 
 #endif

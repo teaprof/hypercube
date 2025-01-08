@@ -44,13 +44,13 @@ class TestResultsDB {
             for(auto it : array) {                
                 TestResultsRecord r;
                 it.as_object() >> r;
-                records.push_back(std::move(r));
+                records_.push_back(std::move(r));
             }
         }
         void writeToFile(const std::string& path) const {
             boost::json::object data;
             boost::json::array array;            
-            for(auto it : records) {
+            for(auto it : records_) {
                 boost::json::object obj;
                 obj << it;
                 array.push_back(obj);
@@ -59,15 +59,26 @@ class TestResultsDB {
             std::ofstream f(path, std::ios::out | std::ios::trunc);
             f<<data;
         }        
-        void push_back(const std::optional<MetaData> meta, const RandomNumberGeneratorDescription& rng, const std::optional<BitsRepackDescription> repack, HypercubeProblem& problem, const SubtaskParameters& subtask, const SubtaskResults& results, double time) {
-            records.push_back({meta, rng, repack, problem, subtask, results, time});
+        void push_back(const TaskRecord& task, const SubtaskResults& results, double time) {
+            records_.push_back({task.meta, task.rng, task.repack, task.problem, task.subtask, results, time});
+        }
+        void add(const std::vector<TaskRecord> &tasks, const std::vector<SubtaskResults>& results, const std::vector<double> times) {
+            assert(tasks.size() == results.size());
+            assert(tasks.size() == times.size());
+            for(size_t n = 0; n < tasks.size(); n++) {
+                auto& task = tasks[n];
+                auto& res = results[n];
+                auto& time = times[n];
+                push_back(task, res, time);
+                sanitize();
+            }
         }
         void sanitize() {
             std::set<int> idx_to_remove;
-            for(int n = 0; n < records.size(); n++) {
-                for(int k = n + 1; k < records.size(); k++) {
-                    if(records[n].problem == records[k].problem && records[n].subtask == records[k].subtask) {
-                        if(records[n].results == records[k].results) {
+            for(int n = 0; n < records_.size(); n++) {
+                for(int k = n + 1; k < records_.size(); k++) {
+                    if(records_[n].problem == records_[k].problem && records_[n].subtask == records_[k].subtask) {
+                        if(records_[n].results == records_[k].results) {
                             idx_to_remove.insert(k);
                         } else {
                             std::cout<<"Records number "<<n<<" and "<<k<<" contradics. Removing both of them"<<std::endl;
@@ -80,12 +91,12 @@ class TestResultsDB {
             std::vector<int> v(idx_to_remove.begin(), idx_to_remove.end());
             std::sort(v.begin(), v.end(), std::greater());
             for(auto idx : v) {
-                records.erase(records.begin() + idx);
+                records_.erase(records_.begin() + idx);
             }
         }
         std::vector<TestResultsRecord> getSimilar(const HypercubeProblem& problem, const SubtaskParameters& subtasks) {
             std::vector<TestResultsRecord> results;
-            for(auto it : records) {
+            for(auto it : records_) {
                 if(it.problem == problem && it.subtask.Ntasks == subtasks.Ntasks) {
                     results.push_back(it);
                 }
@@ -94,11 +105,11 @@ class TestResultsDB {
         }
         std::vector<TestResultsRecord> getUnique() {
             std::vector<TestResultsRecord> results;
-            for(auto it : records) {
+            for(auto it : records_) {
                 auto pos = std::find_if(results.begin(), results.end(), [&it](auto v1) {
                     return it.problem == v1.problem && it.subtask.Ntasks == v1.subtask.Ntasks;
                 });
-                if(pos == records.end()) {
+                if(pos == records_.end()) {
                     results.push_back(it);
                 }
             }
@@ -135,7 +146,7 @@ class TestResultsDB {
             return true;
         }
     private:
-        std::vector<TestResultsRecord> records;
+        std::vector<TestResultsRecord> records_;
 };
 
 #endif

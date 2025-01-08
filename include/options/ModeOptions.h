@@ -22,8 +22,15 @@ class MetaDataOptions : public PartialOptions {
         MetaDataOptions() : PartialOptions("Metadata options") {
             namespace po = boost::program_options;
             addPartialVisible("id", po::value(&taskId), "load task with taskId from input file");
+            addPartialVisible("all", po::bool_switch(&runall), "run all files from the specified file");
         }        
+        void validate() override {
+            if(taskId && runall) {
+                throw std::runtime_error("--id and --all should not be specified both");
+            }
+        }
     boost::optional<uint64_t> taskId;
+    bool runall;
 };
 
 #endif

@@ -42,16 +42,16 @@ class TaskDB {
             for(auto it : array) {                
                 TaskRecord r;
                 it.as_object() >> r;
-                records.push_back(std::move(r));
+                records_.push_back(std::move(r));
             }
         }
         void push_back(const std::optional<MetaData> meta, const RandomNumberGeneratorDescription& rng, std::optional<BitsRepackDescription> bits_repack, const HypercubeProblem& problem, const SubtaskParameters& subtask) {
-            records.push_back({meta, rng, bits_repack, problem, subtask});
+            records_.push_back({meta, rng, bits_repack, problem, subtask});
         }
         void writeToFile(const std::string& path) const {
             boost::json::object data;
             boost::json::array array;            
-            for(auto it : records) {
+            for(auto it : records_) {
                 boost::json::object obj;
                 obj << it;
                 array.push_back(obj);
@@ -64,14 +64,17 @@ class TaskDB {
             f<<data;
         }        
         std::optional<TaskRecord> find(uint64_t taskId) const {
-            for(auto it : records) {
+            for(auto it : records_) {
                 if(it.meta && it.meta->taskId == taskId) 
                     return it;
             }
             return std::nullopt;
         }
+        const std::vector<TaskRecord>& records() {
+            return records_;
+        }
     private:
-        std::vector<TaskRecord> records;
+        std::vector<TaskRecord> records_;
 };
 
 #endif

@@ -43,6 +43,7 @@ struct SubtaskResults {
 class DistributionSampler {
 public:
     virtual ~DistributionSampler() {}
+    virtual std::shared_ptr<DistributionSampler> copy() = 0;
     virtual size_t operator()(RandomBitGenerator &rng) = 0;
     virtual size_t max() = 0;
     virtual void discardN(size_t N, RandomBitGenerator &rng) = 0;
@@ -60,13 +61,17 @@ public:
         size_t data_size = getSubarraySize(problem, subtask);
         data.allocate(data_size);
         std::vector<std::thread> threads;
+        size_t prev_thread_start = 0;
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
             // MultiindexGeneratorT>(task, subtask, rng, sampler, subtask.n_threads,
             // thread_id);
-            // std::thread thread(&Chi2BasedTest::runThread, this, task, subtask, sampler, rng, thread_id);
-            Chi2BasedTest::runThread(problem, subtask, sampler, rng->copy(), n_threads, thread_id);
-            // threads.emplace_back(std::move(thread));
+            auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
+            sampler->discardN(thread_start - prev_thread_start, *rng);
+            prev_thread_start = thread_start;
+            //Chi2BasedTest::runThread(problem, subtask, sampler, rng->copy(), n_threads, thread_id);
+             std::thread thread(&Chi2BasedTest::runThread, this, problem, subtask, sampler->copy(), rng->copy(), n_threads, thread_id);
+            threads.emplace_back(std::move(thread));
         }
         for (auto &it : threads)
             it.join();
@@ -90,6 +95,10 @@ public:
         return res;
     }
 private:
+    void rewind(const Chi2BasedProblem& problem, size_t n_threads, size_t thread_id, std::shared_ptr<DistributionSampler> sampler, std::shared_ptr<RandomBitGenerator> rng) {
+        auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
+        sampler->discardN(thread_start, *rng);
+    }
     std::pair<size_t, size_t> split(size_t N, size_t total_tasks, size_t cur_task) {
         size_t start = N * (cur_task) / total_tasks;
         size_t end = N * (cur_task + 1) / total_tasks;
@@ -126,9 +135,9 @@ private:
                    std::shared_ptr<RandomBitGenerator> rng, size_t n_threads, size_t thread_id) {
         SubtaskResults res{.sum = 0, .sum2 = 0};
         auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
-        sampler->discardN(thread_start, *rng);
+        //sampler->discardN(thread_start, *rng);
         for (size_t n = 0; n < thread_end - thread_start; n++) {
-            size_t idx = (*sampler)(*rng);
+            size_t idx = (*sampler)(*rng);            
             increment(subtask, idx);
         }
     }

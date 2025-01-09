@@ -27,6 +27,11 @@ public:
 class HypercubeSampler : public DistributionSampler {
 public:
     HypercubeSampler(const HypercubeProblem &problem) : problem_(problem), int_distribution_(problem.m_intervals_per_dim - 1) {}
+    HypercubeSampler(const HypercubeSampler &other) : problem_(other.problem_), int_distribution_(other.int_distribution_), multi_index_{other.multi_index_} {}
+
+    std::shared_ptr<DistributionSampler> copy() override {
+        return std::make_shared<HypercubeSampler>(*this);
+    }
 
     uint64_t operator()(RandomBitGenerator &rng) override {
         if (multi_index_.empty()) {

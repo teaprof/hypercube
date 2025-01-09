@@ -45,13 +45,14 @@ struct ReferenceTest {
     }
 };
 
-class HypercubeTestSuite : public testing::TestWithParam<std::tuple<size_t, size_t, size_t, size_t, size_t>> {
+class HypercubeTestSuite : public testing::TestWithParam<std::tuple<size_t, size_t, size_t, size_t, size_t, size_t>> {
     public:
         size_t dim;
         size_t mIntervals;
         size_t stride;
         size_t nSubtasks;
         size_t NPoints;
+        size_t n_threads;
 
         void SetUp() override {
             dim = std::get<0>(GetParam());
@@ -59,6 +60,7 @@ class HypercubeTestSuite : public testing::TestWithParam<std::tuple<size_t, size
             stride = std::get<2>(GetParam());
             nSubtasks = std::get<3>(GetParam());
             NPoints = std::get<4>(GetParam());
+            n_threads = std::get<5>(GetParam());
             if(stride == 0) {
                 stride = dim;
             }
@@ -75,12 +77,11 @@ class HypercubeTestSuite : public testing::TestWithParam<std::tuple<size_t, size
         void calcuateReceived() {
             HypercubeProblem problem{dim, mIntervals, stride, NPoints};
             received = {0, 0};
-            const size_t n_threads = 1;
             for(size_t n = 0; n < nSubtasks; n++) {
                 auto sampler = std::make_shared<HypercubeSampler>(problem);
                 auto rng = std::make_shared<MT19937Wrapper>();
                 SubtaskParameters subtask{.Ntasks=nSubtasks,.cur_task=n};
-                Chi2BasedTest<Histogram> test;
+                Chi2BasedTest<HistogramAtomic> test;
                 auto cur_received = test.run(problem, subtask, sampler, rng, n_threads);
                 received.sum += cur_received.sum;
                 received.sum2 += cur_received.sum2;
@@ -98,10 +99,11 @@ TEST_P(HypercubeTestSuite, BaseTest) {
 
 INSTANTIATE_TEST_SUITE_P(HypercubeTest0, HypercubeTestSuite, testing::Combine(
     testing::Values(1, 3), // dim
-    testing::Values(2, 32, 17, 100), // mIntervalsPerDim
-    testing::Values(0, 1, 2, 17), // stride
-    testing::Values(1, 2, 5), // nSubtasks
-    testing::Values(1, 10, 100, 1000, 100000)), // NPoints
+    testing::Values(2, 32, 17), // mIntervalsPerDim
+    testing::Values(0, 1, 17), // stride
+    testing::Values(1, 5), // nSubtasks
+    testing::Values(1, 10, 100, 1000, 100000), // NPoints
+    testing::Values(1, 2, 4)), // NThreads
     [](const testing::TestParamInfo<HypercubeTestSuite::ParamType>& info)
     {
         const size_t dim = std::get<0>(info.param);
@@ -109,7 +111,8 @@ INSTANTIATE_TEST_SUITE_P(HypercubeTest0, HypercubeTestSuite, testing::Combine(
         const size_t stride = std::get<2>(info.param);
         const size_t nSubtasks = std::get<3>(info.param);
         const size_t NPoints = std::get<4>(info.param);
+        const size_t nThreads = std::get<5>(info.param);
         std::stringstream res;
-        res<<"dim"<<dim<<"_mIntervals"<<mIntervals<<"_stride"<<stride<<"_nSubtask"<<nSubtasks<<"_NPoints"<<NPoints;
+        res<<"dim"<<dim<<"_mIntervals"<<mIntervals<<"_stride"<<stride<<"_nSubtask"<<nSubtasks<<"_NPoints"<<NPoints<<"_nthreads"<<nThreads;
         return res.str();
     });

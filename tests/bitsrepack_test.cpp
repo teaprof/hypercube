@@ -121,3 +121,69 @@ TYPED_TEST(RepackTest, BitsPackSameOrderBigEndian) {
     ASSERT_EQ(res2, 0xABCD);
 }
 
+TYPED_TEST(RepackTest, BitsRepack6bitBEtoBE) {
+    FixedSequenceGenerator gen1(16, {0x1234, 0xABCD});
+    BitsUnpackT<TypeParam> unpacker(false);
+    BitsPackT<TypeParam> packerLittleEndian(6, false);
+    auto res1 = packerLittleEndian(unpacker, gen1);
+    auto res2 = packerLittleEndian(unpacker, gen1);
+    auto res3 = packerLittleEndian(unpacker, gen1);
+    auto res4 = packerLittleEndian(unpacker, gen1);
+    auto res5 = packerLittleEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 4);
+    ASSERT_EQ(res2, 35);
+    ASSERT_EQ(res3, 18);
+    ASSERT_EQ(res4, 43);
+    ASSERT_EQ(res5, 51);
+}
+
+
+TYPED_TEST(RepackTest, BitsRepack6bitBEtoLE) {
+    FixedSequenceGenerator gen1(16, {0x1234, 0xABCD});
+    BitsUnpackT<TypeParam> unpacker(false);
+    BitsPackT<TypeParam> packerLittleEndian(6, true);
+    auto res1 = packerLittleEndian(unpacker, gen1);
+    auto res2 = packerLittleEndian(unpacker, gen1);
+    auto res3 = packerLittleEndian(unpacker, gen1);
+    auto res4 = packerLittleEndian(unpacker, gen1);
+    auto res5 = packerLittleEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 8);
+    ASSERT_EQ(res2, 49);
+    ASSERT_EQ(res3, 18);
+    ASSERT_EQ(res4, 53);
+    ASSERT_EQ(res5, 51);
+}
+
+TYPED_TEST(RepackTest, BitsRepack6bitLEtoBE) {
+    FixedSequenceGenerator gen1(16, {0x1234, 0xABCD});
+    BitsUnpackT<TypeParam> unpacker(true);
+    BitsPackT<TypeParam> packerLittleEndian(6, false);
+    auto res1 = packerLittleEndian(unpacker, gen1);
+    auto res2 = packerLittleEndian(unpacker, gen1);
+    auto res3 = packerLittleEndian(unpacker, gen1);
+    auto res4 = packerLittleEndian(unpacker, gen1);
+    auto res5 = packerLittleEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 11);
+    ASSERT_EQ(res2, 4);
+    ASSERT_EQ(res3, 34);
+    ASSERT_EQ(res4, 51);
+    ASSERT_EQ(res5, 53);
+}
+
+
+TYPED_TEST(RepackTest, BitsRepack6bitLEtoLE) {
+    FixedSequenceGenerator gen1(16, {0x1234, 0xABCD});
+    BitsUnpackT<TypeParam> unpacker(true);
+    BitsPackT<TypeParam> packerLittleEndian(6, true);
+    auto res1 = packerLittleEndian(unpacker, gen1);
+    auto res2 = packerLittleEndian(unpacker, gen1);
+    auto res3 = packerLittleEndian(unpacker, gen1);
+    auto res4 = packerLittleEndian(unpacker, gen1);
+    auto res5 = packerLittleEndian(unpacker, gen1);
+    ASSERT_EQ(res1, 52);
+    ASSERT_EQ(res2, 8);
+    ASSERT_EQ(res3, 17);
+    ASSERT_EQ(res4, 51);
+    ASSERT_EQ(res5, 43);
+}
+

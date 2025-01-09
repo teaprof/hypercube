@@ -8,7 +8,7 @@
 #include<boost/json.hpp>
 #include<stat_tests/chi2based/StatisticalTestBase.h>
 #include<stat_tests/rng.h>
-#include<serializers/serializers.h>
+#include<serializers/jsonserializers.h>
 
 struct TaskRecord {
     std::optional<MetaData> meta;

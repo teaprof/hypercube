@@ -4,6 +4,7 @@
 #include<array>
 #include<vector>
 #include<cassert>
+#include<cstddef>
 
 template<class T>
 class CircularBuffer

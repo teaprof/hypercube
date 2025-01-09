@@ -57,7 +57,7 @@ class BasicOptions : public PartialOptions {
         void update(const boost::program_options::variables_map& vm) override {            
             //need_help = vm.count("help") > 0;
         }
-        bool needHelp() {
+        bool needHelp() const {
             return need_help;
         }
     private:
@@ -84,9 +84,9 @@ class MultithreadOptions : public PartialOptions {
         boost::optional<size_t> nthreads_;
 };
 
-class Options : protected PartialOptions {
+class ProgramOptions : protected PartialOptions {
     public:
-        Options() : PartialOptions("") {}
+        ProgramOptions() : PartialOptions("") {}
         virtual void addGroup(PartialOptions& options) {
             partial.add(options.partial);
             visible.add(options.visible);
@@ -111,7 +111,7 @@ class Options : protected PartialOptions {
             for(auto it : options_) 
                 it.get().validate();
         }
-        void help() {
+        void help() const {
             std::cout<<visible<<std::endl;
         }
     private:

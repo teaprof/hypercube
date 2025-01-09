@@ -6,7 +6,7 @@
 #include<set>
 #include<boost/json.hpp>
 #include<stat_tests/chi2based/StatisticalTestBase.h>
-#include<serializers/serializers.h>
+#include<serializers/jsonserializers.h>
 #include<TestResultsDB/MetaData.h>
 #include<TestResultsDB/TaskDB.h>
 

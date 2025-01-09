@@ -120,6 +120,28 @@ private:
     Packer bits_packer;
 };
 
+template<class IntType>
+void reverseBits(IntType& val, uint_fast8_t nbits) {
+    IntType mask1 = static_cast<uint64_t>(1) << (nbits - 1);
+    IntType mask2 = 1;
+    //uint_fast8_t nbits_2 = nbits/2;
+    while(mask1 > mask2) {
+        bool v1 = (val & mask1);
+        bool v2 = (val & mask2);
+        if(v1 != v2) {
+            if(v1) {
+                val &= ~mask1;
+                val |= mask2;
+            } else {
+                val |= mask1;
+                val &= ~mask2;
+            }
+        }
+        mask1 >>= 1;
+        mask2 <<= 1;
+    }
+}
+
 class BitsUnpackFast {
 public:
     BitsUnpackFast(bool little_endian): little_endian_{little_endian} { }
@@ -159,28 +181,11 @@ private:
     void refill(RandomBitGenerator& rng) {
         assert(empty());
         uint64_t val = rng();
-        if (little_endian_) {
-            buf_ = val;
-            buf_len_ = rng.nbits();
-        } else {
-            // start adding from hi bit
-            uint64_t high_mask = static_cast<uint64_t>(1) << (rng.nbits() - 1);
-            for (size_t n = 0; n < rng.nbits(); n++) {
-                push_back((val & high_mask) != 0);
-                high_mask >>= 1;
-            }
+        buf_ = val;
+        if (!little_endian_) {
+           reverseBits(buf_, rng.nbits());
         }
-    }
-    void push_back(bool v) {
-        //start adding from lo-end
-        assert(buf_len_ < 63);
-        uint64_t mask = (1 << buf_len_);
-        if(v) {
-            buf_ |= mask;
-        } else {
-            buf_ &= ~mask;
-        }        
-        buf_len_++;
+        buf_len_ = rng.nbits();
     }
     bool front() {
         return buf_ % 2;
@@ -220,11 +225,9 @@ private:
         return bits_unpacked.pop_front_little_endian(rng, sample_size_bits_);
     }
     uint64_t packBigEndian(BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
-        uint64_t res = 0;
-        for(uint16_t n = 0; n < sample_size_bits_; n++) {
-            res = (res<<1) + bits_unpacked.pop_front(rng);
-        }
-        return res;
+        uint64_t val = bits_unpacked.pop_front_little_endian(rng, sample_size_bits_);
+        reverseBits(val, sample_size_bits_);
+        return val;
     }
     bool little_endian_;
     uint16_t sample_size_bits_;

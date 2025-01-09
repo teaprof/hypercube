@@ -57,7 +57,6 @@ private:
     bool little_endian_;
 };
 
-
 template<class BoolQueue>
 class BitsPackT {
 public:
@@ -97,12 +96,13 @@ private:
     uint16_t sample_size_bits_;
 };
 
-template<class BoolQueue>
+
+template<class Unpacker, class Packer>
 class BitsRepackT : public RandomBitAdaptor {
 public:
     BitsRepackT(std::shared_ptr<RandomBitGenerator> rng, uint16_t dst_sample_size, bool src_little_endian, bool dst_little_endian) : RandomBitAdaptor(rng),
         bits_unpacker(src_little_endian), bits_packer(dst_sample_size, dst_little_endian) {}
-    BitsRepackT(const BitsRepackT<BoolQueue>& r) : RandomBitAdaptor(r), bits_unpacker(r.bits_unpacker), bits_packer(r.bits_packer) {}
+    BitsRepackT(const BitsRepackT<Unpacker, Packer>& r) : RandomBitAdaptor(r), bits_unpacker(r.bits_unpacker), bits_packer(r.bits_packer) {}
     virtual uint64_t operator()(RandomBitGenerator& rng) override {
         return bits_packer(bits_unpacker, rng);
     }
@@ -113,19 +113,136 @@ public:
         return bits_packer.nbits();
     }
     std::shared_ptr<RandomBitGenerator> copy() override {
-        return std::make_shared<BitsRepackT<BoolQueue>>(*this);
+        return std::make_shared<BitsRepackT<Unpacker, Packer>>(*this);
     }
 private:
-    BitsUnpackT<BoolQueue> bits_unpacker;
-    BitsPackT<BoolQueue> bits_packer;
+    Unpacker bits_unpacker;
+    Packer bits_packer;
+};
+
+class BitsUnpackFast {
+public:
+    BitsUnpackFast(bool little_endian): little_endian_{little_endian} { }
+    BitsUnpackFast(const BitsUnpackFast& other) : little_endian_{other.little_endian_}, buf_(other.buf_), buf_len_(other.buf_len_) {}    
+
+    bool pop_front(RandomBitGenerator &rng) {
+        if (empty()) {
+            refill(rng);
+        }
+        bool res = front();
+        pop();
+        return res;
+    }
+    uint64_t pop_front_little_endian(RandomBitGenerator &rng, uint_fast8_t nbits) {
+        uint64_t res = 0;
+        uint_fast8_t remaining = nbits;
+        uint_fast8_t mask_len = 0;
+        uint_fast8_t ready = 0;        
+        while(remaining > 0) {
+            if(buf_len_ == 0) {
+                refill(rng);
+                assert(buf_len_ > 0);
+            }
+            mask_len = std::min(buf_len_, remaining);        
+            uint64_t mask = (1 << mask_len) - 1;
+            uint64_t term = ((buf_ & mask) << ready);
+            res += term;
+
+            remaining -= mask_len;
+            ready += mask_len;
+            buf_ >>= mask_len;
+            buf_len_ -= mask_len;
+        }
+        return res;
+    }
+private:        
+    void refill(RandomBitGenerator& rng) {
+        assert(empty());
+        uint64_t val = rng();
+        if (little_endian_) {
+            buf_ = val;
+            buf_len_ = rng.nbits();
+        } else {
+            // start adding from hi bit
+            uint64_t high_mask = static_cast<uint64_t>(1) << (rng.nbits() - 1);
+            for (size_t n = 0; n < rng.nbits(); n++) {
+                push_back((val & high_mask) != 0);
+                high_mask >>= 1;
+            }
+        }
+    }
+    void push_back(bool v) {
+        //start adding from lo-end
+        assert(buf_len_ < 63);
+        uint64_t mask = (1 << buf_len_);
+        if(v) {
+            buf_ |= mask;
+        } else {
+            buf_ &= ~mask;
+        }        
+        buf_len_++;
+    }
+    bool front() {
+        return buf_ % 2;
+    }
+    void pop() {
+        assert(buf_len_ > 0);
+        buf_len_--;
+        buf_>>=1;
+    }
+    bool empty() {
+        return buf_len_ == 0;
+    }
+    bool little_endian_;
+    uint64_t buf_{0};
+    uint_fast8_t buf_len_{0};
+
+};
+
+class BitsPackFast {
+public:
+    BitsPackFast(uint16_t sample_size_bits, bool little_endian): little_endian_{little_endian}, sample_size_bits_{sample_size_bits}{ }
+    BitsPackFast(const BitsPackFast& other) : little_endian_{other.little_endian_}, sample_size_bits_{other.sample_size_bits_} {}
+    uint64_t operator()(BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
+        if(little_endian_) {
+            return packLittleEndian(bits_unpacked, rng);
+        }
+        return packBigEndian(bits_unpacked, rng);
+    }
+    uint64_t max() {
+        return (1<<sample_size_bits_) - 1;
+    }
+    uint16_t nbits() {
+        return sample_size_bits_;
+    }
+private:
+    uint64_t packLittleEndian(BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
+        return bits_unpacked.pop_front_little_endian(rng, sample_size_bits_);
+    }
+    uint64_t packBigEndian(BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
+        uint64_t res = 0;
+        for(uint16_t n = 0; n < sample_size_bits_; n++) {
+            res = (res<<1) + bits_unpacked.pop_front(rng);
+        }
+        return res;
+    }
+    bool little_endian_;
+    uint16_t sample_size_bits_;
 };
 
 
-using BitsRepackCircular = BitsRepackT<CircularQueue<bool>>;
-using BitsRepackStd = BitsRepackT<std::deque<bool>>;
+using BitsUnpackStd = BitsUnpackT<std::deque<bool>>;
+using BitsUnpackCircular = BitsUnpackT<CircularQueue<bool>>;
 
-using BitsUnpack = BitsUnpackT<std::deque<bool>>;
-using BitsPack = BitsPackT<std::deque<bool>>;
+using BitsPackStd = BitsPackT<std::deque<bool>>;
+using BitsPackCircular = BitsPackT<CircularQueue<bool>>;
+
+using BitsRepackCircular = BitsRepackT<BitsUnpackCircular, BitsPackCircular>;
+using BitsRepackStd = BitsRepackT<BitsUnpackStd, BitsPackStd>;
+using BitsRepackFast = BitsRepackT<BitsUnpackFast, BitsPackFast>;
+
+using BitsUnpack = BitsUnpackStd;
+using BitsPack = BitsPackStd;
 using BitsRepack = BitsRepackStd;
 //using BitsRepack = BitsRepackCircular;
 #endif

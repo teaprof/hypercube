@@ -3,6 +3,7 @@
 #include <stat_tests/hypercube/HypercubeTest.h>
 #include <progress/tictoc.h>
 
+#include <utility>
 #include <benchmark/benchmark.h>
 
 
@@ -39,6 +40,17 @@ static void bitsRepackCircular(benchmark::State& state) {
     }
     state.counters["rate"] = benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);        
 }
+
+template<bool src_little_endian, bool dst_little_endian>
+static void bitsRepackFast(benchmark::State& state) {
+    auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
+    BitsRepackFast repacker(rng, 32,src_little_endian, dst_little_endian);
+    for(auto _: state) {
+        repacker(*rng);
+    }
+    state.counters["rate"] = benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);        
+}
+
 
 static void hypercubeBenchSingleThread(benchmark::State& state) {
     const size_t Nsamples = 1'000'000;
@@ -102,6 +114,10 @@ BENCHMARK(stdMT19937);
 BENCHMARK(teaMT19937);
 BENCHMARK(bitsRepackStd);
 BENCHMARK(bitsRepackCircular);
+BENCHMARK_TEMPLATE(bitsRepackFast, false, false);
+BENCHMARK_TEMPLATE(bitsRepackFast, false, true);
+BENCHMARK_TEMPLATE(bitsRepackFast, true, false);
+BENCHMARK_TEMPLATE(bitsRepackFast, true, true);
 BENCHMARK(hypercubeBenchSingleThread);
 BENCHMARK(hypercubeBenchAtomic);
 BENCHMARK(hypercubeBenchMutexed);

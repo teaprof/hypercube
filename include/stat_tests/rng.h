@@ -33,7 +33,7 @@ std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorD
     }
     rng->discardN(rng_descr.offset);
     if(bits_repack_descr) {
-        auto repacker = std::make_shared<BitsRepack>(rng, bits_repack_descr->bits_per_sample, bits_repack_descr->src_little_endian, bits_repack_descr->dst_little_endian);
+        auto repacker = std::make_shared<BitsRepackFast>(rng, bits_repack_descr->bits_per_sample, bits_repack_descr->src_little_endian, bits_repack_descr->dst_little_endian);
         return repacker;
     }
     return rng;

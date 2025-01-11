@@ -91,9 +91,9 @@ public:
         StatiscticalTestResults res{.dof = 0, .chi2 = 0, .sum = 0, .sum2 = 0, .N = 0};
         res.dof = task.m_intervals_total - 1;
         res.N = task.N;
-        res.sum = std::accumulate(subtask_results.begin(), subtask_results.end(), 0,
+        res.sum = std::accumulate(subtask_results.begin(), subtask_results.end(), static_cast<uint64_t>(0),
                                   [](auto sum, auto &it) { return sum + it.sum; });
-        res.sum2 = std::accumulate(subtask_results.begin(), subtask_results.end(), 0,
+        res.sum2 = std::accumulate(subtask_results.begin(), subtask_results.end(), static_cast<uint64_t>(0),
                                    [](auto sum2, auto &it) { return sum2 + it.sum2; });
         res.mean = static_cast<double>(res.N)/task.m_intervals_total;
         res.chi2 = res.sum2/res.mean - res.N;

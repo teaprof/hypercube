@@ -37,7 +37,7 @@ class MetaDataOptions : public PartialOptions {
         bool isGatherMode() {
             return gather;
         }
-    boost::optional<uint64_t> taskId;
+    boost::optional<uint64_t> taskId;    
     bool gather;   
     bool runall;
 };

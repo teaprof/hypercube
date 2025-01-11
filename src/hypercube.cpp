@@ -63,9 +63,10 @@ class MyApplication {
             tasks_ = loadFromDB();
             if(tasks_.empty()) {
                 tasks_.push_back(loadFromOptions());
+            }            
+            for(auto it : tasks_) {                
+                std::cout<<it<<std::endl;
             }
-            for(auto it : tasks_)
-                std::cout<<it;
         }
 
         void run() {
@@ -90,6 +91,7 @@ class MyApplication {
 
         void runSubtask() {
             size_t nThreads = options_.multithread_options.nThreads();
+            nThreads = 1;
 
             for(auto task : tasks_) {
                 auto rng = createGenerator(task.rng, task.repack); 

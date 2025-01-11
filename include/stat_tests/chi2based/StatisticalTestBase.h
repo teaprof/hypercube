@@ -3,6 +3,7 @@
 
 #include <arrays/Histogram.h>
 #include <rng/dynamic/generators/RandomBitGenerator.h>
+#include <boost/math/distributions/chi_squared.hpp>
 
 #include <map>
 #include <thread>
@@ -20,9 +21,12 @@ struct Chi2BasedProblem {
 
 struct StatiscticalTestResults {
     size_t dof; // degrees of freedom
-    double chi2;
+    double chi2, chi2cdf, mean;
     size_t sum, sum2;
     size_t N;
+    bool operator==(const StatiscticalTestResults& other) const {
+        return dof == other.dof && chi2 == other.chi2 && chi2cdf == other.chi2cdf && mean == other.mean && sum == other.sum && sum2 == other.sum2 && N == other.N;
+    }
 };
 
 struct SubtaskParameters {
@@ -91,7 +95,11 @@ public:
                                   [](auto sum, auto &it) { return sum + it.sum; });
         res.sum2 = std::accumulate(subtask_results.begin(), subtask_results.end(), 0,
                                    [](auto sum2, auto &it) { return sum2 + it.sum2; });
-        res.chi2 = 0;
+        res.mean = static_cast<double>(res.N)/task.m_intervals_total;
+        res.chi2 = res.sum2/res.mean - res.N;
+        res.dof = task.m_intervals_total-1;
+        boost::math::chi_squared_distribution dist(res.dof);
+        res.chi2cdf = boost::math::cdf(dist, res.chi2);
         return res;
     }
 private:

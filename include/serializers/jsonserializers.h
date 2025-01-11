@@ -38,7 +38,7 @@ boost::json::object& operator<<(boost::json::object& object, const BitsRepackDes
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, BitsRepackDescription& bits_repack_descr) {
-    bits_repack_descr.bits_per_sample = object.at("repack_bits_per_sample").as_uint64();
+    bits_repack_descr.bits_per_sample = object.at("repack_bits_per_sample").as_int64();
     bits_repack_descr.src_little_endian = object.at("repack_src_little_endian").as_bool();
     bits_repack_descr.dst_little_endian =object.at("repack_dst_little_endian").as_bool();
     return object;
@@ -60,6 +60,8 @@ const boost::json::object& operator>>(const boost::json::object& object, Chi2Bas
 boost::json::object& operator<<(boost::json::object& object, const StatiscticalTestResults& results) {
     object.emplace("dof", results.dof);
     object.emplace("chi2", results.chi2);
+    object.emplace("chi2cdf", results.chi2cdf);
+    object.emplace("mean", results.mean);
     object.emplace("sum", results.sum);
     object.emplace("sum2", results.sum2);
     object.emplace("N", results.N);
@@ -69,6 +71,8 @@ boost::json::object& operator<<(boost::json::object& object, const StatiscticalT
 const boost::json::object& operator>>(const boost::json::object& object, StatiscticalTestResults& problem) {
     problem.dof = object.at("dof").as_int64();
     problem.chi2 = object.at("chi2").as_double();
+    problem.chi2cdf = object.at("chi2cdf").as_double();
+    problem.mean = object.at("mean").as_double();
     problem.sum = object.at("sum").as_int64();
     problem.sum2 = object.at("sum2").as_int64();
     problem.N = object.at("N").as_int64();

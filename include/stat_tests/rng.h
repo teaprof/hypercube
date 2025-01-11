@@ -12,12 +12,18 @@ struct RandomNumberGeneratorDescription {
     size_t rng_id;
     std::optional<size_t> seed; // if not set the default value for selected generator is used
     uint64_t offset;
+    bool operator==(const RandomNumberGeneratorDescription& other) const {
+        return rng_id == other.rng_id && seed == other.seed && offset == other.offset;
+    }
 };
 
 struct BitsRepackDescription {
     bool src_little_endian;
     bool dst_little_endian;
     uint16_t bits_per_sample;
+    bool operator==(const BitsRepackDescription& other) const {
+        return src_little_endian == other.src_little_endian && dst_little_endian == other.dst_little_endian && bits_per_sample == other.bits_per_sample;
+    }
 };
 
 std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, std::optional<BitsRepackDescription> bits_repack_descr) {

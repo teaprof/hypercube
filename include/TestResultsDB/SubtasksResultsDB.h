@@ -1,5 +1,5 @@
-#ifndef __TEST_RESULTS_DB_H__
-#define __TEST_RESULTS_DB_H__
+#ifndef __SUBTASKS_RESULTS_DB_H__
+#define __SUBTASKS_RESULTS_DB_H__
 
 #include<string>
 #include<fstream>
@@ -8,31 +8,30 @@
 #include<stat_tests/chi2based/StatisticalTestBase.h>
 #include<serializers/jsonserializers.h>
 #include<TestResultsDB/MetaData.h>
-#include<TestResultsDB/TaskDB.h>
+#include<TestResultsDB/SubtaskDB.h>
 
-struct TestResultsRecord : public TaskRecord {
+struct SubtaskResultsRecord : public SubtaskRecord {
     SubtaskResults results;
     double time;
 };
 
-boost::json::object& operator<<(boost::json::object& object, const TestResultsRecord& record) {
-    object<<static_cast<const TaskRecord&>(record);
+boost::json::object& operator<<(boost::json::object& object, const SubtaskResultsRecord& record) {
+    object<<static_cast<const SubtaskRecord&>(record);
     object<<record.results;
     object["time"] = record.time;
     return object;
 }
 
-const boost::json::object& operator>>(const boost::json::object& object, TestResultsRecord& record) {
-    object>>static_cast<TaskRecord&>(record);
+const boost::json::object& operator>>(const boost::json::object& object, SubtaskResultsRecord& record) {
+    object>>static_cast<SubtaskRecord&>(record);
     object>>record.results;
     record.time = object.at("time").as_double();
     return object;
 }
 
 
-class TestResultsDB {
+class SubtaskResultsDB {
     public:
-
         void readFromFile(const std::string& path) {
             std::ifstream f(path, std::ios::in);
             if(!f) {
@@ -42,7 +41,7 @@ class TestResultsDB {
             boost::json::value results_value = value.at("results");
             auto array = results_value.as_array();
             for(auto it : array) {                
-                TestResultsRecord r;
+                SubtaskResultsRecord r;
                 it.as_object() >> r;
                 records_.push_back(std::move(r));
             }
@@ -59,10 +58,10 @@ class TestResultsDB {
             std::ofstream f(path, std::ios::out | std::ios::trunc);
             f<<data;
         }        
-        void push_back(const TaskRecord& task, const SubtaskResults& results, double time) {
+        void push_back(const SubtaskRecord& task, const SubtaskResults& results, double time) {
             records_.push_back({task.meta, task.rng, task.repack, task.problem, task.subtask, results, time});
         }
-        void add(const std::vector<TaskRecord> &tasks, const std::vector<SubtaskResults>& results, const std::vector<double> times) {
+        void add(const std::vector<SubtaskRecord> &tasks, const std::vector<SubtaskResults>& results, const std::vector<double> times) {
             assert(tasks.size() == results.size());
             assert(tasks.size() == times.size());
             for(size_t n = 0; n < tasks.size(); n++) {
@@ -70,14 +69,16 @@ class TestResultsDB {
                 auto& res = results[n];
                 auto& time = times[n];
                 push_back(task, res, time);
-                sanitize();
             }
+            sanitize();
         }
         void sanitize() {
             std::set<int> idx_to_remove;
             for(int n = 0; n < records_.size(); n++) {
                 for(int k = n + 1; k < records_.size(); k++) {
-                    if(records_[n].problem == records_[k].problem && records_[n].subtask == records_[k].subtask) {
+                    auto r1 = static_cast<SubtaskRecord&>(records_[n]);
+                    auto r2 = static_cast<SubtaskRecord&>(records_[k]);
+                    if(r1 == r2) {
                         if(records_[n].results == records_[k].results) {
                             idx_to_remove.insert(k);
                         } else {
@@ -94,39 +95,39 @@ class TestResultsDB {
                 records_.erase(records_.begin() + idx);
             }
         }
-        std::vector<TestResultsRecord> getSimilar(const HypercubeProblem& problem, const SubtaskParameters& subtasks) {
-            std::vector<TestResultsRecord> results;
+        std::vector<SubtaskResultsRecord> getSimilar(const SubtaskRecord& subtask) const {
+            std::vector<SubtaskResultsRecord> results;
             for(auto it : records_) {
-                if(it.problem == problem && it.subtask.Ntasks == subtasks.Ntasks) {
+                if(subtask == it) {
                     results.push_back(it);
                 }
             }
             return results;
         }
-        std::vector<TestResultsRecord> getUnique() {
-            std::vector<TestResultsRecord> results;
+        std::vector<SubtaskResultsRecord> getUnique() const {
+            std::vector<SubtaskResultsRecord> results;
             for(auto it : records_) {
                 auto pos = std::find_if(results.begin(), results.end(), [&it](auto v1) {
-                    return it.problem == v1.problem && it.subtask.Ntasks == v1.subtask.Ntasks;
+                    return static_cast<SubtaskRecord>(it) == v1 && it.subtask.Ntasks == v1.subtask.Ntasks;
                 });
-                if(pos == records_.end()) {
+                if(pos == results.end()) {
                     results.push_back(it);
                 }
             }
             return results;
         }
-        std::vector<std::vector<TestResultsRecord>> getFinished() {
-            std::vector<std::vector<TestResultsRecord>> res;
+        std::vector<std::vector<SubtaskResultsRecord>> getFinished() const {
+            std::vector<std::vector<SubtaskResultsRecord>> res;
             auto uniq = getUnique();
             for(auto it : uniq) {
-                auto similar = getSimilar(it.problem, it.subtask);
+                auto similar = getSimilar(it);
                 if(checkComplete(similar)) {
                     res.push_back(similar);
                 }
             }
             return res;
         }
-        bool checkComplete(const std::vector<TestResultsRecord>& r) {
+        bool checkComplete(const std::vector<SubtaskResultsRecord>& r) const {
             if(r.empty()) {
                 return false;
             }
@@ -146,7 +147,7 @@ class TestResultsDB {
             return true;
         }
     private:
-        std::vector<TestResultsRecord> records_;
+        std::vector<SubtaskResultsRecord> records_;
 };
 
 #endif

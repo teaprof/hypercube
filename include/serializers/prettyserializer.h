@@ -1,11 +1,11 @@
 #ifndef __PRETTY_SERIALIZERS_H__
 #define __PRETTY_SERIALIZERS_H__
 
-#include "TestResultsDB/TaskDB.h"
+#include "TestResultsDB/SubtaskDB.h"
 #include <ostream>
 
 
-std::ostream& operator<<(std::ostream& str, const TaskRecord& task) {
+std::ostream& operator<<(std::ostream& str, const SubtaskRecord& task) {
     str<<"rng id = "<<task.rng.rng_id<<std::endl;
     if(task.rng.seed) {
         str<<"rng seed = "<<*task.rng.seed<<std::endl;

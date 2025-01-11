@@ -15,21 +15,45 @@ struct TaskRecord {
     RandomNumberGeneratorDescription rng;
     std::optional<BitsRepackDescription> repack;
     HypercubeProblem problem;
-    SubtaskParameters subtask;
+
+    bool operator==(const TaskRecord& other) const {
+        return meta == other.meta && rng == other.rng && repack == other.repack && problem == other.problem;
+    }
 };
 
+struct SubtaskRecord : public TaskRecord {
+    SubtaskParameters subtask;
+    bool operator==(const SubtaskRecord& other) const {
+        return static_cast<const TaskRecord&>(*this) == other && subtask == other.subtask;
+    }
+};
+
+
 boost::json::object& operator<<(boost::json::object& object, const TaskRecord& record) {
-    object<<record.meta<<record.rng<<record.repack<<record.problem<<record.subtask;
+    object<<record.meta<<record.rng<<record.repack<<record.problem;
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, TaskRecord& record) {
-    object>>record.meta>>record.rng>>record.repack>>record.problem>>record.subtask;
+    object>>record.meta>>record.rng>>record.repack>>record.problem;
     return object;
 }
 
 
-class TaskDB {
+boost::json::object& operator<<(boost::json::object& object, const SubtaskRecord& record) {
+    object<<static_cast<const TaskRecord&>(record);
+    object<<record.subtask;
+    return object;
+}
+
+const boost::json::object& operator>>(const boost::json::object& object, SubtaskRecord& record) {
+    object>>static_cast<TaskRecord&>(record);
+    object>>record.subtask;
+    return object;
+}
+
+
+class SubtaskDB {
     public:
         void readFromFile(const std::string& path) {
             std::ifstream f(path, std::ios::in);
@@ -37,10 +61,10 @@ class TaskDB {
                 throw std::runtime_error("Can't open file for reading");
             }
             auto value = boost::json::parse(f);
-            boost::json::value results_value = value.at("tasks");
+            boost::json::value results_value = value.at("subtasks");
             auto array = results_value.as_array();
             for(auto it : array) {                
-                TaskRecord r;
+                SubtaskRecord r;
                 it.as_object() >> r;
                 records_.push_back(std::move(r));
             }
@@ -56,25 +80,25 @@ class TaskDB {
                 obj << it;
                 array.push_back(obj);
             }
-            data["tasks"] = array;
+            data["subtasks"] = array;
             std::ofstream f(path, std::ios::out | std::ios::trunc);
             if(!f) {
                 throw std::runtime_error("can't open file for writing");
             }
             f<<data;
         }        
-        std::optional<TaskRecord> find(uint64_t taskId) const {
+        std::optional<SubtaskRecord> find(uint64_t taskId) const {
             for(auto it : records_) {
                 if(it.meta && it.meta->taskId == taskId) 
                     return it;
             }
             return std::nullopt;
         }
-        const std::vector<TaskRecord>& records() {
+        const std::vector<SubtaskRecord>& records() {
             return records_;
         }
     private:
-        std::vector<TaskRecord> records_;
+        std::vector<SubtaskRecord> records_;
 };
 
 #endif

@@ -8,14 +8,27 @@ class IOOptions : public PartialOptions {
     public:
     IOOptions() : PartialOptions("IO options") {
         namespace po = boost::program_options;
-        addPositionalVisible("input", 1, po::value(&inputFileName), "input file name");
-        addPositionalVisible("output", 1, po::value(&outputFileName), "output file name");
+        addPositionalVisible("input", 1, po::value(&subtasksFileName)->default_value("subtasks.json"), "file with subtasks");
+        addPositionalVisible("output", 1, po::value(&subtasksResultsFileName)->default_value("subtasks_results.json"), "file where subtask results should be written to");
+        addPositionalVisible("gatherfile", 1, po::value(&tasksResultsFileName)->default_value("tasks_results.json"), "file where task results should be gathered to");
         //addPartialVisible("byid", po::value(&runFromCommandLine), "run task with the specified id");
         //addPartialVisible("sample", po::value(&runTaskById), "sampling mode");
         //addPartialVisible("gather", po::value(&gatherResultsByTaskId), "gathering mode");
     }
-    boost::optional<std::string> inputFileName;
-    boost::optional<std::string> outputFileName;
+    void validate() override {
+        if(subtasksFileName.empty()) {
+            throw std::runtime_error("input file name should not be empty");
+        }
+        if(subtasksResultsFileName.empty()) {
+            throw std::runtime_error("outputfile name should not be empty");
+        }
+        if(tasksResultsFileName.empty()) {
+            throw std::runtime_error("gatherfile name should not be empty");
+        }
+    }
+    std::string subtasksFileName;
+    std::string subtasksResultsFileName;
+    std::string tasksResultsFileName;
 };
 
 #endif

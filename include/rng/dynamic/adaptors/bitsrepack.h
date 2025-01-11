@@ -4,6 +4,7 @@
 #include <rng/dynamic/adaptors/adaptor.h>
 #include <rng/dynamic/adaptors/circularbuffer.h>
 #include <queue>
+#include <bit>
 
 template<class BoolQueue>
 class BitsUnpackT {
@@ -144,8 +145,8 @@ void reverseBits(IntType& val, uint_fast8_t nbits) {
 
 class BitsUnpackFast {
 public:
-    BitsUnpackFast(bool little_endian): little_endian_{little_endian} { }
-    BitsUnpackFast(const BitsUnpackFast& other) : little_endian_{other.little_endian_}, buf_(other.buf_), buf_len_(other.buf_len_) {}    
+    BitsUnpackFast(bool little_endian): order{little_endian?std::endian::little : std::endian::big} { }
+    BitsUnpackFast(const BitsUnpackFast& other) : order{other.order}, buf_(other.buf_), buf_len_(other.buf_len_) {}    
 
     bool pop_front(RandomBitGenerator &rng) {
         if (empty()) {
@@ -182,7 +183,7 @@ private:
         assert(empty());
         uint64_t val = rng();
         buf_ = val;
-        if (!little_endian_) {
+        if (order == std::endian::big) {
            reverseBits(buf_, rng.nbits());
         }
         buf_len_ = rng.nbits();
@@ -198,7 +199,7 @@ private:
     bool empty() {
         return buf_len_ == 0;
     }
-    bool little_endian_;
+    std::endian order;
     uint64_t buf_{0};
     uint_fast8_t buf_len_{0};
 
@@ -206,13 +207,14 @@ private:
 
 class BitsPackFast {
 public:
-    BitsPackFast(uint16_t sample_size_bits, bool little_endian): little_endian_{little_endian}, sample_size_bits_{sample_size_bits}{ }
-    BitsPackFast(const BitsPackFast& other) : little_endian_{other.little_endian_}, sample_size_bits_{other.sample_size_bits_} {}
+    BitsPackFast(uint16_t sample_size_bits, bool little_endian): order{little_endian? std::endian::little : std::endian::big}, sample_size_bits_{sample_size_bits}{ }
+    BitsPackFast(const BitsPackFast& other) : order{other.order}, sample_size_bits_{other.sample_size_bits_} {}
     uint64_t operator()(BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
-        if(little_endian_) {
-            return packLittleEndian(bits_unpacked, rng);
+        uint64_t val = bits_unpacked.pop_front_little_endian(rng, sample_size_bits_);
+        if(order == std::endian::big) {
+            reverseBits(val, sample_size_bits_);
         }
-        return packBigEndian(bits_unpacked, rng);
+        return val;
     }
     uint64_t max() {
         return (1<<sample_size_bits_) - 1;
@@ -221,15 +223,7 @@ public:
         return sample_size_bits_;
     }
 private:
-    uint64_t packLittleEndian(BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
-        return bits_unpacked.pop_front_little_endian(rng, sample_size_bits_);
-    }
-    uint64_t packBigEndian(BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
-        uint64_t val = bits_unpacked.pop_front_little_endian(rng, sample_size_bits_);
-        reverseBits(val, sample_size_bits_);
-        return val;
-    }
-    bool little_endian_;
+    std::endian order;
     uint16_t sample_size_bits_;
 };
 

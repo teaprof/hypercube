@@ -9,6 +9,10 @@ struct MetaData {
     uint64_t taskId;
     std::optional<uint64_t> parentId;
     std::vector<uint64_t> childIds;
+
+    bool operator==(const MetaData& other) const {
+        return taskId == other.taskId && parentId == other.parentId && childIds == other.childIds;
+    }
 };
 
 #endif

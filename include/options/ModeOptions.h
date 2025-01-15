@@ -1,45 +1,67 @@
 #ifndef __MODE_OPTIONS_H__
 #define __MODE_OPTIONS_H__
-#include <options/BasicOptions.h>
-#include <boost/optional.hpp>
 
-class MetaDataOptions : public PartialOptions {
+#include <map>
+
+#include "options/BasicOptions.h"
+
+class Mode : public ProgramOptions {
     public:
-        MetaDataOptions() : PartialOptions("Metadata options") {
-            namespace po = boost::program_options;
-            addPartialVisible("id", po::value(&taskId), "load task with taskId from input file");
-            addPartialVisible("all,a", po::bool_switch(&runall), "run all files from the specified file");
-            addPartialVisible("gather", po::bool_switch(&gather), "gather results [default]");
-        }   
-        void update(const boost::program_options::variables_map& vm) override {
-            if(!taskId && !runall) {
-                gather = true;
-            }
+        //Mode(const std::string_view& modename) : modename_(modename) { }
+        
+        void help() {
+            std::cout<<"Mode "<<modename_<<" options "<<std::endl;
+            std::cout<<visible<<std::endl;
         }
-        void validate() override {
-            size_t count = 0;
-            if(taskId) {
-                count++;
-            }
-            if(gather) {
-                count++;
-            }
-            if(runall) {
-                count++;
-            }
-            if(count != 1) {
-                throw std::runtime_error("--id, --all or --gather should be specified");
-            }
-        }
-        bool isRunMode() {
-            return runall || taskId;
-        }
-        bool isGatherMode() {
-            return gather;
-        }
-    boost::optional<uint64_t> taskId;    
-    bool gather;   
-    bool runall;
+        std::string modename_;
 };
+
+class ProgramModesOptions {
+    public:
+    Mode& operator[](const std::string& str) {
+        if(!modes.contains(str)) {
+            modes.emplace(str, std::move(Mode{}));
+        }
+        return modes.at(str);
+    }
+    void setDefaultMode(const std::string& mode) {
+        default_mode_ = mode;
+    }
+    bool parse(int argc, char* argv[]) {
+        assert(!modes.empty());
+        isDefault = false;
+        if(argc < 2) {
+            isDefault = true;
+            selected_mode = modes.find(default_mode_); //could be modes.end()
+            return false;
+        };
+        char* first_arg = argv[1];
+        selected_mode = modes.find(first_arg);
+        if(selected_mode == modes.end()) {
+            std::stringstream str;
+            str<<"unknown mode: "<<first_arg;
+            throw std::runtime_error(str.str());
+        };
+        argc++;
+        argv++;
+        selected_mode->second.parse(argc, argv);
+        return true;
+    }
+    std::map<std::string, Mode>::iterator selected_mode;
+    std::map<std::string, Mode> modes;
+    std::string default_mode_{"default"};
+    bool isDefault{false};
+};
+
+void ttt() {
+    ProgramModesOptions modes;
+    PartialOptions runOptions("run group");
+    PartialOptions gatherOptions("gather group");
+    PartialOptions commonOptions("common group");
+    modes["run"].addGroup(runOptions);
+    modes["run"].addGroup(commonOptions);
+    modes["gather"].addGroup(gatherOptions);
+    modes["gather"].addGroup(commonOptions);
+}
 
 #endif

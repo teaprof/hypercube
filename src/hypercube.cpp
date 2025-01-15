@@ -7,6 +7,7 @@
 #include "options/RngOptions.h"
 #include "options/SubtaskOptions.h"
 #include "options/HypercubeOptions.h"
+#include "options/MetaDataOptions.h"
 #include "options/ModeOptions.h"
 #include "options/IOoptions.h"
 #include "serializers/prettyserializer.h"

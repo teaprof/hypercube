@@ -45,7 +45,7 @@ class MyProgramOptions : public ProgramOptions {
 
 class MyApplication {
     public:
-        MyApplication(int argc, char* argv[]) {
+        MyApplication(int argc, const char* argv[]) {
             options_.parse(argc, argv);
         }
         ~MyApplication() {}
@@ -191,7 +191,7 @@ class MyApplication {
 };
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, const char* argv[]) {
     try {                
         std::cout<<"Program have been run with the following options:"<<std::endl;
         for(int n = 0; n < argc; n++) {

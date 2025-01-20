@@ -27,7 +27,7 @@ class ProgramModesOptions {
     void setDefaultMode(const std::string& mode) {
         default_mode_ = mode;
     }
-    bool parse(int argc, char* argv[]) {
+    bool parse(int argc, const char* argv[]) {
         assert(!modes.empty());
         isDefault = false;
         if(argc < 2) {
@@ -35,14 +35,14 @@ class ProgramModesOptions {
             selected_mode = modes.find(default_mode_); //could be modes.end()
             return false;
         };
-        char* first_arg = argv[1];
+        const char* first_arg = argv[1];
         selected_mode = modes.find(first_arg);
         if(selected_mode == modes.end()) {
             std::stringstream str;
             str<<"unknown mode: "<<first_arg;
             throw std::runtime_error(str.str());
         };
-        argc++;
+        argc--;
         argv++;
         selected_mode->second.parse(argc, argv);
         return true;

@@ -98,7 +98,7 @@ class ProgramOptions : protected PartialOptions {
                 positional = options.positional;
             }
         }
-        virtual void parse(int argc, char* argv[]) {
+        virtual void parse(int argc, const char* argv[]) {
             namespace po = boost::program_options;
             po::store(po::command_line_parser(argc, argv).options(partial).positional(positional).run(), vm);
             boost::program_options::notify(vm);

@@ -7,6 +7,7 @@
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <options/prettyprinter.h>
 
 class PartialOptions {
     public:
@@ -37,22 +38,24 @@ class PartialOptions {
         virtual void validate() {
             //nothing to do
         }
+        virtual void help(size_t level = 3) {
+            visible.print(std::cout);
+        }
         //These vars are used only for parsing arguments
         boost::program_options::options_description partial;
         boost::program_options::positional_options_description  positional;        
 
         //These vars are used only for printing help message
         boost::program_options::options_description visible;
-        boost::program_options::options_description hidden;        
+        boost::program_options::options_description hidden; 
+        TextSection section;
 };
 
-class BasicOptions : public PartialOptions {
+class HelpOptions : public PartialOptions {
     public:
-        BasicOptions() : PartialOptions("Basic options") {
+        HelpOptions() : PartialOptions("Help options") {
             namespace po = boost::program_options;
-            //addPartialVisible("help", new po::untyped_value(true), "produce help");
-            //addPartialVisible("help", po::value(&need_help), "produce help");
-            addPartialVisible("help", po::bool_switch(&need_help), "produce help");
+            addPartialVisible("help", po::bool_switch(&need_help), "produce this help");
         }
         void update(const boost::program_options::variables_map& vm) override {            
             //need_help = vm.count("help") > 0;

@@ -3,7 +3,6 @@
 #include <options/BasicOptions.h>
 #include <optional>
 
-/// UNUSED NOW
 class IOOptions : public PartialOptions {
     public:
     IOOptions() : PartialOptions("IO options") {
@@ -11,9 +10,6 @@ class IOOptions : public PartialOptions {
         addPositionalVisible("input", 1, po::value(&subtasksFileName)->default_value("subtasks.json"), "file with subtasks");
         addPositionalVisible("output", 1, po::value(&subtasksResultsFileName)->default_value("subtasks_results.json"), "file where subtask results should be written to");
         addPositionalVisible("gatherfile", 1, po::value(&tasksResultsFileName)->default_value("tasks_results.json"), "file where task results should be gathered to");
-        //addPartialVisible("byid", po::value(&runFromCommandLine), "run task with the specified id");
-        //addPartialVisible("sample", po::value(&runTaskById), "sampling mode");
-        //addPartialVisible("gather", po::value(&gatherResultsByTaskId), "gathering mode");
     }
     void validate() override {
         if(subtasksFileName.empty()) {
@@ -29,6 +25,20 @@ class IOOptions : public PartialOptions {
     std::string subtasksFileName;
     std::string subtasksResultsFileName;
     std::string tasksResultsFileName;
+};
+
+class SubtasksOutput : public PartialOptions {
+    public:
+    SubtasksOutput() : PartialOptions("IO options") {
+        namespace po = boost::program_options;
+        addPositionalVisible("output", 1, po::value(&subtasksFileName)->default_value("subtasks_results.json"), "file with subtasks to generate");
+    }
+    void validate() override {
+        if(subtasksFileName.empty()) {
+            throw std::runtime_error("input file name should not be empty");
+        }
+    }
+    std::string subtasksFileName;
 };
 
 #endif

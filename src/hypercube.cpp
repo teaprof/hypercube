@@ -19,18 +19,25 @@
 
 #include<memory>
 
-class MyProgramOptions : public ProgramOptions {
+class MyProgramOptions : public ProgramModesOptions {
     public:
     MyProgramOptions() {
-        addGroup(meta_data_options);
-        addGroup(rng_options);
-        addGroup(bits_repack_options);
-        //addGroup(sampling_options);
-        addGroup(hypercube_options);
-        addGroup(subtask_options);
-        addGroup(multithread_options);        
-        addGroup(io_options);
-        addGroup(basic_options);
+        program_description="Hypercube statistical test for random number generators.";
+        (*this)["run"].setTitle("Run options");
+        (*this)["run"].addGroup(meta_data_options);
+        (*this)["run"].addGroup(rng_options);
+        (*this)["run"].addGroup(bits_repack_options);
+        //(*this)["run"].addGroup(sampling_options);
+        (*this)["run"].addGroup(hypercube_options);
+        (*this)["run"].addGroup(subtask_options);
+        (*this)["run"].addGroup(multithread_options);        
+        (*this)["run"].addGroup(io_options);
+        (*this)["run"].addGroup(help_options);
+        (*this)["gather"].addGroup(io_options);
+        (*this)["gather"].setTitle("Gather options");
+        (*this)["generate"].addGroup(subtasks_output_options);
+        (*this)["generate"].setTitle("Generate options");
+        this->defaultMode().addGroup(help_options);
     }
     MetaDataOptions meta_data_options;
     RNGOptions rng_options;
@@ -40,7 +47,8 @@ class MyProgramOptions : public ProgramOptions {
     SubtaskOptions subtask_options;
     MultithreadOptions multithread_options;
     IOOptions io_options;
-    BasicOptions basic_options;
+    SubtasksOutput subtasks_output_options;
+    HelpOptions help_options;
 };
 
 class MyApplication {
@@ -193,13 +201,13 @@ class MyApplication {
 
 int main(int argc, const char* argv[]) {
     try {                
-        std::cout<<"Program have been run with the following options:"<<std::endl;
+        /*std::cout<<"Program have been run with the following options:"<<std::endl;
         for(int n = 0; n < argc; n++) {
             std::cout<<"    "<<argv[n]<<std::endl;
-        }
+        }*/
         MyApplication app(argc, argv);
-        if(app.options().basic_options.needHelp()) {
-            app.options().help();
+        if(app.options().help_options.needHelp()) {
+            app.options().help().print(0);
             return 0;
         }
         app.init();

@@ -3,9 +3,9 @@
 #include <options/BasicOptions.h>
 #include <boost/optional.hpp>
 
-class MetaDataOptions : public PartialOptions {
+class MetaDataOptions : public OptionsGroupStorage {
     public:
-        MetaDataOptions() : PartialOptions("Metadata options") {
+        MetaDataOptions() : OptionsGroupStorage("Metadata options") {
             namespace po = boost::program_options;
             addPartialVisible("id", po::value(&taskId), "load task with taskId from input file");
             addPartialVisible("all,a", po::bool_switch(&runall), "run all files from the specified file");

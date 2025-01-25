@@ -11,8 +11,8 @@ class TextSection {
     std::stringstream title;
     std::stringstream header;
     std::stringstream body;
-    std::stringstream footer;
     std::vector<TextSection> subsections;
+    std::stringstream footer;
 
     void print(size_t level) {
         printTitle(level, title);

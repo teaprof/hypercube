@@ -3,9 +3,9 @@
 #include <options/BasicOptions.h>
 #include <optional>
 
-class IOOptions : public PartialOptions {
+class IOOptions : public OptionsGroupStorage {
     public:
-    IOOptions() : PartialOptions("IO options") {
+    IOOptions() : OptionsGroupStorage("IO options") {
         namespace po = boost::program_options;
         addPositionalVisible("input", 1, po::value(&subtasksFileName)->default_value("subtasks.json"), "file with subtasks");
         addPositionalVisible("output", 1, po::value(&subtasksResultsFileName)->default_value("subtasks_results.json"), "file where subtask results should be written to");
@@ -27,9 +27,9 @@ class IOOptions : public PartialOptions {
     std::string tasksResultsFileName;
 };
 
-class SubtasksOutput : public PartialOptions {
+class SubtasksOutput : public OptionsGroupStorage {
     public:
-    SubtasksOutput() : PartialOptions("IO options") {
+    SubtasksOutput() : OptionsGroupStorage("IO options") {
         namespace po = boost::program_options;
         addPositionalVisible("output", 1, po::value(&subtasksFileName)->default_value("subtasks_results.json"), "file with subtasks to generate");
     }

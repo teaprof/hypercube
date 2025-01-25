@@ -6,9 +6,9 @@
 #include <memory>
 #include <cstdint>
 
-class HypercubeOptions : public PartialOptions {
+class HypercubeOptions : public OptionsGroupStorage {
     public:
-        HypercubeOptions() : PartialOptions("Hypercube test options") {
+        HypercubeOptions() : OptionsGroupStorage("Hypercube test options") {
             namespace po = boost::program_options;
             addPartialVisible("dim,d", po::value<size_t>(&dim)->default_value(2), "hypercube dimension");
             addPartialVisible("nintervals,m", po::value<size_t>(&nIntervals)->default_value(100), "number of intervals per each dimension");

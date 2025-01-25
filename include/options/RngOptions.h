@@ -17,9 +17,9 @@ std::optional<T> to_std_optional(boost::optional<T> v) {
     return std::nullopt;
 }
 
-class RNGOptions : public PartialOptions {
+class RNGOptions : public OptionsGroupStorage {
     public:
-        RNGOptions() : PartialOptions("RNG options") {
+        RNGOptions() : OptionsGroupStorage("RNG options") {
             namespace po = boost::program_options;
             addPartialVisible("name", po::value<std::string>(&name)->default_value("mt19937"), "rng name");
             //addPartialVisible("number", po::value<uint16_t>(&number)->default_value(0), "rng number");
@@ -43,9 +43,9 @@ class RNGOptions : public PartialOptions {
         size_t offset{0};
 };
 
-class BitsRepackOptions : public PartialOptions {
+class BitsRepackOptions : public OptionsGroupStorage {
     public:
-        BitsRepackOptions() : PartialOptions("Bits repack options") {
+        BitsRepackOptions() : OptionsGroupStorage("Bits repack options") {
             namespace po = boost::program_options;
             addPartialVisible("srcLittleEndian", po::value(&src_little_endian), "is source little endian?");
             addPartialVisible("dstLittleEndian", po::value(&dst_little_endian), "is dest little endian?");

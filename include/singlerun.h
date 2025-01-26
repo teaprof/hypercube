@@ -59,7 +59,7 @@ class SingleRun {
         void initSubtasks() {
             tasks_ = loadFromDB();
             if(tasks_.empty()) {
-                tasks_.push_back(loadFromOptions());
+                tasks_ = loadFromOptions();
             }
             std::cout<<"The following tasks have been created:\n";
             for(auto it : tasks_) {                
@@ -123,12 +123,16 @@ class SingleRun {
             }
             return res;
         }
-        SubtaskRecord loadFromOptions() {
-            SubtaskRecord res;
-            res.problem = options_.hypercube_options.problem();
-            res.subtask = SubtaskParameters{.Ntasks=options_.subtask_options.nSubtasks,.cur_task=options_.subtask_options.curSubtask};
-            res.repack = options_.bits_repack_options.description();
-            res.rng = options_.rng_options.description();        
+        std::vector<SubtaskRecord> loadFromOptions() {
+            std::vector<SubtaskRecord> res;
+            for(auto problem : options_.hypercube_options) {
+                SubtaskRecord subtask;
+                subtask.problem = problem;
+                subtask.subtask = SubtaskParameters{.Ntasks=options_.subtask_options.nSubtasks,.cur_task=options_.subtask_options.curSubtask};
+                subtask.repack = options_.bits_repack_options.description();
+                subtask.rng = options_.rng_options.description();        
+                res.push_back(std::move(subtask));
+            }
             return res;
         }
         void saveResults(const std::string& filename) {

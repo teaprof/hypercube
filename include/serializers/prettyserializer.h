@@ -22,7 +22,7 @@ std::ostream& operator<<(std::ostream& str, const SubtaskRecord& task) {
     }
     str<<"dim = "<<task.problem.dim<<std::endl;
     str<<"nIntervals = "<<task.problem.m_intervals_per_dim<<std::endl;
-    str<<"nIntervalsTotal = "<<task.problem.m_intervals_total<<std::endl;
+    str<<"nIntervalsTotal = "<<task.problem.n_cells_total<<std::endl;
     str<<"nSamples = "<<task.problem.N<<std::endl;
 
     str<<"nSubtask = "<<task.subtask.Ntasks<<std::endl;

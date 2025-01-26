@@ -57,13 +57,13 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
             return option;
         }
 
-        bool notSpecified() {
+        /*bool notSpecified() {
             //return true if none of the options were specified
             return not_specified_;
-        }
+        }*/
 
         virtual void update(const boost::program_options::variables_map& vm) {
-            not_specified_ = true;
+            /*not_specified_ = true;
             for(auto v : vm) {
                 std::cout<<v.first<<" "<<v.second.defaulted()<<" "<<v.second.empty()<<std::endl;
             }
@@ -72,7 +72,7 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
                     not_specified_ = false;
                     break;
                 }
-            }
+            }*/
         }
         virtual void validate() {
             //nothing to do
@@ -95,7 +95,7 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
         boost::program_options::options_description visible;
         boost::program_options::options_description hidden;         
     private:
-        bool not_specified_{true}; // true if none of the positional or partial options are specified
+        //bool not_specified_{true}; // true if none of the positional or partial options are specified
 };
 
 class ProgramOptions : public DocumentedOptionsGroup {

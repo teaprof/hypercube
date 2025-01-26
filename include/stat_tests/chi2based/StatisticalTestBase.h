@@ -13,9 +13,9 @@
 
 struct Chi2BasedProblem {
     size_t N;
-    size_t m_intervals_total;
+    size_t n_cells_total;
     bool operator==(const Chi2BasedProblem& other) const {
-        return N == other.N && m_intervals_total == other.m_intervals_total;
+        return N == other.N && n_cells_total == other.n_cells_total;
     }
 };
 
@@ -61,7 +61,7 @@ public:
 
     SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
                     std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
-        assert(problem.m_intervals_total == sampler->max() + 1);
+        assert(problem.n_cells_total == sampler->max() + 1);
         size_t data_size = getSubarraySize(problem, subtask);
         data.allocate(data_size);
         std::vector<std::thread> threads;
@@ -89,15 +89,15 @@ public:
                                     const std::vector<SubtaskResults> &subtask_results) {
         assert(n_subtasks == subtask_results.size());
         StatiscticalTestResults res{.dof = 0, .chi2 = 0, .sum = 0, .sum2 = 0, .N = 0};
-        res.dof = task.m_intervals_total - 1;
+        res.dof = task.n_cells_total - 1;
         res.N = task.N;
         res.sum = std::accumulate(subtask_results.begin(), subtask_results.end(), static_cast<uint64_t>(0),
                                   [](auto sum, auto &it) { return sum + it.sum; });
         res.sum2 = std::accumulate(subtask_results.begin(), subtask_results.end(), static_cast<uint64_t>(0),
                                    [](auto sum2, auto &it) { return sum2 + it.sum2; });
-        res.mean = static_cast<double>(res.N)/task.m_intervals_total;
+        res.mean = static_cast<double>(res.N)/task.n_cells_total;
         res.chi2 = res.sum2/res.mean - res.N;
-        res.dof = task.m_intervals_total-1;
+        res.dof = task.n_cells_total-1;
         boost::math::chi_squared_distribution dist(res.dof);
         res.chi2cdf = boost::math::cdf(dist, res.chi2);
         return res;
@@ -125,7 +125,7 @@ private:
 
     size_t getSubarraySize(const Chi2BasedProblem problem, const SubtaskParameters& subtask) {
         size_t res = 0;
-        for(size_t n = 0; n < problem.m_intervals_total; n++)
+        for(size_t n = 0; n < problem.n_cells_total; n++)
             if(n % subtask.Ntasks == subtask.cur_task)
                 res++;
         return res;

@@ -47,13 +47,13 @@ const boost::json::object& operator>>(const boost::json::object& object, BitsRep
 
 boost::json::object& operator<<(boost::json::object& object, const Chi2BasedProblem& problem) {
     object.emplace("N", problem.N);
-    object.emplace("m_intervals_total", problem.m_intervals_total);
+    object.emplace("n_cells_total", problem.n_cells_total);
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, Chi2BasedProblem& problem) {
     problem.N = object.at("N").as_int64();
-    problem.m_intervals_total = object.at("m_intervals_total").as_int64();
+    problem.n_cells_total = object.at("n_cells_total").as_int64();
     return object;
 }
 

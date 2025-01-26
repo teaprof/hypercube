@@ -25,11 +25,13 @@ class TaskGeneratorOptions : public ProgramOptions {
     TaskGeneratorOptions() {
         addGroup(subtasks_output_options);
         addGroup(runtime_options);
-        addGroup(hypercube_options); // to add a specified hypercube test
+        addGroup(rng_options);
+        addGroup(hypercube_options); // to add a specified hypercube test        
     }
     SubtasksOutput subtasks_output_options;
     HypercubeOptions hypercube_options;
     RuntimeOptions runtime_options;
+    RNGOptions rng_options;
 };
 
 
@@ -38,7 +40,24 @@ class TaskGenerator {
     TaskGenerator(const TaskGeneratorOptions& options) : options_{options} {}
     void init() {}
     void run() {
-        std::cout<<"Hypercube opts not specified: "<<options_.hypercube_options.notSpecified()<<std::endl;
+        size_t task_id = 0;
+        SubtaskDB tasks;
+        for(auto problem : options_.hypercube_options) {            
+            size_t totalMB = problem.n_cells_total*sizeof(size_t);
+            size_t total_subtasks = std::ceil(totalMB/options_.runtime_options.RAM/1024.0/1024.0);
+            for(size_t n = 0; n < total_subtasks; n++) {
+                SubtaskParameters subtask{.Ntasks = total_subtasks, .cur_task=n};
+                //subtask.repack = options_.bits_repack_options.description();
+                //subtask.rng = options_.rng_options.description();                        
+                auto rng_descr = options_.rng_options.description();
+                MetaData meta1{.taskId=task_id++};
+                tasks.push_back(meta1, rng_descr, std::nullopt, problem, subtask);
+            }                            
+        }
+        std::cout<<"Totally generated "<<tasks.records().size()<<" subtasks"<<std::endl;
+        std::cout<<"Writing db..."<<std::endl;
+        tasks.writeToFile("subtasks.json");
+        std::cout<<"finished!"<<std::endl;
     }
     /*void run() {
         SubtaskDB tasks;
@@ -64,7 +83,9 @@ class TaskGenerator {
         }
         tasks.writeToFile("subtasks.json");
     }*/
-    void done() {}
+    void done() {
+
+    }
     private:
     TaskGeneratorOptions options_;
 };

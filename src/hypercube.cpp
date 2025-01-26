@@ -26,12 +26,19 @@ class MyProgramOptions : public ProgramModesOptions {
     public:
     MyProgramOptions() {
         program_description="Hypercube statistical test for random number generators.";        
-        (*this)["all"].setTitle("Run all options");
-        (*this)["all"].setHeader("run the default set of tests.");
-        push_back("run", single_run_options);        
-        push_back("gather", gather_options);
+        push_back("run", single_run_options); // run subtasks and gather
+        push_back("gather", gather_options); // gather only
         push_back("generate", task_generator_options);
         this->defaultMode().addGroup(help_options);
+
+        //(*this)["all"].setTitle("Run all options");
+        //(*this)["all"].setHeader("run the default set of tests.");
+        (*this)["run"].setTitle("Run options");
+        (*this)["run"].setHeader("run the specified subtasks");
+        (*this)["gather"].setTitle("Gather only options");
+        (*this)["gather"].setHeader("gather results of the finished subtasks and update final statistics");
+        (*this)["generate"].setTitle("Generate subtasks options");
+        (*this)["generate"].setHeader("generate subtasks.");
     }
     SingleRunOptions single_run_options;
     GatherOptions gather_options;
@@ -49,16 +56,45 @@ class MyApplication {
         }
         void init() {
             if(options_.selectedModeName() == "run") {
-                
-            }             
+                single_run.emplace(options_.single_run_options);
+                gatherer.emplace(options_.single_run_options.io_options);
+                single_run->init();
+                gatherer->init();
+            } else if(options_.selectedModeName() == "gather") {
+                gatherer.emplace(options_.gather_options);
+                gatherer->init();
+            } else if(options_.selectedModeName() == "generate") {
+                task_generator.emplace(options_.task_generator_options);
+                task_generator->init();
+            }
         }
         void run() {
+            if(task_generator.has_value()) {
+                task_generator->run();
+            }
+            if(single_run.has_value()) {
+                single_run->run();
+            }
+            if(gatherer.has_value()) {
+                gatherer->run();
+            }
         }
         void done() {
+            if(task_generator.has_value()) {
+                task_generator->done();
+            }
+            if(single_run.has_value()) {
+                single_run->done();
+            }
+            if(gatherer.has_value()) {
+                gatherer->done();
+            }
         }
     private:
         MyProgramOptions options_;
         std::optional<SingleRun> single_run;
+        std::optional<Gatherer> gatherer;
+        std::optional<TaskGenerator> task_generator;
 };
 
 int main(int argc, const char* argv[]) {

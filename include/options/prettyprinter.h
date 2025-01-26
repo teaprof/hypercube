@@ -25,18 +25,19 @@ class TextSection {
         }
         printText(level, footer);
     }
+    private:
 
     static void printTitle(size_t level, const std::stringstream& str) {
         if(str.view().empty()) {
             return;
-        }    
-        std::cout<<"\n"<<addPrefix(prefix(level), str.view())<<std::endl;
+        }        
+        std::cout<<"\n"<<addPrefix(titleprefix(level), str.view())<<std::endl;
     }
     static void printText(size_t level, const std::stringstream& str) {
         if(str.view().empty()) {
             return;
         }        
-        std::cout<<addPrefix(prefix(level), str.view())<<std::endl;
+        std::cout<<addPrefix(textprefix(level), str.view())<<std::endl;
     }
     static std::string addPrefix(const std::string& prefix, const std::string_view& view) {
         if(view.empty()) {
@@ -52,10 +53,16 @@ class TextSection {
         }
         return res.str();
     }
-    static std::string prefix(size_t level) {
+    static std::string titleprefix(size_t level) {
+        return prefix(level, "**");
+    }
+    static std::string textprefix(size_t level) {
+        return prefix(level, "  ");
+    }
+    static std::string prefix(size_t level, const std::string& pattern) {
         std::string res;
         for(size_t n = 0; n < level; n++)
-            res += "  ";
+            res += pattern;
         return res;
     }
 };

@@ -30,7 +30,6 @@ public:
         addGroup(subtask_options);
         addGroup(multithread_options);        
         addGroup(io_options);
-        addGroup(help_options);
     }
     MetaDataOptions meta_data_options;
     RNGOptions rng_options;
@@ -40,13 +39,11 @@ public:
     SubtaskOptions subtask_options;
     MultithreadOptions multithread_options;
     IOOptions io_options;
-    HelpOptions help_options;
 };
 
 class SingleRun {        
     public:
-        SingleRun(int argc, const char* argv[]) {
-            options_.parse(argc, argv);
+        SingleRun(const SingleRunOptions& options) : options_{options} {
         }
         ~SingleRun() {}
 
@@ -56,34 +53,25 @@ class SingleRun {
 
 
         void init() {
-            //all, run, gather, generate
-            if(options_.meta_data_options.isRunMode()) {
-                initSubtasks();
-            }
+            initSubtasks();
         }
 
         void initSubtasks() {
             tasks_ = loadFromDB();
             if(tasks_.empty()) {
                 tasks_.push_back(loadFromOptions());
-            }            
+            }
+            std::cout<<"The following tasks have been created:\n";
             for(auto it : tasks_) {                
                 std::cout<<it<<std::endl;
             }
         }
 
         void run() {
-            if(options_.meta_data_options.isRunMode()) {
-                runSubtask();
-            }
+            runSubtasks();
         }
         void done() {
-            //if(options_.io_options.subtasksResultsFileName) {
-            //    const std::string& filename = *(options_.io_options.subtasksResultsFileName);
-            //    saveResults(filename);
-            //}
             saveResults(options_.io_options.subtasksResultsFileName);
-            gatherResults();
         }
     private:
         SingleRunOptions options_;
@@ -92,7 +80,7 @@ class SingleRun {
         std::vector<TaskResultsRecord> task_results_;
         std::vector<double> times_;
 
-        void runSubtask() {
+        void runSubtasks() {
             size_t nThreads = options_.multithread_options.nThreads();
             nThreads = 1;
 
@@ -109,41 +97,6 @@ class SingleRun {
                 std::cout<<"elapsed: "<<time*1000<<" ms"<<std::endl;
                 subtask_results_.push_back(cur_res);
                 times_.push_back(time);
-            }
-        }
-
-        void gatherResults() {
-            SubtaskResultsDB subtask_results_db; 
-            TaskResultsDB task_results_db;
-            const std::string& subtask_results_filename = options_.io_options.subtasksResultsFileName;
-            const std::string& task_results_filename = options_.io_options.tasksResultsFileName;
-            if(std::filesystem::exists(subtask_results_filename)) {
-                boost::interprocess::file_lock flock(subtask_results_filename.c_str());
-                subtask_results_db.readFromFile(subtask_results_filename);
-            };
-            if(std::filesystem::exists(task_results_filename)) {
-                boost::interprocess::file_lock flock(task_results_filename.c_str());
-                task_results_db.readFromFile(task_results_filename);
-                gatherResults_(subtask_results_db, task_results_db);
-                task_results_db.writeToFile(task_results_filename);
-            } else {
-                gatherResults_(subtask_results_db, task_results_db);
-                task_results_db.writeToFile(task_results_filename);
-            }
-        }
-
-        void gatherResults_(const SubtaskResultsDB& subtask_results_db, TaskResultsDB& task_results_db) {
-            std::vector<std::vector<SubtaskResultsRecord>> finished_tasks = subtask_results_db.getFinished();
-            for(auto subtasks : finished_tasks) {
-                TaskRecord& task = static_cast<TaskRecord&>(subtasks[0]);
-                std::vector<SubtaskResults> subtask_results;
-                for(SubtaskResultsRecord& it: subtasks) {
-                    subtask_results.push_back(it.results);
-                };
-                Chi2BasedTest<Histogram> chi2_based_test; // no matter what histogram class is used here
-                StatiscticalTestResults res = chi2_based_test.collect(task.problem, subtasks[0].subtask.Ntasks, subtask_results);
-                TaskResultsRecord task_results_{task.meta, task.rng, task.repack, task.problem, res};
-                task_results_db.push_back(task_results_);
             }
         }
 

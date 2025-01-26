@@ -23,18 +23,24 @@
 class TaskGeneratorOptions : public ProgramOptions {
     public:
     TaskGeneratorOptions() {
-        addGroup(subtasks_output_options_);
-        addGroup(runtime_options_);
+        addGroup(subtasks_output_options);
+        addGroup(runtime_options);
+        addGroup(hypercube_options); // to add a specified hypercube test
     }
-    private:
-    SubtasksOutput subtasks_output_options_;
-    RuntimeOptions runtime_options_;
+    SubtasksOutput subtasks_output_options;
+    HypercubeOptions hypercube_options;
+    RuntimeOptions runtime_options;
 };
 
 
 class TaskGenerator {
     public:
+    TaskGenerator(const TaskGeneratorOptions& options) : options_{options} {}
+    void init() {}
     void run() {
+        std::cout<<"Hypercube opts not specified: "<<options_.hypercube_options.notSpecified()<<std::endl;
+    }
+    /*void run() {
         SubtaskDB tasks;
         size_t task_id = 0;
         for(size_t dim = 1; dim <= 3; dim++) {
@@ -57,6 +63,8 @@ class TaskGenerator {
             }
         }
         tasks.writeToFile("subtasks.json");
-        return 0;
-    }
-}
+    }*/
+    void done() {}
+    private:
+    TaskGeneratorOptions options_;
+};

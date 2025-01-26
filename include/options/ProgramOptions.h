@@ -57,8 +57,22 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
             return option;
         }
 
+        bool notSpecified() {
+            //return true if none of the options were specified
+            return not_specified_;
+        }
+
         virtual void update(const boost::program_options::variables_map& vm) {
-            //nothing to do            
+            not_specified_ = true;
+            for(auto v : vm) {
+                std::cout<<v.first<<" "<<v.second.defaulted()<<" "<<v.second.empty()<<std::endl;
+            }
+            for(auto it : partial.options()) {
+                if(vm.count(it->key("")) > 0) {
+                    not_specified_ = false;
+                    break;
+                }
+            }
         }
         virtual void validate() {
             //nothing to do
@@ -80,6 +94,8 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
         //These vars are used only for printing help message
         boost::program_options::options_description visible;
         boost::program_options::options_description hidden;         
+    private:
+        bool not_specified_{true}; // true if none of the positional or partial options are specified
 };
 
 class ProgramOptions : public DocumentedOptionsGroup {
@@ -89,13 +105,13 @@ class ProgramOptions : public DocumentedOptionsGroup {
     public:
         ProgramOptions() {}
         virtual void addGroup(OptionsGroupStorage& options) {
-            options_.push_back(options);
             if(options.positional.max_total_count() != 0) {
                 for(auto it : options_) {
                     //only one group of options is allowed to have positional arguments
                     assert(it.get().positional.max_total_count() == 0);
                 }
             }
+            options_.push_back(options);
         }
         virtual void parse(int argc, const char* argv[]) {
             namespace po = boost::program_options;
@@ -141,24 +157,24 @@ class ProgramModesOptions : public DocumentedOptionsGroup {
     public:
     ProgramModesOptions() {}    
     ProgramOptions& push_back(const std::string& mode_name, ProgramOptions& val) {
-        auto res = modes.emplace(mode_name, std::ref(val));
+        auto res = modes_.emplace(mode_name, std::ref(val));
         if(!res.second) {
             throw std::runtime_error("The specified mode_name is already present in ProgramModesOptions");
         }
-        modes_order.push_back(modes.find(mode_name));
+        modes_order_.push_back(modes_.find(mode_name));
         return getref(res.first);
     }
     ProgramOptions& at(const std::string& mode_name) {
-        auto pos = modes.find(mode_name);
-        if(pos != modes.end()) {
+        auto pos = modes_.find(mode_name);
+        if(pos != modes_.end()) {
             throw std::out_of_range("the requested mode_name is not contained in the mode list");
         }
         return getref(pos);
     }    
     ProgramOptions& operator[](const std::string& mode_name) {
-        auto pos = modes.find(mode_name);
-        if(pos == modes.end()) {
-            pos = modes.emplace(mode_name, std::make_shared<ProgramOptions>()).first;
+        auto pos = modes_.find(mode_name);
+        if(pos == modes_.end()) {
+            pos = modes_.emplace(mode_name, std::make_shared<ProgramOptions>()).first;
         }
         return getref(pos);
     }    
@@ -175,22 +191,22 @@ class ProgramModesOptions : public DocumentedOptionsGroup {
         return selected_mode_->first;
     }
     bool parse(int argc, const char* argv[]) {
-        assert(!modes.empty());
-        if(argc > 2) {
+        assert(!modes_.empty());
+        if(argc >= 2) {
             const char* first_arg = argv[1];
-            //selected_mode_ = find(first_arg);
-            if(selected_mode_ != modes.end()) {
+            selected_mode_ = modes_.find(first_arg);
+            if(selected_mode_ != modes_.end()) {
                 argc--;
                 argv++;
             } else {
                 // Case: mode is unknown, fallback to default mode
-                selected_mode_ = modes.find(default_mode_name_);
-                assert(selected_mode_ != modes.end());
+                selected_mode_ = modes_.find(default_mode_name_);
+                assert(selected_mode_ != modes_.end());
             }
         } else {
             // Case: no options specified, fallback to default mode
-            selected_mode_ = modes.find(default_mode_name_);
-            assert(selected_mode_ != modes.end());
+            selected_mode_ = modes_.find(default_mode_name_);
+            assert(selected_mode_ != modes_.end());
         };
         getref(selected_mode_).parse(argc, argv);
         return true;
@@ -200,7 +216,7 @@ class ProgramModesOptions : public DocumentedOptionsGroup {
         section.header<<header_;
         section.header<<"Usage:\n";
         section.header<<"\t"<<exename<<" --help\n";
-        for(auto& mode : modes_order) {            
+        for(auto& mode : modes_order_) {            
             if(mode->first != default_mode_name_) {
                 section.header<<"\t"<<exename<<" "<<mode->first<<" ["<<mode->first<<" options] ...\n";
             }
@@ -211,8 +227,8 @@ class ProgramModesOptions : public DocumentedOptionsGroup {
         section.subsections.push_back(std::move(description));
         TextSection options;
         options.title<<"Options:";
-        options.subsections.push_back(getref(modes.find(default_mode_name_)).help());
-        for(auto& mode : modes_order) {
+        options.subsections.push_back(getref(modes_.find(default_mode_name_)).help());
+        for(auto& mode : modes_order_) {
             if(mode->first != default_mode_name_) {
                 options.subsections.push_back(getref(mode).help());
             }
@@ -224,8 +240,8 @@ class ProgramModesOptions : public DocumentedOptionsGroup {
     std::string program_description;
     std::string exename{"hypercube "};
 private:
-    modes_t modes;    
-    std::vector<modes_t::iterator> modes_order; //for printing purpose
+    modes_t modes_;    
+    std::vector<modes_t::iterator> modes_order_; //for printing purpose
     modes_t::iterator selected_mode_;
     std::string default_mode_name_{"default"};
     ProgramOptions& getref(modes_t::iterator it) {

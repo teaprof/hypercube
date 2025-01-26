@@ -8,7 +8,7 @@ class RuntimeOptions : public OptionsGroupStorage {
     public:
         RuntimeOptions() : OptionsGroupStorage("Runtime options") {
             namespace po = boost::program_options;
-            addPartialVisible("ram", po::value<size_t>(&RAM)->default_value(1), "max memory available on target machine");
+            addPartialVisible("ram", po::value<size_t>(&RAM)->default_value(1024), "max memory available on target machine in MBytes (default is 1 GB)");
         }        
         size_t RAM;
 };

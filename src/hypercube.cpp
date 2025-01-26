@@ -16,6 +16,8 @@
 #include<filesystem>
 #include "options/BasicOptions.h"
 #include "singlerun.h"
+#include "gatherer.h"
+#include "taskgenerator.h"
 #include <boost/interprocess/sync/file_lock.hpp>
 
 #include<memory>
@@ -26,33 +28,14 @@ class MyProgramOptions : public ProgramModesOptions {
         program_description="Hypercube statistical test for random number generators.";        
         (*this)["all"].setTitle("Run all options");
         (*this)["all"].setHeader("run the default set of tests.");
-        /*(*this)["run"].setTitle("Run options");
-        (*this)["run"].addGroup(meta_data_options);
-        (*this)["run"].addGroup(rng_options);
-        (*this)["run"].addGroup(bits_repack_options);
-        //(*this)["run"].addGroup(sampling_options);
-        (*this)["run"].addGroup(hypercube_options);
-        (*this)["run"].addGroup(subtask_options);
-        (*this)["run"].addGroup(multithread_options);        
-        (*this)["run"].addGroup(io_options);
-        (*this)["run"].addGroup(help_options);*/
-        push_back("run", single_run_options);
-        (*this)["gather"].addGroup(io_options);
-        (*this)["gather"].setTitle("Gather options");
-        (*this)["generate"].addGroup(subtasks_output_options);
-        (*this)["generate"].setTitle("Generate options");
+        push_back("run", single_run_options);        
+        push_back("gather", gather_options);
+        push_back("generate", task_generator_options);
         this->defaultMode().addGroup(help_options);
     }
     SingleRunOptions single_run_options;
-    MetaDataOptions meta_data_options;
-    RNGOptions rng_options;
-    BitsRepackOptions bits_repack_options;
-    //SamplingOptions sampling_options;
-    HypercubeOptions hypercube_options;
-    SubtaskOptions subtask_options;
-    MultithreadOptions multithread_options;
-    IOOptions io_options;
-    SubtasksOutput subtasks_output_options;
+    GatherOptions gather_options;
+    TaskGeneratorOptions task_generator_options;
     HelpOptions help_options;
 };
 

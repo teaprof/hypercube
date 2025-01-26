@@ -19,9 +19,9 @@
 
 #include<memory>
 
-class SingleRunOptions : public ProgramModeOptions {
+class SingleRunOptions : public ProgramOptions {
 public:
-    SingleRunOptions() : ProgramModeOptions("") {
+    SingleRunOptions() : ProgramOptions() {
         addGroup(meta_data_options);
         addGroup(rng_options);
         addGroup(bits_repack_options);

@@ -24,8 +24,8 @@ class MyProgramOptions : public ProgramModesOptions {
     public:
     MyProgramOptions() {
         program_description="Hypercube statistical test for random number generators.";        
-        (*this)["all"]->setTitle("Run all options");
-        (*this)["all"]->setHead("run the default set of tests.");
+        (*this)["all"].setTitle("Run all options");
+        (*this)["all"].setHeader("run the default set of tests.");
         /*(*this)["run"].setTitle("Run options");
         (*this)["run"].addGroup(meta_data_options);
         (*this)["run"].addGroup(rng_options);
@@ -36,15 +36,14 @@ class MyProgramOptions : public ProgramModesOptions {
         (*this)["run"].addGroup(multithread_options);        
         (*this)["run"].addGroup(io_options);
         (*this)["run"].addGroup(help_options);*/
-        single_run_options = std::make_shared<SingleRunOptions>();
         push_back("run", single_run_options);
-        (*this)["gather"]->addGroup(io_options);
-        (*this)["gather"]->setTitle("Gather options");
-        (*this)["generate"]->addGroup(subtasks_output_options);
-        (*this)["generate"]->setTitle("Generate options");
-        this->defaultMode()->addGroup(help_options);
+        (*this)["gather"].addGroup(io_options);
+        (*this)["gather"].setTitle("Gather options");
+        (*this)["generate"].addGroup(subtasks_output_options);
+        (*this)["generate"].setTitle("Generate options");
+        this->defaultMode().addGroup(help_options);
     }
-    std::shared_ptr<SingleRunOptions> single_run_options;
+    SingleRunOptions single_run_options;
     MetaDataOptions meta_data_options;
     RNGOptions rng_options;
     BitsRepackOptions bits_repack_options;
@@ -66,9 +65,8 @@ class MyApplication {
             return options_;
         }
         void init() {
-            assert(options_.selected_mode != options_.modes.end());
-            if(options_.selected_mode->second->mode_name_ == "run") {
-                single_run = std::make_shared<SingleRun>();
+            if(options_.selectedModeName() == "run") {
+                
             }             
         }
         void run() {
@@ -77,7 +75,7 @@ class MyApplication {
         }
     private:
         MyProgramOptions options_;
-        std::shared_ptr<SingleRun> single_run;
+        std::optional<SingleRun> single_run;
 };
 
 int main(int argc, const char* argv[]) {

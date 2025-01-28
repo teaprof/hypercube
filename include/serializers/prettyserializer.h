@@ -14,7 +14,11 @@ std::ostream& operator<<(std::ostream& str, const SubtaskRecord& task) {
     }
     str<<"rng offset = "<<task.rng.offset<<std::endl;
     if(task.repack) {
-        str<<"repack sample size = "<<task.repack->bits_per_sample<<std::endl;
+        if(task.repack->bits_per_sample) {
+            str<<"repack sample size = "<<*task.repack->bits_per_sample<<std::endl;
+        } else {
+            str<<"repack sample size = default"<<std::endl;
+        }
         str<<"repack srcLittleEndian = "<<task.repack->src_little_endian<<std::endl;
         str<<"repack dstLittleEndian = "<<task.repack->dst_little_endian<<std::endl;
     } else {

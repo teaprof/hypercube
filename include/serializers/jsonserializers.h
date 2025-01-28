@@ -31,14 +31,24 @@ const boost::json::object& operator>>(const boost::json::object& object, RandomN
 }
 
 boost::json::object& operator<<(boost::json::object& object, const BitsRepackDescription& bits_repack_descr) {
-    object.emplace("repack_bits_per_sample", bits_repack_descr.bits_per_sample);
+    if(bits_repack_descr.bits_per_sample) {
+        object.emplace("repack_bits_per_sample", *bits_repack_descr.bits_per_sample);        
+    } else {
+        object["repack_bits_per_sample"].emplace_null();
+    }
     object.emplace("repack_src_little_endian", bits_repack_descr.src_little_endian);
     object.emplace("repack_dst_little_endian", bits_repack_descr.dst_little_endian);
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, BitsRepackDescription& bits_repack_descr) {
-    bits_repack_descr.bits_per_sample = object.at("repack_bits_per_sample").as_int64();
+    auto v = object.at("repack_bits_per_sample");
+    if(v.is_null()) {
+        bits_repack_descr.bits_per_sample = std::nullopt;
+    } else {
+        assert(v.is_int64());
+        bits_repack_descr.bits_per_sample = v.as_int64();
+    }    
     bits_repack_descr.src_little_endian = object.at("repack_src_little_endian").as_bool();
     bits_repack_descr.dst_little_endian =object.at("repack_dst_little_endian").as_bool();
     return object;

@@ -126,12 +126,14 @@ class SingleRun {
         std::vector<SubtaskRecord> loadFromOptions() {
             std::vector<SubtaskRecord> res;
             for(auto problem : options_.hypercube_options) {
-                SubtaskRecord subtask;
-                subtask.problem = problem;
-                subtask.subtask = SubtaskParameters{.Ntasks=options_.subtask_options.nSubtasks,.cur_task=options_.subtask_options.curSubtask};
-                subtask.repack = options_.bits_repack_options.description();
-                subtask.rng = options_.rng_options.description();        
-                res.push_back(std::move(subtask));
+                for(auto bits_repack_description : options_.bits_repack_options) {
+                    SubtaskRecord subtask;
+                    subtask.problem = problem;
+                    subtask.subtask = SubtaskParameters{.Ntasks=options_.subtask_options.nSubtasks,.cur_task=options_.subtask_options.curSubtask};
+                    subtask.repack = bits_repack_description;
+                    subtask.rng = options_.rng_options.description();        
+                    res.push_back(std::move(subtask));
+                }
             }
             return res;
         }

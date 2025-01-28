@@ -20,7 +20,7 @@ struct RandomNumberGeneratorDescription {
 struct BitsRepackDescription {
     bool src_little_endian;
     bool dst_little_endian;
-    uint16_t bits_per_sample;
+    std::optional<uint16_t> bits_per_sample;
     bool operator==(const BitsRepackDescription& other) const {
         return src_little_endian == other.src_little_endian && dst_little_endian == other.dst_little_endian && bits_per_sample == other.bits_per_sample;
     }
@@ -33,7 +33,13 @@ std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorD
     }
     rng->discardN(rng_descr.offset);
     if(bits_repack_descr) {
-        auto repacker = std::make_shared<BitsRepackFast>(rng, bits_repack_descr->bits_per_sample, bits_repack_descr->src_little_endian, bits_repack_descr->dst_little_endian);
+        //Use the default value for bits_per_sample for selected rng
+        uint16_t bits_per_sample = rng->nbits();
+        if(bits_repack_descr->bits_per_sample) {
+            //if bits_repack_descr.bits_per_sample is set, use this value
+            bits_per_sample = *bits_repack_descr->bits_per_sample;
+        }
+        auto repacker = std::make_shared<BitsRepackFast>(rng, bits_per_sample, bits_repack_descr->src_little_endian, bits_repack_descr->dst_little_endian);
         return repacker;
     }
     return rng;

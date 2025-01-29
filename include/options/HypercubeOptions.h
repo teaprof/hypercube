@@ -5,9 +5,16 @@
 #include <stat_tests/hypercube/HypercubeTest.h>
 #include <memory>
 #include <cstdint>
+#include <options/cartesian_product.h>
 
 class HypercubeOptions : public OptionsGroupStorage {
+        std::vector<size_t> dim{1};
+        std::vector<size_t> nIntervals{100};
+        std::vector<size_t> nSamples{100000};
+        std::vector<size_t> nSamplesPerCell{10};
+        std::vector<size_t> stride{1};
     public:
+        using cartesian_product_t = CartesianProduct2<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>>;
         HypercubeOptions() : OptionsGroupStorage("Hypercube test options") {
             namespace po = boost::program_options;
             addPartialVisible("dim,d", po::value(&dim), "hypercube dimension");
@@ -16,93 +23,62 @@ class HypercubeOptions : public OptionsGroupStorage {
             addPartialVisible("nsamplespercell,M", po::value(&nSamplesPerCell), "number of samples per cell (should not be used with nSamples)");
             addPartialVisible("stride,s", po::value(&stride), "stride, default is equal to dimension");
         }
-        void update(const boost::program_options::variables_map& vm) override {
-            OptionsGroupStorage::update(vm);
-            if(dim.empty()) {
-                dim.push_back(2);
-            }
-            if(nIntervals.empty()) {
-                nIntervals.push_back(100);
-            }
-            if(nSamples.empty() && nSamplesPerCell.empty()) {
-                nSamplesPerCell.push_back(100);
-            }
-            if(stride.empty()) {
-                stride.push_back(0);
-            }
-        }
         void validate() override {
             if(!nSamplesPerCell.empty() && !nSamples.empty()) {
                 throw std::runtime_error("--nSamples and --nSamplesPerCell should not be used simultaneously");
             }
         }
-
-        /*HypercubeProblem problem() {
-            HypercubeProblem problem(dim, nIntervals, stride, nSamples);
-            return problem;
-        }*/
-        struct HypercubeProblemIterator {
-            const HypercubeOptions& opts;
-            size_t dim_idx;
-            size_t nIntervals_idx;
-            size_t nSamples_idx;
-            size_t nSamplesPerCell_idx;
-            size_t stride_idx;
-            bool end_reached;
-            HypercubeProblem operator*() const {
-                size_t dim = opts.dim[dim_idx];
-                size_t nIntervals = opts.nIntervals[nIntervals_idx];
-                size_t nSamples = 0;
-                if(!opts.nSamples.empty()) {
-                    nSamples = opts.nSamples[nSamples_idx];
-                } else {
-                    assert(!opts.nSamplesPerCell.empty());
-                    HypercubeProblem temp(dim, nIntervals, 0, 0);
-                    nSamples = opts.nSamplesPerCell[nSamplesPerCell_idx]*temp.n_cells_total;
-                }
-                size_t stride = opts.stride[stride_idx];
-                if(stride == 0) {
-                    stride = dim;
-                }
-                return HypercubeProblem(dim, nIntervals, stride, nSamples);
+        void update(const boost::program_options::variables_map& vm) override {
+            OptionsGroupStorage::update(vm);
+            /*if(dim.empty()) {
+                dim.push_back(2);
             }
-            void operator++() {
-                if(++dim_idx == opts.dim.size()) {
-                    dim_idx = 0;
-                    if(++nIntervals_idx == opts.nIntervals.size()) {
-                        nIntervals_idx = 0;
-                        if(++nSamples_idx >= opts.nSamples.size()) {
-                            nSamples_idx = 0;
-                            if(++nSamplesPerCell_idx >= opts.nSamplesPerCell.size()) {
-                                nSamplesPerCell_idx = 0;
-                                if(++stride_idx == opts.stride.size()) {
-                                    stride_idx = 0;
-                                    end_reached = true;
-                                }
-                            }
-                        }
-                    };
-                }
+            if(nIntervals.empty()) {
+                nIntervals.push_back(100);
+            }*/
+            if(nSamples.empty() && nSamplesPerCell.empty()) {
+                nSamplesPerCell.push_back(100);
             }
-            bool operator==(const HypercubeProblemIterator& other) const {
-                return dim_idx == other.dim_idx && nIntervals_idx == other.nIntervals_idx && nSamples_idx == other.nSamples_idx && stride_idx == other.stride_idx && end_reached == other.end_reached;
-            }
-            bool operator!=(const HypercubeProblemIterator& other) const {
-                return !(*this == other);
-            }
-        };
-        HypercubeProblemIterator begin() const {
-            return HypercubeProblemIterator{*this, 0, 0, 0, 0, 0, false};
-        }
-        HypercubeProblemIterator end() const {
-            return HypercubeProblemIterator{*this, 0, 0, 0, 0, 0, true};
+            /*if(stride.empty()) {
+                stride.push_back(0);
+            }*/
+            this->options_combinations_.setSubspace<0>(dim);
+            options_combinations_.setSubspace<1>(nIntervals);
+            options_combinations_.setSubspace<2>(nSamples);
+            options_combinations_.setSubspace<3>(nSamplesPerCell);
+            options_combinations_.setSubspace<4>(stride);
         }
 
-        std::vector<size_t> dim{1};
-        std::vector<size_t> nIntervals{100};
-        std::vector<size_t> nSamples{100000};
-        std::vector<size_t> nSamplesPerCell{10};
-        std::vector<size_t> stride{1};
+        HypercubeProblem description(const cartesian_product_t::index_t multi_index) const {            
+            size_t dim = options_combinations_.get<0>(multi_index, 2);
+            size_t nIntervals = options_combinations_.get<1>(multi_index, 100);
+            std::optional<size_t> nSamples_opt = options_combinations_.get<3>(multi_index);
+            std::optional<size_t> nSamplesPerCell_opt = options_combinations_.get<4>(multi_index);
+            size_t stride = options_combinations_.get<4>(multi_index, dim);
+            size_t nSamples =0;
+            if(nSamples_opt.has_value()) {
+                nSamples = nSamples_opt.value();
+            } else {
+                assert(nSamplesPerCell_opt.has_value());
+                HypercubeProblem temp(dim, nIntervals, 0, 0);
+                nSamples = nSamplesPerCell_opt.value()*temp.n_cells_total;
+            }
+            if(stride == 0) {
+                stride = dim;
+            }
+            return HypercubeProblem(dim, nIntervals, stride, nSamples);
+        }
+
+        decltype(auto) begin() const {
+            auto f = std::bind(&HypercubeOptions::description, this, std::placeholders::_1);
+            return IteratorWithMapping(options_combinations_.begin(), f);
+        }
+        decltype(auto) end() const {
+            auto f = std::bind(&HypercubeOptions::description, this, std::placeholders::_1);
+            return IteratorWithMapping(options_combinations_.end(), f);
+        }
+    private:
+        cartesian_product_t options_combinations_;
 };
 
 

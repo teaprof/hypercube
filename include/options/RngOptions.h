@@ -3,6 +3,7 @@
 
 #include <options/BasicOptions.h>
 #include <options/cartesian_product.h>
+#include <functional>
 #include <rng/dynamic/adaptors/bitsrepack.h>
 #include <rng/dynamic/generators/RandomNumberWrapper.h>
 #include <stat_tests/rng.h>
@@ -20,6 +21,7 @@ std::optional<T> to_std_optional(boost::optional<T> v) {
 
 class RNGOptions : public OptionsGroupStorage {
     public:
+
         RNGOptions() : OptionsGroupStorage("RNG options") {
             namespace po = boost::program_options;
             addPartialVisible("name", po::value<std::string>(&name)->default_value("mt19937"), "rng name");
@@ -45,7 +47,10 @@ class RNGOptions : public OptionsGroupStorage {
 };
 
 class BitsRepackOptions : public OptionsGroupStorage {
-    public:
+        std::vector<bool> src_little_endian, dst_little_endian;
+        std::vector<uint16_t> dst_sample_bits;
+    public:        
+        using cartesian_product_t = CartesianProduct2<std::vector<bool>, std::vector<bool>, std::vector<uint16_t>>;        
         BitsRepackOptions() : OptionsGroupStorage("Bits repack options") {
             namespace po = boost::program_options;
             addPartialVisible("srcLittleEndian", po::value(&src_little_endian), "is source little endian? (default is true)");
@@ -53,20 +58,18 @@ class BitsRepackOptions : public OptionsGroupStorage {
             addPartialVisible("dstSampleBits", po::value(&dst_sample_bits), "dst bits per sample (default - use selected RNG native sample size)");
         }
         void update(const boost::program_options::variables_map& vm) override {
-            options_combinations.addDimension(src_little_endian.size());
-            options_combinations.addDimension(dst_little_endian.size());
-            options_combinations.addDimension(dst_sample_bits.size());
+            options_combinations_.setSubspace<0>(src_little_endian);
+            options_combinations_.setSubspace<1>(dst_little_endian);
+            options_combinations_.setSubspace<2>(dst_sample_bits);
         }                
         size_t nCombinations() const {
-            return options_combinations.productSpaceSize();
+            return options_combinations_.spaceSize();
         }
-        std::optional<BitsRepackDescription> description(size_t n) const {
+        std::optional<BitsRepackDescription> description(const cartesian_product_t::index_t &multi_index) const {
             if(useRepack()) {
-                auto indicies = options_combinations.indicies(n);            
-                assert(indicies.size() == 3);
-                bool src_little_endian_val = CartesianProduct::select(src_little_endian, indicies[0], true); /// \todo: use native endianness
-                bool dst_little_endian_val = CartesianProduct::select(dst_little_endian, indicies[1], true); /// \todo: use native endianness
-                std::optional<uint16_t> dst_sample_bits_val = CartesianProduct::select(dst_sample_bits, indicies[2]);
+                bool src_little_endian_val = options_combinations_.get<0>(multi_index, true); /// \todo: use native endianness
+                bool dst_little_endian_val = options_combinations_.get<1>(multi_index, true); /// \todo: use native endianness
+                std::optional<uint16_t> dst_sample_bits_val = options_combinations_.get<2>(multi_index);
                 return BitsRepackDescription{src_little_endian_val, dst_little_endian_val, dst_sample_bits_val};
             }   
             return std::nullopt;
@@ -74,31 +77,17 @@ class BitsRepackOptions : public OptionsGroupStorage {
         bool useRepack() const {
             return !src_little_endian.empty() || !dst_little_endian.empty() || !dst_sample_bits.empty();
         }
-        struct Iterator {            
-            Iterator(const BitsRepackOptions& obj, size_t current_combination = 0) : obj_(obj), current_combination_{current_combination} {}
-            std::optional<BitsRepackDescription> operator*() {
-                return obj_.description(current_combination_);
-            }
-            void operator++() {
-                current_combination_++;
-            }
-            bool operator==(const Iterator& other) const {
-                return current_combination_ == other.current_combination_;
-            }
-            private:
-            size_t current_combination_;
-            const BitsRepackOptions& obj_;
-        };
-        Iterator begin() const {
-            return Iterator(*this);
-        }
-        Iterator end() const {
-            return Iterator(*this, options_combinations.productSpaceSize());
-        }
-        std::vector<bool> src_little_endian, dst_little_endian;
-        std::vector<uint16_t> dst_sample_bits;
-        CartesianProduct options_combinations;
-};
 
+        decltype(auto) begin() const {
+            auto f = std::bind(&BitsRepackOptions::description, this, std::placeholders::_1);
+            return IteratorWithMapping(options_combinations_.begin(), f);
+        }
+        decltype(auto) end() const {
+            auto f = std::bind(&BitsRepackOptions::description, this, std::placeholders::_1);
+            return IteratorWithMapping(options_combinations_.end(), f);
+        }
+    private:
+        cartesian_product_t options_combinations_;        
+};
 
 #endif

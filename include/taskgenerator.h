@@ -40,21 +40,41 @@ class TaskGenerator {
     TaskGenerator(const TaskGeneratorOptions& options) : options_{options} {}
     void init() {}
     void run() {
+        size_t subtask_id = 0;
         size_t task_id = 0;
         SubtaskDB tasks;
-        for(auto problem : options_.hypercube_options) {            
-            size_t totalMB = problem.n_cells_total*sizeof(size_t);
-            size_t total_subtasks = std::ceil(totalMB/options_.runtime_options.RAM/1024.0/1024.0);
+        size_t filter_by_total_points_count = 0;
+        size_t filter_by_subtasks = 0;
+        for(auto problem : options_.hypercube_options) {                        
+            double totalMB = problem.n_cells_total*sizeof(size_t)/1024.0/1024.0;
+            size_t total_subtasks = std::ceil(totalMB/options_.runtime_options.max_ram_MB);
+            if(problem.N >= options_.runtime_options.maxTotalPoints) {
+                filter_by_total_points_count++;
+                continue;
+            }
+            if(total_subtasks > options_.runtime_options.maxSubtasks) {
+                filter_by_subtasks++;
+                continue;
+            }
+            if(++task_id > options_.runtime_options.maxTasks) {
+                std::cout<<"Reached maximum number of tasks"<<std::endl;
+                break;
+            }
             for(size_t n = 0; n < total_subtasks; n++) {
                 SubtaskParameters subtask{.Ntasks = total_subtasks, .cur_task=n};
                 //subtask.repack = options_.bits_repack_options.description();
                 //subtask.rng = options_.rng_options.description();                        
                 auto rng_descr = options_.rng_options.description();
-                MetaData meta1{.taskId=task_id++};
+                MetaData meta1{.taskId=subtask_id++};
                 tasks.push_back(meta1, rng_descr, std::nullopt, problem, subtask);
-            }                            
+                if(tasks.records().size() > 100'000'000) {
+                    throw std::runtime_error("The number of subtasks becomes greater than 100 millions");
+                }
+            }
         }
-        std::cout<<"Totally generated "<<tasks.records().size()<<" subtasks"<<std::endl;
+        std::cout<<"Totally generated "<<task_id<<" tasks ("<<tasks.records().size()<<" subtasks)"<<std::endl;
+        std::cout<<"Filtered by maxTotalPoints filter "<<filter_by_total_points_count<<" tasks"<<std::endl;
+        std::cout<<"Filtered by maxSubtask filter "<<filter_by_subtasks<<" tasks"<<std::endl;
         std::cout<<"Writing db..."<<std::endl;
         tasks.writeToFile("subtasks.json");
         std::cout<<"finished!"<<std::endl;

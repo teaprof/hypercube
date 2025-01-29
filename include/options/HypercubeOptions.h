@@ -13,14 +13,21 @@ class HypercubeOptions : public OptionsGroupStorage {
         std::vector<size_t> nSamples{100000};
         std::vector<size_t> nSamplesPerCell{10};
         std::vector<size_t> stride{1};
+        static constexpr size_t dim_default = 2;
+        static constexpr size_t nIntervals_default = 100;
+        static constexpr size_t nsamples_per_cell_default = 100;
     public:
         using cartesian_product_t = CartesianProduct2<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>>;
         HypercubeOptions() : OptionsGroupStorage("Hypercube test options") {
             namespace po = boost::program_options;
-            addPartialVisible("dim,d", po::value(&dim), "hypercube dimension");
-            addPartialVisible("nintervals,m", po::value(&nIntervals), "number of intervals per each dimension");
-            addPartialVisible("nsamples,N", po::value(&nSamples), "number of samples (should not be used with nSamplesPerCell)");
-            addPartialVisible("nsamplespercell,M", po::value(&nSamplesPerCell), "number of samples per cell (should not be used with nSamples)");
+            std::stringstream default_str, nIntervals_str, nSamplesPerCell_str;
+            default_str<<"hypercube dimension (default is "<<dim_default<<")";
+            nIntervals_str<<"number of intervals per each dimension (default is "<<nIntervals_default<<")";
+            nSamplesPerCell_str<<"number of samples per cell (should not be used with nSamples)(default is "<<nsamples_per_cell_default<<")";
+            addPartialVisible("dim,d", po::value(&dim), default_str.str().c_str());
+            addPartialVisible("nintervals,m", po::value(&nIntervals), nIntervals_str.str().c_str());
+            addPartialVisible("nsamples,N", po::value(&nSamples), "number of samples (should not be used with nSamplesPerCell), not used by default");
+            addPartialVisible("nsamplespercell,M", po::value(&nSamplesPerCell), nSamplesPerCell_str.str().c_str());
             addPartialVisible("stride,s", po::value(&stride), "stride, default is equal to dimension");
         }
         void validate() override {
@@ -30,19 +37,8 @@ class HypercubeOptions : public OptionsGroupStorage {
         }
         void update(const boost::program_options::variables_map& vm) override {
             OptionsGroupStorage::update(vm);
-            /*if(dim.empty()) {
-                dim.push_back(2);
-            }
-            if(nIntervals.empty()) {
-                nIntervals.push_back(100);
-            }*/
-            if(nSamples.empty() && nSamplesPerCell.empty()) {
-                nSamplesPerCell.push_back(100);
-            }
-            /*if(stride.empty()) {
-                stride.push_back(0);
-            }*/
-            this->options_combinations_.setSubspace<0>(dim);
+            // the default values for all parameters are set in `description` fcn            
+            options_combinations_.setSubspace<0>(dim);
             options_combinations_.setSubspace<1>(nIntervals);
             options_combinations_.setSubspace<2>(nSamples);
             options_combinations_.setSubspace<3>(nSamplesPerCell);
@@ -50,12 +46,13 @@ class HypercubeOptions : public OptionsGroupStorage {
         }
 
         HypercubeProblem description(const cartesian_product_t::index_t multi_index) const {            
-            size_t dim = options_combinations_.get<0>(multi_index, 2);
-            size_t nIntervals = options_combinations_.get<1>(multi_index, 100);
+            size_t dim = options_combinations_.get<0>(multi_index, dim_default);
+            size_t nIntervals = options_combinations_.get<1>(multi_index, nIntervals_default);
             std::optional<size_t> nSamples_opt = options_combinations_.get<3>(multi_index);
-            std::optional<size_t> nSamplesPerCell_opt = options_combinations_.get<4>(multi_index);
+            std::optional<size_t> nSamplesPerCell_opt = options_combinations_.get<4>(multi_index, nsamples_per_cell_default);
             size_t stride = options_combinations_.get<4>(multi_index, dim);
-            size_t nSamples =0;
+
+            size_t nSamples = 0;
             if(nSamples_opt.has_value()) {
                 nSamples = nSamples_opt.value();
             } else {

@@ -17,6 +17,7 @@
 #include "options/BasicOptions.h"
 #include "options/TaskGeneratorOptions.h"
 #include <boost/interprocess/sync/file_lock.hpp>
+#include <hash/hash.h>
 
 #include<memory>
 
@@ -64,8 +65,9 @@ class TaskGenerator {
                 SubtaskParameters subtask{.Ntasks = total_subtasks, .cur_task=n};
                 //subtask.repack = options_.bits_repack_options.description();
                 //subtask.rng = options_.rng_options.description();                        
-                auto rng_descr = options_.rng_options.description();
-                MetaData meta1{.taskId=subtask_id++};
+                auto rng_descr = options_.rng_options.description();                
+                auto hash = myhash(problem, subtask);
+                MetaData meta1{.taskId=subtask_id++, .hash=hash};
                 tasks.push_back(meta1, rng_descr, std::nullopt, problem, subtask);
                 if(tasks.records().size() > 100'000'000) {
                     throw std::runtime_error("The number of subtasks becomes greater than 100 millions");

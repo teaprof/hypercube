@@ -4,14 +4,14 @@
 #include <cstdint>
 #include <optional>
 #include <vector>
+#include <hash/hash.h>
 
 struct MetaData {
     uint64_t taskId;
-    std::optional<uint64_t> parentId;
-    std::vector<uint64_t> childIds;
+    hash_t hash;
 
     bool operator==(const MetaData& other) const {
-        return taskId == other.taskId && parentId == other.parentId && childIds == other.childIds;
+        return taskId == other.taskId && hash == other.hash;
     }
 };
 

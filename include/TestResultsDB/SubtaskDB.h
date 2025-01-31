@@ -61,8 +61,9 @@ class SubtaskDB {
                 throw std::runtime_error("Can't open file for reading");
             }
             auto value = boost::json::parse(f);
-            boost::json::value results_value = value.at("subtasks");
-            auto array = results_value.as_array();
+            //boost::json::value results_value = value.at("subtasks");
+            //auto array = results_value.as_array();
+            auto array = value.as_array();
             for(auto it : array) {                
                 SubtaskRecord r;
                 it.as_object() >> r;
@@ -73,19 +74,17 @@ class SubtaskDB {
             records_.push_back({meta, rng, bits_repack, problem, subtask});
         }
         void writeToFile(const std::string& path) const {
-            boost::json::object data;
             boost::json::array array;            
             for(auto it : records_) {
                 boost::json::object obj;
                 obj << it;
                 array.push_back(obj);
             }
-            data["subtasks"] = array;
             std::ofstream f(path, std::ios::out | std::ios::trunc);
             if(!f) {
                 throw std::runtime_error("can't open file for writing");
             }
-            f<<data;
+            f<<array;
         }        
         std::optional<SubtaskRecord> find(uint64_t taskId) const {
             for(auto it : records_) {

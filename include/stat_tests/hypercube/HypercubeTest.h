@@ -15,13 +15,13 @@ public:
         for (size_t k = 0; k < dim; k++)
             n_cells_total *= m_intervals_per_dim;
     }
-    size_t dim;
-    size_t m_intervals_per_dim;
-    size_t stride;
     bool operator==(const HypercubeProblem& other) const {
         return dim == other.dim && m_intervals_per_dim == other.m_intervals_per_dim && stride == other.stride && 
         static_cast<Chi2BasedProblem>(*this) == other;
     }
+    size_t dim;
+    size_t m_intervals_per_dim;
+    size_t stride;
 };
 
 class HypercubeSampler : public DistributionSampler {

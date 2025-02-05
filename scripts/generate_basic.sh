@@ -3,7 +3,7 @@ RAM=$((4*1024)) # in Megabytes
 dims=""
 mIntervals=""
 nPointsPerCell=""
-for dim in {1..30}
+for dim in {1..5}
 do
 	dims="${dims} -d${dim}"
 done

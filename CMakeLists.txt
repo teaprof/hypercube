@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-find_package(Boost 1.84.0 NO_MODULE REQUIRED COMPONENTS program_options json)
+find_package(Boost 1.83.0 NO_MODULE REQUIRED COMPONENTS program_options json)
 include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(GTest REQUIRED)

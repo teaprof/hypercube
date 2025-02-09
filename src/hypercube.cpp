@@ -26,9 +26,9 @@ class MyProgramOptions : public ProgramModesOptions {
     public:
     MyProgramOptions() {
         program_description="Hypercube statistical test for random number generators.";        
+        push_back("generate", task_generator_options);
         push_back("run", single_run_options); // run subtasks and gather
         push_back("gather", gather_options); // gather only
-        push_back("generate", task_generator_options);
         this->defaultMode().addGroup(help_options);
 
         //(*this)["all"].setTitle("Run all options");

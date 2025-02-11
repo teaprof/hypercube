@@ -23,6 +23,7 @@ class DocumentedOptionsGroup {
         void setFooter(const std::string& str) {
             footer_ = str;
         }        
+        virtual TextSection help() const = 0;
     protected:
         //These values are used to generate documentation
         std::string title_;
@@ -78,7 +79,7 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
             //nothing to do
         }
 
-        TextSection help() const {
+        TextSection help() const override {
             TextSection section;
             section.title << title_;
             section.header << header_;
@@ -98,12 +99,22 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
         //bool not_specified_{true}; // true if none of the positional or partial options are specified
 };
 
-class ProgramOptions : public DocumentedOptionsGroup {
+class ParseableOptions : public OptionsGroupStorage {
+public:
+    ParseableOptions() : OptionsGroupStorage("") {}
+    ParseableOptions(const std::string& caption) : OptionsGroupStorage(caption) {}
+    virtual bool parse(int argc, const char* argv[]) = 0;
+    virtual void validate() = 0;
+    virtual void update(const boost::program_options::variables_map& vm) = 0;
+};
+
+class ProgramOptions : public ParseableOptions {
     // This class can parse the list of options and print the help message
     // Use this class for simple set of command line options like: 
     // programname --arg1 --arg2 10 -zxc -v 20 input.txt output.txt
     public:
-        ProgramOptions() {}
+        ProgramOptions() : ParseableOptions() {}
+        ProgramOptions(const std::string& caption) : ParseableOptions(caption) {}
         virtual void addGroup(OptionsGroupStorage& options) {
             if(options.positional.max_total_count() != 0) {
                 for(auto it : options_) {
@@ -113,7 +124,7 @@ class ProgramOptions : public DocumentedOptionsGroup {
             }
             options_.push_back(options);
         }
-        virtual void parse(int argc, const char* argv[]) {
+        bool parse(int argc, const char* argv[]) override {
             namespace po = boost::program_options;
             boost::program_options::options_description partial;
             boost::program_options::positional_options_description positional;        
@@ -131,12 +142,16 @@ class ProgramOptions : public DocumentedOptionsGroup {
             for(auto it : options_) {
                 it.get().update(vm);
             }
+            return true;
         }
-        void validate() {
+        void validate() override {
             for(auto it : options_) 
                 it.get().validate();
         }
-        TextSection help() const {
+        void  update(const boost::program_options::variables_map& vm) override {
+
+        }
+        TextSection help() const override {
             TextSection section;
             section.title << title_;
             section.header << header_;
@@ -151,11 +166,11 @@ class ProgramOptions : public DocumentedOptionsGroup {
     };
 
 
-class ProgramModesOptions : public DocumentedOptionsGroup {
+class ProgramModesOptions : public ParseableOptions {
     using value_t = std::variant<std::reference_wrapper<ProgramOptions>, std::shared_ptr<ProgramOptions>>;
     using modes_t = std::map<std::string, value_t>;
     public:
-    ProgramModesOptions() {}    
+    ProgramModesOptions() : ParseableOptions() {}    
     ProgramOptions& push_back(const std::string& mode_name, ProgramOptions& val) {
         auto res = modes_.emplace(mode_name, std::ref(val));
         if(!res.second) {
@@ -174,7 +189,7 @@ class ProgramModesOptions : public DocumentedOptionsGroup {
     ProgramOptions& operator[](const std::string& mode_name) {
         auto pos = modes_.find(mode_name);
         if(pos == modes_.end()) {
-            pos = modes_.emplace(mode_name, std::make_shared<ProgramOptions>()).first;
+            pos = modes_.emplace(mode_name, std::make_shared<ProgramOptions>("")).first;
         }
         return getref(pos);
     }    
@@ -190,7 +205,7 @@ class ProgramModesOptions : public DocumentedOptionsGroup {
     const std::string& selectedModeName() {
         return selected_mode_->first;
     }
-    bool parse(int argc, const char* argv[]) {
+    bool parse(int argc, const char* argv[]) override {
         assert(!modes_.empty());
         if(argc >= 2) {
             const char* first_arg = argv[1];
@@ -211,7 +226,11 @@ class ProgramModesOptions : public DocumentedOptionsGroup {
         getref(selected_mode_).parse(argc, argv);
         return true;
     }
-    TextSection help() const {
+    void validate() override {
+    }
+    void  update(const boost::program_options::variables_map& vm) override {
+    }
+    TextSection help() const override {
         TextSection section;
         section.header<<header_;
         section.header<<"Usage:\n";

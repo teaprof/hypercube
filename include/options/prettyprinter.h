@@ -5,6 +5,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <locale>
 
 class TextSection {
     public:
@@ -30,40 +31,69 @@ class TextSection {
     static void printTitle(size_t level, const std::stringstream& str) {
         if(str.view().empty()) {
             return;
-        }        
-        std::cout<<"\n"<<addPrefix(titleprefix(level), str.view())<<std::endl;
+        }                
+        std::cout<<"\n"<<print(titleprefix(level), toUpper(str.view()), titlesuffix(level))<<std::endl;
     }
     static void printText(size_t level, const std::stringstream& str) {
         if(str.view().empty()) {
             return;
         }        
-        std::cout<<addPrefix(textprefix(level), str.view())<<std::endl;
+        std::cout<<print(textprefix(level), str.view(), textsuffix(level))<<std::endl;
     }
-    static std::string addPrefix(const std::string& prefix, const std::string_view& view) {
+    static std::string print(const std::string& lineprefix, const std::string_view& view, const std::string& linesuffix) {
         if(view.empty()) {
             return "";
         }
         std::stringstream res;
-        res<<prefix;
-        for(auto ch : view) {
-            res<<ch;
+        res<<lineprefix;
+        for(auto ch : view) {            
             if(ch == '\n') {
-                res<<prefix;
+                res<<linesuffix<<"\n";
+                res<<lineprefix;
+            } else {
+                res<<ch;
             }
         }
+        res<<linesuffix;
         return res.str();
     }
-    static std::string titleprefix(size_t level) {
-        return prefix(level, "**");
+    static std::string titleprefix(size_t level) { 
+        return repeat(level, "  ") + bold();
+    }
+    static std::string titlesuffix(size_t level) {
+        return reset();
     }
     static std::string textprefix(size_t level) {
-        return prefix(level, "  ");
+        return repeat(level, "  ");
     }
-    static std::string prefix(size_t level, const std::string& pattern) {
+    static std::string textsuffix(size_t level) {
+        return "";
+    }
+    static std::string repeat(size_t level, std::string pattern=" ") {
         std::string res;
         for(size_t n = 0; n < level; n++)
             res += pattern;
         return res;
+    }
+    static std::string toUpper(const std::string_view& str) {
+        std::string res;
+        for(auto ch : str) {
+            res += std::toupper(ch);
+        }
+        return res;
+    }
+    //For esc-codes, see https://man7.org/linux/man-pages/man4/console_codes.4.html
+    static std::string underline() {
+        return "\033[4m";
+    }
+    static std::string bold() {
+        return "\033[1m";
+    }
+    static std::string red() {
+        return "\033[31m";
+    }    
+    static std::string reset() {
+        return "\033[0m";
     }
 };
 

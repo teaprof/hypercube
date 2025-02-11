@@ -19,24 +19,43 @@
 
 #include<memory>
 
-class SingleRunOptions : public ProgramOptions {
+
+class ManualSingleRunOptions : public ProgramOptions {
 public:
-    SingleRunOptions() : ProgramOptions() {
-        addGroup(meta_data_options);
+    ManualSingleRunOptions() : ProgramOptions() {
         addGroup(rng_options);
         addGroup(bits_repack_options);
         //addGroup(sampling_options);
         addGroup(hypercube_options);
         addGroup(subtask_options);
-        addGroup(multithread_options);        
-        addGroup(io_options);
     }
-    MetaDataOptions meta_data_options;
     RNGOptions rng_options;
     BitsRepackOptions bits_repack_options;
     //SamplingOptions sampling_options;
     HypercubeOptions hypercube_options;
     SubtaskOptions subtask_options;
+};
+
+class SubtaskRunOptions : public ProgramOptions {
+public:
+    SubtaskRunOptions() : ProgramOptions() {
+        addGroup(meta_data_options);
+    }
+    MetaDataOptions meta_data_options;
+};
+
+
+class SingleRunOptions  {
+public:
+    SingleRunOptions() {
+        manual_single_run_options.addGroup(multithread_options);
+        manual_single_run_options.addGroup(io_options);
+        subtask_run_options.addGroup(multithread_options);
+        subtask_run_options.addGroup(io_options);
+    }
+    ManualSingleRunOptions manual_single_run_options;
+    SubtaskRunOptions subtask_run_options;
+
     MultithreadOptions multithread_options;
     IOOptions io_options;
 };
@@ -102,7 +121,7 @@ class SingleRun {
 
         std::vector<SubtaskRecord> loadFromDB() {
             std::vector<SubtaskRecord> res;
-            if(options_.meta_data_options.taskId || options_.meta_data_options.runall) {
+            /*if(options_.meta_data_options.taskId || options_.meta_data_options.runall) {
                 SubtaskDB subtaskDB;
                 subtaskDB.readFromFile(options_.io_options.subtasksFileName);
                 if(options_.meta_data_options.taskId) {
@@ -120,12 +139,12 @@ class SingleRun {
                         std::cout<<"The specified file doesn't contain any task"<<std::endl;
                     }
                 }
-            }
+            }*/
             return res;
         }
         std::vector<SubtaskRecord> loadFromOptions() {
             std::vector<SubtaskRecord> res;
-            for(auto problem : options_.hypercube_options) {
+            /*for(auto problem : options_.hypercube_options) {
                 for(auto bits_repack_description : options_.bits_repack_options) {
                     SubtaskRecord subtask;
                     subtask.problem = problem;
@@ -134,7 +153,7 @@ class SingleRun {
                     subtask.rng = options_.rng_options.description();        
                     res.push_back(std::move(subtask));
                 }
-            }
+            }*/
             return res;
         }
         void saveResults(const std::string& filename) {

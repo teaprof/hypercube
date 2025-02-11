@@ -8,10 +8,9 @@
 
 struct MetaData {
     uint64_t taskId;
-    hash_t hash;
 
     bool operator==(const MetaData& other) const {
-        return taskId == other.taskId && hash == other.hash;
+        return taskId == other.taskId;
     }
 };
 

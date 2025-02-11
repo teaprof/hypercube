@@ -27,14 +27,17 @@ class MyProgramOptions : public ProgramModesOptions {
     MyProgramOptions() {
         program_description="Hypercube statistical test for random number generators.";        
         push_back("generate", task_generator_options);
-        push_back("run", single_run_options); // run subtasks and gather
+        push_back("run", single_run_options.manual_single_run_options); // run subtasks and gather
+        push_back("subtask", single_run_options.subtask_run_options); // run subtasks and gather
         push_back("gather", gather_options); // gather only
         this->defaultMode().addGroup(help_options);
 
         //(*this)["all"].setTitle("Run all options");
         //(*this)["all"].setHeader("run the default set of tests.");
-        (*this)["run"].setTitle("Run options");
-        (*this)["run"].setHeader("run the specified subtasks");
+        (*this)["run"].setTitle("Manual run options");
+        (*this)["run"].setHeader("run manually specified task");
+        (*this)["subtask"].setTitle("Run options");
+        (*this)["subtask"].setHeader("run the specified subtasks from subtask json file");
         (*this)["gather"].setTitle("Gather only options");
         (*this)["gather"].setHeader("gather results of the finished subtasks and update final statistics");
         (*this)["generate"].setTitle("Generate subtasks options");
@@ -104,7 +107,7 @@ int main(int argc, const char* argv[]) {
             std::cout<<"    "<<argv[n]<<std::endl;
         }*/
         MyApplication app(argc, argv);
-        if(app.options().help_options.needHelp()) {
+        if(argc==1 || app.options().help_options.needHelp()) {
             app.options().help().print(0);
             return 0;
         }

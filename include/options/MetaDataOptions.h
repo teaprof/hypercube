@@ -8,7 +8,6 @@ class MetaDataOptions : public OptionsGroupStorage {
         MetaDataOptions() : OptionsGroupStorage("Metadata options") {
             namespace po = boost::program_options;
             addPartialVisible("id", po::value(&taskId), "load task with taskId from input file");
-            addPartialVisible("hash", po::value(&taskHash), "load task with taskHash from input file");
             addPartialVisible("all,a", po::bool_switch(&runall), "run all files from the specified file");
             addPartialVisible("gather", po::bool_switch(&gather), "gather results [default]");
         }   
@@ -28,9 +27,6 @@ class MetaDataOptions : public OptionsGroupStorage {
             if(runall) {
                 count++;
             }
-            if(taskHash) {
-                count++;
-            }
             if(count != 1) {
                 throw std::runtime_error("--id, --all or --gather should be specified");
             }
@@ -42,7 +38,6 @@ class MetaDataOptions : public OptionsGroupStorage {
             return gather;
         }
     boost::optional<uint64_t> taskId;
-    boost::optional<uint64_t> taskHash;
     bool gather;   
     bool runall;
 };

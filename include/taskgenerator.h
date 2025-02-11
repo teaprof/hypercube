@@ -27,7 +27,8 @@ class TaskGeneratorOptions : public ProgramOptions {
         addGroup(subtasks_output_options);
         addGroup(runtime_options);
         addGroup(rng_options);
-        addGroup(hypercube_options); // to add a specified hypercube test        
+        addGroup(hypercube_options); // to add a specified hypercube test 
+
     }
     SubtasksOutput subtasks_output_options;
     HypercubeOptions hypercube_options;
@@ -67,7 +68,7 @@ class TaskGenerator {
                 //subtask.rng = options_.rng_options.description();                        
                 auto rng_descr = options_.rng_options.description();                
                 auto hash = myhash(problem, subtask);
-                MetaData meta1{.taskId=subtask_id++, .hash=hash};
+                MetaData meta1{.taskId=hash};
                 tasks.push_back(meta1, rng_descr, std::nullopt, problem, subtask);
                 if(tasks.records().size() > 100'000'000) {
                     throw std::runtime_error("The number of subtasks becomes greater than 100 millions");

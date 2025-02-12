@@ -6,25 +6,72 @@
 #include <iostream>
 #include <vector>
 #include <locale>
+#include <memory>
 
-class TextSection {
+class TextSectionBase {
     public:
-    std::stringstream title;
-    std::stringstream header;
-    std::stringstream body;
-    std::vector<TextSection> subsections;
-    std::stringstream footer;
+    virtual std::stringstream title() const = 0;
+    virtual std::stringstream header() const = 0;
+    virtual std::stringstream body() const = 0;
+    virtual std::stringstream footer() const = 0;
+    virtual std::vector<std::shared_ptr<TextSectionBase>> subsections() const = 0;
+};
 
-    void print(size_t level) {
-        printTitle(level, title);
-        if(!title.view().empty())
-            level++;
-        printText(level, header);
-        printText(level, body);
-        for(auto& subsection : subsections) {
-            subsection.print(level);
+class TextSectionAutoBody : public TextSectionBase {
+    public:
+    std::stringstream title_;
+    std::stringstream header_;
+    std::stringstream footer_;    
+    std::stringstream title() const override {
+        std::stringstream res;
+        res<<title_.str();
+        return res;
+    }
+    std::stringstream header() const override {
+        std::stringstream res;
+        res<<header_.str();
+        return res;
+    }
+    std::stringstream body() const override = 0;
+    std::stringstream footer() const override {
+        std::stringstream res;
+        res<<footer_.str();
+        return res;
+    }
+    std::vector<std::shared_ptr<TextSectionBase>> subsections() const  override {
+        return {};
+    }
+};
+
+class TextSection : public TextSectionAutoBody {
+    public:
+    std::stringstream body_;
+       
+    std::stringstream body() const override {
+        std::stringstream res;
+        res<<body_.str();
+        return res;
+    }
+};
+
+
+class PrettyPrinter {
+    public:
+
+    static void print(const TextSectionBase& section) {
+        print(section, 0);
+    }
+
+    static void print(const TextSectionBase& section, size_t level) {
+        printTitle(level, section.title());
+        /*if(!title.view().empty())
+            level++;*/
+        printText(level, section.header());
+        printText(level, section.body());
+        for(auto& subsection : section.subsections()) {
+            print(*subsection, level+1);
         }
-        printText(level, footer);
+        printText(level, section.footer());
     }
     private:
 

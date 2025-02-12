@@ -22,18 +22,29 @@
 
 #include<memory>
 
+class DefaultOptions : public ProgramOptions {
+    public:
+    DefaultOptions() {
+        addGroup(help_options);
+    }
+    HelpOptions help_options;
+};
+
 class MyProgramOptions : public ProgramModesOptions {
     public:
     MyProgramOptions() {
         program_description="Hypercube statistical test for random number generators.";        
+        push_back("default", default_options);
         push_back("generate", task_generator_options);
         push_back("run", single_run_options.manual_single_run_options); // run subtasks and gather
         push_back("subtask", single_run_options.subtask_run_options); // run subtasks and gather
         push_back("gather", gather_options); // gather only
-        this->defaultMode().addGroup(help_options);
+        this->setDefaultModeName("default");
+        this->showDefaultModeName(false);
 
         //(*this)["all"].setTitle("Run all options");
         //(*this)["all"].setHeader("run the default set of tests.");
+        (*this)["default"].setTitle("Help options");
         (*this)["run"].setTitle("Manual run options");
         (*this)["run"].setHeader("run manually specified task");
         (*this)["subtask"].setTitle("Run options");
@@ -46,7 +57,7 @@ class MyProgramOptions : public ProgramModesOptions {
     SingleRunOptions single_run_options;
     GatherOptions gather_options;
     TaskGeneratorOptions task_generator_options;
-    HelpOptions help_options;
+    DefaultOptions default_options;
 };
 
 class MyApplication {
@@ -107,7 +118,7 @@ int main(int argc, const char* argv[]) {
             std::cout<<"    "<<argv[n]<<std::endl;
         }*/
         MyApplication app(argc, argv);
-        if(argc==1 || app.options().help_options.needHelp()) {
+        if(argc==1 || app.options().default_options.help_options.needHelp()) {
             app.options().help().print(0);
             return 0;
         }

@@ -4,15 +4,15 @@
 TEST(PROGRAMMODEOPTIONS, PARSE) {
     namespace po = boost::program_options;
     ProgramModesOptions modes;
-    OptionsGroupStorage runOptions("run group");
+    auto runOptions = std::make_shared<OptionsGroupStorage>("run group");
     size_t dim;
-    runOptions.addPartialVisible("dim,d", po::value<size_t>(&dim)->default_value(2), "hypercube dimension");
-    OptionsGroupStorage gatherOptions("gather group");
+    runOptions->addPartialVisible("dim,d", po::value<size_t>(&dim)->default_value(2), "hypercube dimension");
+    auto gatherOptions= std::make_shared<OptionsGroupStorage>("gather group");
     size_t gather_opt;
-    gatherOptions.addPartialVisible("gather,g", po::value<size_t>(&gather_opt)->default_value(2), "some option for gathering");
-    OptionsGroupStorage commonOptions("common group");
+    gatherOptions->addPartialVisible("gather,g", po::value<size_t>(&gather_opt)->default_value(2), "some option for gathering");
+    auto commonOptions = std::make_shared<OptionsGroupStorage>("common group");
     size_t common_value;
-    commonOptions.addPartialVisible("common,c", po::value<size_t>(&common_value)->default_value(2), "common value");    
+    commonOptions->addPartialVisible("common,c", po::value<size_t>(&common_value)->default_value(2), "common value");    
     modes["run"].addGroup(runOptions);
     modes["run"].addGroup(commonOptions);
     modes["gather"].addGroup(gatherOptions);

@@ -4,19 +4,19 @@
 TEST(PROGRAMMODEOPTIONS, PARSE) {
     namespace po = boost::program_options;
     ProgramModesOptions modes;
-    auto runOptions = std::make_shared<OptionsGroupStorage>("run group");
+    auto runOptions = std::make_shared<OptionsGroup>("run group");
     size_t dim;
     runOptions->addPartialVisible("dim,d", po::value<size_t>(&dim)->default_value(2), "hypercube dimension");
-    auto gatherOptions= std::make_shared<OptionsGroupStorage>("gather group");
+    auto gatherOptions= std::make_shared<OptionsGroup>("gather group");
     size_t gather_opt;
     gatherOptions->addPartialVisible("gather,g", po::value<size_t>(&gather_opt)->default_value(2), "some option for gathering");
-    auto commonOptions = std::make_shared<OptionsGroupStorage>("common group");
+    auto commonOptions = std::make_shared<OptionsGroup>("common group");
     size_t common_value;
     commonOptions->addPartialVisible("common,c", po::value<size_t>(&common_value)->default_value(2), "common value");    
-    modes["run"].addGroup(runOptions);
-    modes["run"].addGroup(commonOptions);
-    modes["gather"].addGroup(gatherOptions);
-    modes["gather"].addGroup(commonOptions);
+    modes["run"]->addGroup(runOptions);
+    modes["run"]->addGroup(commonOptions);
+    modes["gather"]->addGroup(gatherOptions);
+    modes["gather"]->addGroup(commonOptions);
 
     const char* argv1[] = {"prgmname", "run", "-d", "10",  "-c", "20"};
     modes.parse(6, argv1);

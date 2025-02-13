@@ -22,15 +22,17 @@
 class GatherOptions : public ProgramOptions {
     public:
     GatherOptions() {
+        io_options = std::make_shared<IOOptions>();
         addGroup(io_options);
     }
-    GatherOptions(const IOOptions& io_opts) : io_options{io_opts} {}
-    IOOptions io_options;
+    GatherOptions(std::shared_ptr<IOOptions> io_opts) : io_options{io_opts} {}
+    std::shared_ptr<IOOptions> io_options;
 };
 
 class Gatherer  {
 public:
-    Gatherer(const GatherOptions& options) : options_{options} {}
+    Gatherer(const std::shared_ptr<GatherOptions> options) : options_{options} {}
+    Gatherer(const std::shared_ptr<IOOptions> options) : options_{std::make_shared<GatherOptions>(options)} {}
     void init() {
         //nothing to do
     }
@@ -41,13 +43,13 @@ public:
         //nothing to do
     }
 private:
-    GatherOptions options_;
+    const std::shared_ptr<GatherOptions> options_;
     
     void gatherResults() {
         SubtaskResultsDB subtask_results_db; 
         TaskResultsDB task_results_db;
-        const std::string& subtask_results_filename = options_.io_options.subtasksResultsFileName;
-        const std::string& task_results_filename = options_.io_options.tasksResultsFileName;
+        const std::string& subtask_results_filename = options_->io_options->subtasksResultsFileName;
+        const std::string& task_results_filename = options_->io_options->tasksResultsFileName;
         if(std::filesystem::exists(subtask_results_filename)) {
             boost::interprocess::file_lock flock(subtask_results_filename.c_str());
             subtask_results_db.readFromFile(subtask_results_filename);

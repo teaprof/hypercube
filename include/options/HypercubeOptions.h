@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <options/cartesian_product.h>
 
-class HypercubeOptions : public OptionsGroupStorage {
+class HypercubeOptions : public OptionsGroup {
         std::vector<size_t> dim{1};
         std::vector<size_t> nIntervals{100};
         std::vector<size_t> nSamples{100000};
@@ -18,7 +18,7 @@ class HypercubeOptions : public OptionsGroupStorage {
         static constexpr size_t nsamples_per_cell_default = 100;
     public:
         using cartesian_product_t = CartesianProduct2<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>>;
-        HypercubeOptions() : OptionsGroupStorage("Hypercube test options") {
+        HypercubeOptions() : OptionsGroup("Hypercube test options") {
             namespace po = boost::program_options;
             std::stringstream default_str, nIntervals_str, nSamplesPerCell_str;
             default_str<<"hypercube dimension (default is "<<dim_default<<")";
@@ -36,7 +36,7 @@ class HypercubeOptions : public OptionsGroupStorage {
             }
         }
         void update(const boost::program_options::variables_map& vm) override {
-            OptionsGroupStorage::update(vm);
+            OptionsGroup::update(vm);
             // the default values for all parameters are set in `description` fcn            
             options_combinations_.setSubspace<0>(dim);
             options_combinations_.setSubspace<1>(nIntervals);

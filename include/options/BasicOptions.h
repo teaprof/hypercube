@@ -8,9 +8,9 @@
 #include <options/prettyprinter.h>
 #include <options/ProgramOptions.h>
 
-class HelpOptions : public OptionsGroupStorage {
+class HelpOptions : public OptionsGroup {
     public:
-        HelpOptions() : OptionsGroupStorage("Help options") {
+        HelpOptions() : OptionsGroup("Help options") {
             namespace po = boost::program_options;
             addPartialVisible("help", po::bool_switch(&need_help), "produce this help");
         }
@@ -24,9 +24,9 @@ class HelpOptions : public OptionsGroupStorage {
         bool need_help;
 };
 
-class MultithreadOptions : public OptionsGroupStorage {
+class MultithreadOptions : public OptionsGroup {
     public:
-        MultithreadOptions() : OptionsGroupStorage("multithreading options") {
+        MultithreadOptions() : OptionsGroup("multithreading options") {
             namespace po = boost::program_options;
             concurency = std::thread::hardware_concurrency();
             std::stringstream str;

@@ -22,6 +22,19 @@ class TextSectionAutoBody : public TextSectionBase {
     std::stringstream title_;
     std::stringstream header_;
     std::stringstream footer_;    
+    std::vector<std::shared_ptr<TextSectionBase>> subsections_;
+    void setTitle(const std::string& str) {
+        title_.clear();
+        title_<<str;
+    }
+    void setHeader(const std::string& str) {
+        header_.clear();
+        header_<<str;
+    }
+    void setFooter(const std::string& str) {
+        footer_.clear();
+        footer_<<str;
+    }
     std::stringstream title() const override {
         std::stringstream res;
         res<<title_.str();
@@ -39,7 +52,7 @@ class TextSectionAutoBody : public TextSectionBase {
         return res;
     }
     std::vector<std::shared_ptr<TextSectionBase>> subsections() const  override {
-        return {};
+        return subsections_;
     }
 };
 

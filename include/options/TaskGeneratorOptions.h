@@ -4,9 +4,9 @@
 #include <options/BasicOptions.h>
 #include <stat_tests/chi2based/StatisticalTestBase.h>
 
-class RuntimeOptions : public OptionsGroupStorage {
+class RuntimeOptions : public OptionsGroup {
     public:
-        RuntimeOptions() : OptionsGroupStorage("Runtime options") {
+        RuntimeOptions() : OptionsGroup("Runtime options") {
             namespace po = boost::program_options;
             addPartialVisible("ram", po::value<size_t>(&max_ram_MB)->default_value(1024), "max memory available on target machine in MBytes (default is 1 GB)");
             addPartialVisible("maxTotalPoints", po::value<size_t>(&maxTotalPoints)->default_value(1e+12), "filter out tasks with the number of points greater than this value");

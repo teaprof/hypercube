@@ -8,22 +8,17 @@
 #include <sstream>
 #include <iostream>
 #include <variant>
+#include <locale>
 
 #include <boost/program_options.hpp>
 #include <boost/make_shared.hpp>
 
-class DocumentedOptionsGroup : public TextSectionAutoBody {
+/*class DocumentedOptionsGroup : public TextSectionAutoBody {
     public:    
         std::stringstream body() const override {
             return detailedList();
         }
 
-        void setGroupName(std::string str) {
-            group_name_ = std::move(str);
-        }
-        const std::string& groupName() const {
-            return group_name_;
-        }
         virtual std::stringstream detailedList() const = 0;
     protected:
         std::string group_name_;
@@ -31,16 +26,20 @@ class DocumentedOptionsGroup : public TextSectionAutoBody {
         std::string title_;
         std::string header_;
         std::string footer_;
-};
+};*/
 
-class OptionsGroupStorage : public DocumentedOptionsGroup {
+class OptionsGroup { //}: public DocumentedOptionsGroup {
     /// \todo: rename this class
     public:
         static constexpr uint16_t text_width = 140;
         
-        OptionsGroupStorage(std::string group_name) : visible(group_name, text_width) 
+        OptionsGroup(std::string group_name) : visible(group_name, text_width) 
         {
-            setGroupName(group_name);
+            std::string lower;
+            for(auto ch : group_name) {
+                lower += std::tolower(ch);
+            }
+            setGroupName(lower);
         }
         
         template<class...Args>
@@ -65,12 +64,6 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
             return option;
         }
 
-        std::stringstream detailedList() const override {
-            std::stringstream res;
-            res << visible;
-            return res;
-        }
-
         virtual void validate() {
             //nothing to do
             //redefine this function in the derived class
@@ -87,7 +80,21 @@ class OptionsGroupStorage : public DocumentedOptionsGroup {
         //These vars are used only for printing help message
         boost::program_options::options_description visible;
         boost::program_options::options_description hidden;         
+
+        std::stringstream detailedList() const {
+            std::stringstream res;
+            res << visible;
+            return res;
+        }
+
+        void setGroupName(std::string str) {
+            group_name_ = std::move(str);
+        }
+        const std::string& groupName() const {
+            return group_name_;
+        }
     private:
+        std::string group_name_;
         //bool not_specified_{true}; // true if none of the positional or partial options are specified
 };
 
@@ -98,13 +105,13 @@ public:
     virtual void update(const boost::program_options::variables_map& vm) = 0;
 };
 
-class ProgramOptions : public OptionsParser, public TextSection {
+class ProgramOptions : public OptionsParser {
     // This class can parse the list of options and print the help message
     // Use this class for simple set of command line options like: 
     // programname --arg1 --arg2 10 -zxc -v 20 input.txt output.txt
     public:
         ProgramOptions() = default;
-        virtual void addGroup(std::shared_ptr<OptionsGroupStorage> options) {
+        virtual void addGroup(std::shared_ptr<OptionsGroup> options) {
             if(options->positional.max_total_count() != 0) {
                 for(auto it : options_) {
                     //only one group of options is allowed to have positional arguments
@@ -140,72 +147,45 @@ class ProgramOptions : public OptionsParser, public TextSection {
         void  update(const boost::program_options::variables_map& vm) override {
 
         }
-        std::vector<std::shared_ptr<TextSectionBase>> subsections() const override {
-            std::vector<std::shared_ptr<TextSectionBase>>  res;
-            for(auto it : options_) {
-                res.push_back(it);
-            }
-            return res;
-        }
-        /*std::string shortList() const  {
-            std::stringstream str;
-            for(auto it : options_) {
-                str<<it.get().groupName()<<" ";
-            }
-            return str.str();
-        }*/
-        const std::vector<std::shared_ptr<OptionsGroupStorage>> options() const {
+        const std::vector<std::shared_ptr<OptionsGroup>> options() const {
             return options_;
         }
+
+        std::string title;
+        std::string description;
     private:
-        std::vector<std::shared_ptr<OptionsGroupStorage>> options_;
+        std::vector<std::shared_ptr<OptionsGroup>> options_;
     };
 
 
-class ProgramModesOptions : public OptionsParser, public TextSection {
-    /// \todo: don't inherit OptionsGroupStorage here
-    using value_t = std::variant<std::reference_wrapper<ProgramOptions>, std::shared_ptr<ProgramOptions>>;
+class ProgramModesOptions : public OptionsParser {
+    using value_t = std::shared_ptr<ProgramOptions>;
     using modes_t = std::map<std::string, value_t>;
     public:
     ProgramModesOptions() : OptionsParser() {}    
-    ProgramOptions& push_back(const std::string& mode_name, ProgramOptions& val) {
-        auto res = modes_.emplace(mode_name, std::ref(val));
-        if(!res.second) {
-            throw std::runtime_error("The specified mode_name is already present in ProgramModesOptions");
-        }
-        modes_order_.push_back(modes_.find(mode_name));
-        return getref(res.first);
-    }
-    ProgramOptions& push_back(const std::string& mode_name, std::shared_ptr<ProgramOptions> val) {
+    std::shared_ptr<ProgramOptions> push_back(const std::string& mode_name, std::shared_ptr<ProgramOptions> val) {
         auto res = modes_.emplace(mode_name, val);
         if(!res.second) {
             throw std::runtime_error("The specified mode_name is already present in ProgramModesOptions");
         }
         modes_order_.push_back(modes_.find(mode_name));
-        return getref(res.first);
+        return res.first->second;
     }
-    ProgramOptions& at(const std::string& mode_name) {
-        auto pos = modes_.find(mode_name);
-        if(pos != modes_.end()) {
-            throw std::out_of_range("the requested mode_name is not contained in the mode list");
-        }
-        return getref(pos);
-    }    
-    ProgramOptions& operator[](const std::string& mode_name) {
+    std::shared_ptr<ProgramOptions> operator[](const std::string& mode_name) {
         auto pos = modes_.find(mode_name);
         if(pos == modes_.end()) {
             pos = modes_.emplace(mode_name, std::make_shared<ProgramOptions>()).first;
         }
-        return getref(pos);
+        return pos->second;
     }    
-    ProgramOptions& defaultMode() {
+    std::shared_ptr<ProgramOptions> defaultMode() {
         return (*this)[default_mode_name_];
     }
     void setDefaultModeName(const std::string& mode_name) {
         default_mode_name_ = mode_name;
     }
-    ProgramOptions& selectedMode() {
-        return getref(selected_mode_);
+    std::shared_ptr<ProgramOptions> selectedMode() {
+        return selected_mode_->second;
     }
     const std::string& selectedModeName() {
         return selected_mode_->first;
@@ -228,7 +208,7 @@ class ProgramModesOptions : public OptionsParser, public TextSection {
             selected_mode_ = modes_.find(default_mode_name_);
             assert(selected_mode_ != modes_.end());
         };
-        getref(selected_mode_).parse(argc, argv);
+        selected_mode_->second->parse(argc, argv);
         return true;
     }
     void validate() override {
@@ -239,61 +219,8 @@ class ProgramModesOptions : public OptionsParser, public TextSection {
         show_default_mode_name_ = flag;
     }
 
-    class TextSectionWithDetails : public TextSection {
-    public:
-        TextSectionWithDetails(const ProgramModesOptions* parent) : parent_(parent) {}
-        std::vector<std::shared_ptr<TextSectionBase>>  subsections() const override {
-            std::vector<std::shared_ptr<TextSectionBase>> res;
-            for(auto& mode : parent_->modes_order_) {
-                auto ptr = parent_->getptr(mode);
-                if(ptr) {
-                    res.push_back(ptr);
-                }
-            }
-            return res;
-        }
-    private:
-        const ProgramModesOptions* parent_;
-    };
-    std::vector<std::shared_ptr<TextSectionBase>>  subsections() const override {
-        auto usage = std::make_shared<TextSection>();
-        usage->title_<<"Usage:\n";
-        for(auto& mode : modes_order_) {            
-            usage->header_<<"\t"<<shortHelp(mode)<<"\n";
-        }
-
-        auto description = std::make_shared<TextSection>();
-        description->title_<<"Detailed description:";
-        description->header_<<program_description;
-
-        auto options = std::make_shared<TextSectionWithDetails>(this);
-        options->title_<<"Details:";
-
-        std::vector<std::shared_ptr<TextSectionBase>> res;
-        res.push_back(std::move(usage));
-        res.push_back(std::move(description));
-        res.push_back(std::move(options));
-        return res;
-    }
     std::string program_description;
     std::string exename{"hypercube"};
-
-    std::string shortHelp(modes_t::iterator it) const {
-        std::stringstream str;
-        str<<exename<<" ";
-        if(it->first == default_mode_name_) {
-            if(show_default_mode_name_) {
-                str<<"["<<it->first<<"] ";
-            }
-        } else {
-            str<<it->first<<" ";
-        }
-        const ProgramOptions& opts = getref(it);
-        for(auto group : opts.options()) {
-            str<<"["<<group->groupName()<<"] ";
-        }        
-        return str.str();
-    }
 
 private:
     modes_t modes_;    
@@ -301,26 +228,67 @@ private:
     modes_t::iterator selected_mode_;
     std::string default_mode_name_{"default"};
     bool show_default_mode_name_{true};
-    ProgramOptions& getref(modes_t::iterator it) {
-        if(std::holds_alternative<std::reference_wrapper<ProgramOptions>>(it->second)) {
-            return std::get<std::reference_wrapper<ProgramOptions>>(it->second);
-        } else {
-            return *std::get<std::shared_ptr<ProgramOptions>>(it->second);
+    friend class ProgramModesOptionsPrinter;
+};
+
+class ProgramModesOptionsPrinter {
+    public:
+    std::shared_ptr<TextSectionBase> print(ProgramModesOptions& pmo) {
+        auto res = std::make_shared<TextSection>();
+        auto usage = std::make_shared<TextSection>();
+        usage->title_<<"Usage:\n";
+        for(auto& mode : pmo.modes_order_) {
+            usage->header_<<"\t"<<shortHelp(pmo, mode)<<"\n";
         }
+
+        auto description = std::make_shared<TextSection>();
+        description->title_<<"Detailed description:";
+        description->header_<<pmo.program_description;
+
+        auto details = std::make_shared<TextSection>();
+        details->title_<<"Details:";
+        for(auto& mode : pmo.modes_order_) {
+            auto ptr = mode->second;
+            for(auto &it : print(*ptr)) {
+                details->subsections_.push_back(it);
+            }
+        }
+
+        res->subsections_.push_back(usage);
+        res->subsections_.push_back(description);
+        res->subsections_.push_back(details);
+        return res;
     }
-    const ProgramOptions& getref(modes_t::const_iterator it) const {
-        if(std::holds_alternative<std::reference_wrapper<ProgramOptions>>(it->second)) {
-            return std::get<std::reference_wrapper<ProgramOptions>>(it->second);
+    std::string shortHelp(ProgramModesOptions& pmo, ProgramModesOptions::modes_t::iterator it) const {
+        std::stringstream str;
+        str<<pmo.exename<<" ";
+        if(it->first == pmo.default_mode_name_) {
+            if(pmo.show_default_mode_name_) {
+                str<<"["<<it->first<<"] ";
+            }
         } else {
-            return *std::get<std::shared_ptr<ProgramOptions>>(it->second);
+            str<<it->first<<" ";
         }
+        const std::shared_ptr<ProgramOptions> opts = it->second;
+        for(auto group : opts->options()) {
+            str<<"["<<group->groupName()<<"] ";
+        }        
+        return str.str();
     }
-    const std::shared_ptr<ProgramOptions> getptr(modes_t::const_iterator it) const {
-        if(std::holds_alternative<std::reference_wrapper<ProgramOptions>>(it->second)) {
-            return nullptr;
-        } else {
-            return std::get<std::shared_ptr<ProgramOptions>>(it->second);
+    std::vector<std::shared_ptr<TextSectionBase>> print(ProgramOptions& pmo) const {
+        std::vector<std::shared_ptr<TextSectionBase>>  res;
+        //res->setTitle(pmo.title);
+        //res->setHeader(pmo.description);
+        for(auto it : pmo.options()) {
+            res.push_back(print(*it));
         }
+        return res;
+    }
+    std::shared_ptr<TextSectionBase> print(OptionsGroup& grp) const {
+        auto res = std::make_shared<TextSection>();
+        res->body_<<grp.detailedList().view();
+        return res;
     }
 };
+
 #endif

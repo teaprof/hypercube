@@ -9,31 +9,16 @@
 #include <iostream>
 #include <variant>
 #include <locale>
+#include <set>
 
 #include <boost/program_options.hpp>
 #include <boost/make_shared.hpp>
 
-/*class DocumentedOptionsGroup : public TextSectionAutoBody {
-    public:    
-        std::stringstream body() const override {
-            return detailedList();
-        }
-
-        virtual std::stringstream detailedList() const = 0;
-    protected:
-        std::string group_name_;
-        //These values are used to generate documentation
-        std::string title_;
-        std::string header_;
-        std::string footer_;
-};*/
-
-class OptionsGroup { //}: public DocumentedOptionsGroup {
-    /// \todo: rename this class
+class OptionsGroup {
     public:
         static constexpr uint16_t text_width = 140;
         
-        OptionsGroup(std::string group_name) : visible(group_name, text_width) 
+        OptionsGroup(std::string group_name) : visible(text_width) 
         {
             std::string lower;
             for(auto ch : group_name) {
@@ -93,6 +78,7 @@ class OptionsGroup { //}: public DocumentedOptionsGroup {
         const std::string& groupName() const {
             return group_name_;
         }
+        std::stringstream description;
     private:
         std::string group_name_;
         //bool not_specified_{true}; // true if none of the positional or partial options are specified
@@ -275,20 +261,26 @@ class ProgramModesOptionsPrinter {
         }        
         return str.str();
     }
-    std::vector<std::shared_ptr<TextSectionBase>> print(ProgramOptions& pmo) const {
+    std::vector<std::shared_ptr<TextSectionBase>> print(ProgramOptions& pmo) {
         std::vector<std::shared_ptr<TextSectionBase>>  res;
         //res->setTitle(pmo.title);
         //res->setHeader(pmo.description);
         for(auto it : pmo.options()) {
-            res.push_back(print(*it));
+            if(!options_groups_printed_already_.contains(it->groupName())) {
+                res.push_back(print(*it));
+                options_groups_printed_already_.insert(it->groupName());
+            }
         }
         return res;
     }
     std::shared_ptr<TextSectionBase> print(OptionsGroup& grp) const {
         auto res = std::make_shared<TextSection>();
+        res->setTitle(grp.groupName());
+        res->setHeader(grp.description.view());
         res->body_<<grp.detailedList().view();
         return res;
-    }
+    }    
+    std::set<std::string> options_groups_printed_already_;
 };
 
 #endif

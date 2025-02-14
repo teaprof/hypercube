@@ -23,11 +23,11 @@ class TextSectionAutoBody : public TextSectionBase {
     std::stringstream header_;
     std::stringstream footer_;    
     std::vector<std::shared_ptr<TextSectionBase>> subsections_;
-    void setTitle(const std::string& str) {
+    void setTitle(const std::string_view& str) {
         title_.clear();
         title_<<str;
     }
-    void setHeader(const std::string& str) {
+    void setHeader(const std::string_view str) {
         header_.clear();
         header_<<str;
     }
@@ -92,7 +92,11 @@ class PrettyPrinter {
         if(str.view().empty()) {
             return;
         }                
-        std::cout<<"\n"<<print(titleprefix(level), toUpper(str.view()), titlesuffix(level))<<std::endl;
+        //if(level < 2) {
+            std::cout<<"\n"<<print(titleprefix(level), toUpper(str.view()), titlesuffix(level))<<std::endl;
+        //} else {
+            //std::cout<<"\n"<<print(titleprefix(level), str.view(), titlesuffix(level))<<std::endl;
+        //}
     }
     static void printText(size_t level, const std::stringstream& str) {
         if(str.view().empty()) {
@@ -118,13 +122,16 @@ class PrettyPrinter {
         return res.str();
     }
     static std::string titleprefix(size_t level) { 
-        return repeat(level, "  ") + bold();
+        if(level <= 1) {
+            return repeat(level, "  ") + bold();
+        };
+        return repeat(level, "  ");
     }
     static std::string titlesuffix(size_t level) {
         return reset();
     }
     static std::string textprefix(size_t level) {
-        return repeat(level, "  ");
+        return repeat(level+1, "  ");
     }
     static std::string textsuffix(size_t level) {
         return "";

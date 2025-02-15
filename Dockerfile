@@ -24,6 +24,9 @@ ADD . /app/src/
 WORKDIR /app/build
 RUN cmake -DCMAKE_CXX_COMPILER=clang++-16 -DCMAKE_BUILD_TYPE=Release ../src  && \
     cmake --build . -j
+
+#CHANGE AIRFLOW SETTINGS
+#RUN sed -i 's/dag_dir_list_interval.*/dag_dir_list_interval = 30/g' /opt/airflow/airflow.cfg
  
 #FROM ubuntu:latest
 FROM $BaseImage

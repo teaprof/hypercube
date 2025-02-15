@@ -169,13 +169,13 @@ const boost::json::object& operator>>(const boost::json::object& object, Hypercu
 
 boost::json::object& operator<<(boost::json::object& object, const MetaData& meta) {    
     AssertOnlyFields(meta, meta.taskId);
-    object.emplace("taskID", meta.taskId);
+    object.emplace("taskId", meta.taskId);
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, MetaData& meta) {
     AssertOnlyFields(meta, meta.taskId);
-    meta.taskId = object.at("taskID").as_int64();
+    meta.taskId = object.at("taskId").as_int64();
     return object;
 }
 

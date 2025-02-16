@@ -124,6 +124,7 @@ class ProgramOptions : public OptionsParser {
             for(auto it : options_) {
                 it->update(vm);
             }
+            activated = true;
             return true;
         }
         void validate() override {
@@ -139,6 +140,7 @@ class ProgramOptions : public OptionsParser {
 
         std::string title;
         std::string description;
+        bool activated{false}; //becomes true when parse function succeeded
     private:
         std::vector<std::shared_ptr<OptionsGroup>> options_;
     };
@@ -195,6 +197,7 @@ class ProgramModesOptions : public OptionsParser {
             assert(selected_mode_ != modes_.end());
         };
         selected_mode_->second->parse(argc, argv);
+        activated = true;
         return true;
     }
     void validate() override {
@@ -207,7 +210,7 @@ class ProgramModesOptions : public OptionsParser {
 
     std::string program_description;
     std::string exename{"hypercube"};
-
+    bool activated{false}; //becomes true when parse function succeeded
 private:
     modes_t modes_;    
     std::vector<modes_t::iterator> modes_order_; //order of modes_ for printing purpose

@@ -131,31 +131,34 @@ class SingleRun {
 
         std::vector<SubtaskRecord> loadFromDB() {
             std::vector<SubtaskRecord> res;
-            /*if(options_->meta_data_options.taskId || options_->meta_data_options.runall) {
+            assert(options_->subtask_run_options->activated);
+            auto meta_data_options = options_->subtask_run_options->meta_data_options;
+            if(meta_data_options->taskId || meta_data_options->runall) {
                 SubtaskDB subtaskDB;
                 subtaskDB.readFromFile(options_->io_options.subtasksFileName);
-                if(options_->meta_data_options.taskId) {
-                    auto task = subtaskDB.find(*options_->meta_data_options.taskId);
+                if(meta_data_options->taskId) {
+                    auto task = subtaskDB.find(*meta_data_options->taskId);
                     if(!task) {
                         std::stringstream str;
-                        str<<"Input file "<<options_->io_options.subtasksFileName<<" doesn't contain task with taskid = "<<*options_->meta_data_options.taskId;
+                        str<<"Input file "<<options_->io_options->subtasksFileName<<" doesn't contain task with taskid = "<<*meta_data_options->taskId;
                         throw std::runtime_error(str.str());
                     }
                     res.push_back(*task);
                 } else {
-                    assert(options_->meta_data_options.runall);
+                    assert(meta_data_options->runall);
                     res = subtaskDB.records();
                     if(res.empty()) {
                         std::cout<<"The specified file doesn't contain any task"<<std::endl;
                     }
                 }
-            }*/
+            }
             return res;
         }
         std::vector<SubtaskRecord> loadFromOptions() {
             std::vector<SubtaskRecord> res;
-            /*for(auto problem : options_->hypercube_options) {
-                for(auto bits_repack_description : options_->bits_repack_options) {
+            assert(options_->manual_single_run_options->activated);            
+            for(auto problem : *options_->manual_single_run_options->hypercube_options) {
+                for(auto bits_repack_description : *options_->manual_single_run_options->bits_repack_options) {
                     SubtaskRecord subtask;
                     subtask.problem = problem;
                     subtask.subtask = SubtaskParameters{.Ntasks=options_->subtask_options.nSubtasks,.cur_task=options_->subtask_options.curSubtask};
@@ -163,7 +166,7 @@ class SingleRun {
                     subtask.rng = options_->rng_options.description();        
                     res.push_back(std::move(subtask));
                 }
-            }*/
+            }
             return res;
         }
         void saveResults(const std::string& filename) {

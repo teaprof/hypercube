@@ -74,7 +74,7 @@ class MyApplication {
             return options_;
         }
         void init() {
-            if(options_.selectedModeName() == "run") {
+            if(options_.selectedModeName() == "run" || options_.selectedModeName() == "subtask") {
                 single_run.emplace(options_.single_run_options);
                 gatherer.emplace(options_.single_run_options->io_options);
                 single_run->init();

@@ -42,7 +42,7 @@ class MyProgramOptions : public ProgramModesOptions {
         push_back("default", default_options);
         push_back("generate", task_generator_options);
         push_back("run", single_run_options->manual_single_run_options); // run subtasks and gather
-        push_back("subtask", single_run_options->subtask_run_options); // run subtasks and gather
+        push_back("subtask", single_run_options->batched_run_options); // run subtasks and gather
         push_back("gather", gather_options); // gather only
         this->setDefaultModeName("default");
         this->showDefaultModeName(false);

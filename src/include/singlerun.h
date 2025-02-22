@@ -11,18 +11,18 @@
 #include "options/ProgramOptions.h"
 #include "options/IOoptions.h"
 #include "serializers/prettyserializer.h"
-#include<cassert>
-#include<iostream>
-#include<filesystem>
+#include <cassert>
+#include <iostream>
+#include <filesystem>
 #include "options/BasicOptions.h"
 #include <boost/interprocess/sync/file_lock.hpp>
 
 #include<memory>
 
 
-class ManualSingleRunOptions : public ProgramOptions {
+class ManualRunOptions : public ProgramOptions {
 public:
-    ManualSingleRunOptions() : ProgramOptions() {
+    ManualRunOptions() : ProgramOptions() {
         rng_options = std::make_shared<RNGOptions>();
         bits_repack_options = std::make_shared<BitsRepackOptions>();
         //sampling_options = std::make_shared<SamplingOptions>();
@@ -41,9 +41,9 @@ public:
     std::shared_ptr<SubtaskOptions> subtask_options;
 };
 
-class SubtaskRunOptions : public ProgramOptions {
+class BatchedRunOptions : public ProgramOptions {
 public:
-    SubtaskRunOptions() : ProgramOptions() {
+    BatchedRunOptions() : ProgramOptions() {
         meta_data_options = std::make_shared<MetaDataOptions>();
         addGroup(meta_data_options);
     }
@@ -51,26 +51,26 @@ public:
 };
 
 
-class SingleRunOptions  {
+class SingleRunOptions  { // maybe rename to RunOptions
 public:
     SingleRunOptions() {
-        manual_single_run_options = std::make_shared<ManualSingleRunOptions>();
-        subtask_run_options = std::make_shared<SubtaskRunOptions>();
+        manual_single_run_options = std::make_shared<ManualRunOptions>();
+        batched_run_options = std::make_shared<BatchedRunOptions>();
         multithread_options = std::make_shared<MultithreadOptions>();
         io_options = std::make_shared<IOOptions>();
         manual_single_run_options->addGroup(multithread_options);
         manual_single_run_options->addGroup(io_options);
-        subtask_run_options->addGroup(multithread_options);
-        subtask_run_options->addGroup(io_options);
+        batched_run_options->addGroup(multithread_options);
+        batched_run_options->addGroup(io_options);
     }
-    std::shared_ptr<ManualSingleRunOptions> manual_single_run_options;
-    std::shared_ptr<SubtaskRunOptions> subtask_run_options;
+    std::shared_ptr<ManualRunOptions> manual_single_run_options;
+    std::shared_ptr<BatchedRunOptions> batched_run_options;
 
     std::shared_ptr<MultithreadOptions> multithread_options;
     std::shared_ptr<IOOptions> io_options;
 };
 
-class SingleRun {        
+class SingleRun {   // maybe rename to Runner     
     public:
         SingleRun(const std::shared_ptr<SingleRunOptions>& options) : options_{options} {
         }
@@ -86,10 +86,13 @@ class SingleRun {
         }
 
         void initSubtasks() {
-            tasks_ = loadFromDB();
-            if(tasks_.empty()) {
+            if(options_->batched_run_options->activated) {
+                assert(!options_->manual_single_run_options->activated);
+                tasks_ = loadFromDB();
+            } else {
+                assert(options_->manual_single_run_options->activated);
                 tasks_ = loadFromOptions();
-            }
+            };
             std::cout<<"The following tasks have been created:\n";
             for(auto it : tasks_) {                
                 std::cout<<it<<std::endl;
@@ -131,11 +134,11 @@ class SingleRun {
 
         std::vector<SubtaskRecord> loadFromDB() {
             std::vector<SubtaskRecord> res;
-            assert(options_->subtask_run_options->activated);
-            auto meta_data_options = options_->subtask_run_options->meta_data_options;
+            assert(options_->batched_run_options->activated);
+            auto meta_data_options = options_->batched_run_options->meta_data_options;
             if(meta_data_options->taskId || meta_data_options->runall) {
                 SubtaskDB subtaskDB;
-                subtaskDB.readFromFile(options_->io_options.subtasksFileName);
+                subtaskDB.readFromFile(options_->io_options->subtasksFileName);
                 if(meta_data_options->taskId) {
                     auto task = subtaskDB.find(*meta_data_options->taskId);
                     if(!task) {
@@ -161,9 +164,9 @@ class SingleRun {
                 for(auto bits_repack_description : *options_->manual_single_run_options->bits_repack_options) {
                     SubtaskRecord subtask;
                     subtask.problem = problem;
-                    subtask.subtask = SubtaskParameters{.Ntasks=options_->subtask_options.nSubtasks,.cur_task=options_->subtask_options.curSubtask};
+                    subtask.subtask = SubtaskParameters{.Ntasks=options_->manual_single_run_options->subtask_options->nSubtasks,.cur_task=options_->manual_single_run_options->subtask_options->curSubtask};
                     subtask.repack = bits_repack_description;
-                    subtask.rng = options_->rng_options.description();        
+                    subtask.rng = options_->manual_single_run_options->rng_options->description();
                     res.push_back(std::move(subtask));
                 }
             }

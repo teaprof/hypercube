@@ -13,7 +13,7 @@ do
 done
 for M in 10 100 1000 10000 100000 1000000
 do
-	nPointsPerCell="${nPointsPerCell} -M${m}"
+	nPointsPerCell="${nPointsPerCell} -M${M}"
 done
 
 echo "Dimensions: " $dims

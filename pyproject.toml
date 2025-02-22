@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "hypercube"
+version = "0.1.0"
+description = ""
+authors = ["tea <tsvegor@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.12.3"
+apache-airflow = "^2.10.5"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

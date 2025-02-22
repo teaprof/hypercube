@@ -175,7 +175,11 @@ boost::json::object& operator<<(boost::json::object& object, const MetaData& met
 
 const boost::json::object& operator>>(const boost::json::object& object, MetaData& meta) {
     AssertOnlyFields(meta, meta.taskId);
-    meta.taskId = object.at("taskId").as_int64();
+    /*std::cout<<std::endl;
+    for(auto it : object) {
+        std::cout<<it.key()<<" "<<it.value()<<std::endl;
+    }*/
+    meta.taskId = object.at("taskId").as_uint64();
     return object;
 }
 
@@ -193,7 +197,7 @@ const boost::json::object& operator>>(const boost::json::object& object, std::op
         T value;
         object>>value;
         value_opt = value;
-    } catch (const boost::system::system_error&) {
+    } catch (const boost::system::system_error& ec) {
         value_opt = std::nullopt;
     }    
     return object;

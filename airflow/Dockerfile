@@ -20,7 +20,7 @@ ENV PATH="/opt/cmake-3.31.2-linux-x86_64/bin:$PATH"
 ENV CMAKE_CXX_COMPILER="clang-16"
 
 #BUILD APP
-ADD . /app/src/
+ADD ./src /app/src/
 WORKDIR /app/build
 RUN cmake -DCMAKE_CXX_COMPILER=clang++-16 -DCMAKE_BUILD_TYPE=Release ../src  && \
     cmake --build . -j

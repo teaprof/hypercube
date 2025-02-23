@@ -1,2 +1,2 @@
 #docker build -t hypercube -f airflow/Dockerfile  .
-docker build -t hypercube .
+docker build -t hypercube -f airflow/Dockerfile .

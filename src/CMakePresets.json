@@ -11,7 +11,7 @@
             "hidden": true,
             "displayName": "Clang 15.0.7 x86_64-pc-linux-gnu",
             "description": "Using compilers: C = /usr/bin/clang-15, CXX = /usr/bin/clang++-15",
-            "binaryDir": "${sourceDir}/build/${presetName}",
+            "binaryDir": "${sourceDir}/../build/${presetName}",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
                 "CMAKE_C_COMPILER": "/usr/bin/clang-15",

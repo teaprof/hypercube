@@ -43,15 +43,15 @@ boost::json::object& operator<<(boost::json::object& object, const RandomNumberG
 
 const boost::json::object& operator>>(const boost::json::object& object, RandomNumberGeneratorDescription& rng_descr) {
     AssertOnlyFields(rng_descr, rng_descr.offset, rng_descr.rng_id, rng_descr.seed);
-    rng_descr.rng_id = object.at("rng_id").as_int64();
+    rng_descr.rng_id = object.at("rng_id").to_number<uint64_t>();
     auto v = object.at("seed");
     if(v.is_null()) {
         rng_descr.seed = std::nullopt;
     } else {
         assert(v.is_int64());
-        rng_descr.seed = v.as_int64();
+        rng_descr.seed = v.to_number<uint64_t>();
     }
-    rng_descr.offset = object.at("offset").as_int64();
+    rng_descr.offset = object.at("offset").to_number<uint64_t>();
     return object;
 }
 
@@ -74,7 +74,7 @@ const boost::json::object& operator>>(const boost::json::object& object, BitsRep
         bits_repack_descr.bits_per_sample = std::nullopt;
     } else {
         assert(v.is_int64());
-        bits_repack_descr.bits_per_sample = v.as_int64();
+        bits_repack_descr.bits_per_sample = v.to_number<uint64_t>();
     }    
     bits_repack_descr.src_little_endian = object.at("repack_src_little_endian").as_bool();
     bits_repack_descr.dst_little_endian =object.at("repack_dst_little_endian").as_bool();
@@ -91,8 +91,8 @@ boost::json::object& operator<<(boost::json::object& object, const Chi2BasedProb
 
 const boost::json::object& operator>>(const boost::json::object& object, Chi2BasedProblem& problem) {
     AssertOnlyFields(problem, problem.N, problem.n_cells_total);
-    problem.N = object.at("N").as_int64();
-    problem.n_cells_total = object.at("n_cells_total").as_int64();
+    problem.N = object.at("N").to_number<uint64_t>();
+    problem.n_cells_total = object.at("n_cells_total").to_number<uint64_t>();
     return object;
 }
 
@@ -110,11 +110,11 @@ boost::json::object& operator<<(boost::json::object& object, const StatiscticalT
 
 const boost::json::object& operator>>(const boost::json::object& object, StatiscticalTestResults& results) {
     AssertOnlyFields(results, results.dof, results.mean, results.sum, results.sum2, results.N, results.chi2, results.chi2cdf);
-    results.dof = object.at("dof").as_int64();
+    results.dof = object.at("dof").to_number<uint64_t>();
     results.mean = object.at("mean").as_double();
-    results.sum = object.at("sum").as_int64();
-    results.sum2 = object.at("sum2").as_int64();
-    results.N = object.at("N").as_int64();
+    results.sum = object.at("sum").to_number<uint64_t>();
+    results.sum2 = object.at("sum2").to_number<uint64_t>();
+    results.N = object.at("N").to_number<uint64_t>();
     results.chi2 = object.at("chi2").as_double();
     results.chi2cdf = object.at("chi2cdf").as_double();
     return object;
@@ -129,8 +129,8 @@ boost::json::object& operator<<(boost::json::object& object, const SubtaskParame
 
 const boost::json::object& operator>>(const boost::json::object& object, SubtaskParameters& subtask) {
     AssertOnlyFields(subtask, subtask.Ntasks, subtask.cur_task);
-    subtask.Ntasks = object.at("Ntasks").as_int64();
-    subtask.cur_task = object.at("cur_task").as_int64();
+    subtask.Ntasks = object.at("Ntasks").to_number<uint64_t>();
+    subtask.cur_task = object.at("cur_task").to_number<uint64_t>();
     return object;
 }
 
@@ -143,8 +143,8 @@ boost::json::object& operator<<(boost::json::object& object, const SubtaskResult
 
 const boost::json::object& operator>>(const boost::json::object& object, SubtaskResults& results) {
     AssertOnlyFields(results, results.sum, results.sum2);
-    results.sum = object.at("sum").as_int64();
-    results.sum2 = object.at("sum2").as_int64();
+    results.sum = object.at("sum").to_number<uint64_t>();
+    results.sum2 = object.at("sum2").to_number<uint64_t>();
     return object;
 }
 
@@ -160,9 +160,9 @@ boost::json::object& operator<<(boost::json::object& object, const HypercubeProb
 
 const boost::json::object& operator>>(const boost::json::object& object, HypercubeProblem& problem) {
     AssertOnlyFields(problem, static_cast<const Chi2BasedProblem&>(problem), problem.dim, problem.m_intervals_per_dim, problem.stride);
-    problem.dim = object.at("dim").as_int64();
-    problem.m_intervals_per_dim = object.at("m_intervals_per_dim").as_int64();
-    problem.stride = object.at("stride").as_int64();
+    problem.dim = object.at("dim").to_number<uint64_t>();
+    problem.m_intervals_per_dim = object.at("m_intervals_per_dim").to_number<uint64_t>();
+    problem.stride = object.at("stride").to_number<uint64_t>();
     object >> static_cast<Chi2BasedProblem&>(problem);
     return object;
 }
@@ -175,11 +175,7 @@ boost::json::object& operator<<(boost::json::object& object, const MetaData& met
 
 const boost::json::object& operator>>(const boost::json::object& object, MetaData& meta) {
     AssertOnlyFields(meta, meta.taskId);
-    /*std::cout<<std::endl;
-    for(auto it : object) {
-        std::cout<<it.key()<<" "<<it.value()<<std::endl;
-    }*/
-    meta.taskId = object.at("taskId").as_uint64();
+    meta.taskId = object.at("taskId").to_number<uint64_t>();
     return object;
 }
 

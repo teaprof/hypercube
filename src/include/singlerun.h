@@ -57,7 +57,7 @@ public:
         manual_single_run_options = std::make_shared<ManualRunOptions>();
         batched_run_options = std::make_shared<BatchedRunOptions>();
         multithread_options = std::make_shared<MultithreadOptions>();
-        io_options = std::make_shared<IOOptions>();
+        io_options = std::make_shared<IOOptions>("run io options");
         manual_single_run_options->addGroup(multithread_options);
         manual_single_run_options->addGroup(io_options);
         batched_run_options->addGroup(multithread_options);

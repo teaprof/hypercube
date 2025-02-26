@@ -12,6 +12,16 @@ json_file=os.path.join(dir_path, "subtasks.json")
 with open(json_file) as f:
 #with open('subtasks.json') as f:
     data = json.load(f)
+    
+dims = [1, 2, 3, 4, 5, 6, 7];
+mIntervalsPerDim = [10, 20, 50, 100, 1000, 1e+4]
+nPointsPerCell = [10, 100, 1000, 10000, 1e+5, 1e+6];
+
+    
+for d in dims:
+    for m in mIntervalsPerDim:
+        for n in nPointsPerCell:
+            pass
 
 with DAG(dag_id="all", start_date=datetime.datetime(2021, 1, 1), schedule="@once") as dag:
     for it in data:

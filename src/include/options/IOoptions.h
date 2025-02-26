@@ -1,11 +1,10 @@
 #ifndef __IO_OPTIONS_H__
 #define __IO_OPTIONS_H__
 #include <options/BasicOptions.h>
-#include <optional>
 
 class IOOptions : public OptionsGroup {
     public:
-    IOOptions() : OptionsGroup("IO options") {
+    IOOptions(const std::string& io_options_name) : OptionsGroup(io_options_name) {
         namespace po = boost::program_options;
         addPositionalVisible("input", 1, po::value(&subtasksFileName)->default_value("subtasks.json"), "file with subtasks");
         addPositionalVisible("output", 1, po::value(&subtasksResultsFileName)->default_value("subtasks_results.json"), "file where subtask results should be written to");
@@ -29,7 +28,7 @@ class IOOptions : public OptionsGroup {
 
 class SubtasksOutput : public OptionsGroup {
     public:
-    SubtasksOutput() : OptionsGroup("IO options") {
+    SubtasksOutput() : OptionsGroup("subtasks output options") {
         namespace po = boost::program_options;
         addPositionalVisible("output", 1, po::value(&subtasksFileName)->default_value("subtasks_results.json"), "file with subtasks to generate");
     }

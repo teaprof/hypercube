@@ -22,7 +22,7 @@
 class GatherOptions : public ProgramOptions {
     public:
     GatherOptions() {
-        io_options = std::make_shared<IOOptions>();
+        io_options = std::make_shared<IOOptions>("gatherer io options");
         addGroup(io_options);
     }
     GatherOptions(std::shared_ptr<IOOptions> io_opts) : io_options{io_opts} {}

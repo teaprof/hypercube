@@ -26,15 +26,15 @@ class IOOptions : public OptionsGroup {
     std::string tasksResultsFileName;
 };
 
-class SubtasksOutput : public OptionsGroup {
+class GeneratorOutputOptions : public OptionsGroup {
     public:
-    SubtasksOutput() : OptionsGroup("subtasks output options") {
+    GeneratorOutputOptions() : OptionsGroup("subtasks output options") {
         namespace po = boost::program_options;
-        addPositionalVisible("output", 1, po::value(&subtasksFileName)->default_value("subtasks_results.json"), "file with subtasks to generate");
+        addPositionalVisible("output", 1, po::value(&subtasksFileName)->default_value("subtasks.json"), "file with subtasks to generate");
     }
     void validate() override {
         if(subtasksFileName.empty()) {
-            throw std::runtime_error("input file name should not be empty");
+            throw std::runtime_error("output file name should not be empty");
         }
     }
     std::string subtasksFileName;

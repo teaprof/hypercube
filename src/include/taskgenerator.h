@@ -16,16 +16,16 @@
 class TaskGeneratorOptions : public ProgramOptions {
     public:
     TaskGeneratorOptions() {
-        subtasks_output_options = std::make_shared<SubtasksOutput>();
+        output_options = std::make_shared<GeneratorOutputOptions>();
         hypercube_options = std::make_shared<HypercubeOptions>();
         runtime_options = std::make_shared<RuntimeOptions>();
         rng_options = std::make_shared<RNGOptions>();
-        addGroup(subtasks_output_options);
+        addGroup(output_options);
         addGroup(runtime_options);
         addGroup(rng_options);
         addGroup(hypercube_options); // to add a specified hypercube test 
     }
-    std::shared_ptr<SubtasksOutput> subtasks_output_options;
+    std::shared_ptr<GeneratorOutputOptions> output_options;
     std::shared_ptr<HypercubeOptions> hypercube_options;
     std::shared_ptr<RuntimeOptions> runtime_options;
     std::shared_ptr<RNGOptions> rng_options;
@@ -74,7 +74,7 @@ class TaskGenerator {
         std::cout<<"Filtered by maxTotalPoints filter "<<filter_by_total_points_count<<" tasks"<<std::endl;
         std::cout<<"Filtered by maxSubtask filter "<<filter_by_subtasks<<" tasks"<<std::endl;
         std::cout<<"Writing db..."<<std::endl;
-        tasks.writeToFile("subtasks.json");
+        tasks.writeToFile(options_->output_options->subtasksFileName);
         std::cout<<"finished!"<<std::endl;
     }
     /*void run() {

@@ -15,7 +15,9 @@
 #include <iostream>
 #include <filesystem>
 #include "options/BasicOptions.h"
-#include <boost/interprocess/sync/file_lock.hpp>
+//#include <boost/interprocess/sync/file_lock.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 
 #include<memory>
 
@@ -173,9 +175,12 @@ class SingleRun {   // maybe rename to Runner
             return res;
         }
         void saveResults(const std::string& filename) {
+            using boost::interprocess::named_mutex, boost::interprocess::open_or_create, boost::interprocess::scoped_lock;
+            boost::interprocess::named_mutex m(open_or_create, "hypercube_singlerun_save_results");
+            scoped_lock<named_mutex> s(m);
             SubtaskResultsDB results_db; 
             if(std::filesystem::exists(filename)) {
-                boost::interprocess::file_lock flock(filename.c_str());
+                //boost::interprocess::file_lock flock(filename.c_str()); //can be used only if file exists
                 results_db.readFromFile(filename);
                 results_db.add(tasks_, subtask_results_, times_);
                 results_db.writeToFile(filename);

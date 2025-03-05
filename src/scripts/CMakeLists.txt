@@ -3,3 +3,4 @@ set(permissions_rwx OWNER_EXECUTE GROUP_EXECUTE OWNER_READ OWNER_WRITE GROUP_REA
 set(permissions_rw OWNER_READ OWNER_WRITE GROUP_READ GROUP_WRITE WORLD_READ)
 configure_file(generate_basic.sh generate_basic.sh FILE_PERMISSIONS ${permissions_rwx} COPYONLY)
 configure_file(tablesupdate.py tablesupdate.py FILE_PERMISSIONS ${permissions_rwx} COPYONLY)
+configure_file(generate_dags.py generate_dags.py FILE_PERMISSIONS ${permissions_rwx} COPYONLY)

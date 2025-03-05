@@ -32,8 +32,8 @@ RUN ./bootstrap.sh --with-libraries=json,program_options --with-toolset=clang
 RUN ./b2
 RUN ./b2 install
 
-
 #BUILD APP
+FROM build AS build_app
 ADD ./src /app/src/
 WORKDIR /app/build
 RUN cmake -DCMAKE_CXX_COMPILER=clang++-16 -DCMAKE_BUILD_TYPE=Release ../src  && \
@@ -48,7 +48,7 @@ USER root
 RUN apt update -y
 RUN apt install libboost-program-options1.81.0 libboost-json1.81.0 libboost-container1.81.0
 USER airflow
-COPY --from=build /app /app
+COPY --from=build_app /app /app
 ENV PATH="/app/build/bin:$PATH"
 USER airflow
 

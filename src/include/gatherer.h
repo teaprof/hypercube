@@ -22,11 +22,15 @@
 class GatherOptions : public ProgramOptions {
     public:
     GatherOptions() {
-        io_options = std::make_shared<IOOptions>("gatherer io options");
+        io_options = std::make_shared<GatherIOOptions>();
         addGroup(io_options);
     }
-    GatherOptions(std::shared_ptr<IOOptions> io_opts) : io_options{io_opts} {}
-    std::shared_ptr<IOOptions> io_options;
+    GatherOptions(std::shared_ptr<IOOptions> io_opts)  {
+        io_options = std::make_shared<GatherIOOptions>();
+        io_options->subtasksResultsFileName = io_opts->subtasksFileName;
+        io_options->tasksResultsFileName = io_opts->tasksResultsFileName;
+    }
+    std::shared_ptr<GatherIOOptions> io_options;
 };
 
 class Gatherer  {
@@ -50,22 +54,38 @@ private:
         TaskResultsDB task_results_db;
         const std::string& subtask_results_filename = options_->io_options->subtasksResultsFileName;
         const std::string& task_results_filename = options_->io_options->tasksResultsFileName;
-        if(std::filesystem::exists(subtask_results_filename)) {
-            boost::interprocess::file_lock flock(subtask_results_filename.c_str());
-            subtask_results_db.readFromFile(subtask_results_filename);
-        };
-        if(std::filesystem::exists(task_results_filename)) {
-            boost::interprocess::file_lock flock(task_results_filename.c_str());
-            task_results_db.readFromFile(task_results_filename);
-            gatherResults_(subtask_results_db, task_results_db);
-            task_results_db.writeToFile(task_results_filename);
-        } else {
-            gatherResults_(subtask_results_db, task_results_db);
-            task_results_db.writeToFile(task_results_filename);
+        {
+            using boost::interprocess::named_mutex, boost::interprocess::open_or_create, boost::interprocess::scoped_lock;
+            named_mutex m(open_or_create, "hypercube_singlerun_gather_results");
+            scoped_lock<named_mutex> s(m);
+
+            if(std::filesystem::exists(subtask_results_filename)) {
+                boost::interprocess::file_lock flock(subtask_results_filename.c_str());
+                try {
+                    subtask_results_db.readFromFile(subtask_results_filename);
+                } catch (...) { // the actual type of the exception is very hard to derive from boost::json source code
+                    std::cout<<"Error while reading "<<subtask_results_filename<<std::endl;
+                    return;
+                }
+            };
+            if(std::filesystem::exists(task_results_filename)) {
+                boost::interprocess::file_lock flock(task_results_filename.c_str());
+                try {
+                    task_results_db.readFromFile(task_results_filename);
+                } catch (...) { // the actual type of the exception is very hard to derive from boost::json source code
+                    std::cout<<"Error while reading "<<task_results_filename<<std::endl;
+                    task_results_db.clear();
+                }
+                appendNewResults(subtask_results_db, task_results_db);
+                task_results_db.writeToFile(task_results_filename);
+            } else {
+                appendNewResults(subtask_results_db, task_results_db);
+                task_results_db.writeToFile(task_results_filename);
+            }
         }
     }
 
-    void gatherResults_(const SubtaskResultsDB& subtask_results_db, TaskResultsDB& task_results_db) {
+    void appendNewResults(const SubtaskResultsDB& subtask_results_db, TaskResultsDB& task_results_db) {
         std::vector<std::vector<SubtaskResultsRecord>> finished_tasks = subtask_results_db.getFinished();
         for(auto subtasks : finished_tasks) {
             TaskRecord& task = static_cast<TaskRecord&>(subtasks[0]);
@@ -78,5 +98,6 @@ private:
             TaskResultsRecord task_results_{task.meta, task.rng, task.repack, task.problem, res};
             task_results_db.push_back(task_results_);
         }
+        task_results_db.sanitize();
     }
 };

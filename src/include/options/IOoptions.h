@@ -26,6 +26,25 @@ class IOOptions : public OptionsGroup {
     std::string tasksResultsFileName;
 };
 
+class GatherIOOptions : public OptionsGroup {
+    public:
+    GatherIOOptions() : OptionsGroup("gatherer io options") {
+        namespace po = boost::program_options;
+        addPositionalVisible("input", 1, po::value(&subtasksResultsFileName)->default_value("subtasks_results.json"), "file with subtasks");
+        addPositionalVisible("output", 1, po::value(&tasksResultsFileName)->default_value("tasks_results.json"), "file where subtask results should be written to");
+    }
+    void validate() override {
+        if(subtasksResultsFileName.empty()) {
+            throw std::runtime_error("outputfile name should not be empty");
+        }
+        if(tasksResultsFileName.empty()) {
+            throw std::runtime_error("gatherfile name should not be empty");
+        }
+    }
+    std::string subtasksResultsFileName;
+    std::string tasksResultsFileName;
+};
+
 class GeneratorOutputOptions : public OptionsGroup {
     public:
     GeneratorOutputOptions() : OptionsGroup("subtasks output options") {

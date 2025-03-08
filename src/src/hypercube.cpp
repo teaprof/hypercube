@@ -117,8 +117,9 @@ int main(int argc, const char* argv[]) {
             return 0;
         }
         app.init();
-        app.run();
+        app.    run();
         app.done();
+        std::cout<<"Success"<<std::endl;
         return 0;
     } catch (std::runtime_error& r) {
         std::cerr<<"Error:"<<std::endl;

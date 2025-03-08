@@ -1,3 +1,4 @@
+#=======================BUILD==============================
 #FROM ubuntu:latest AS build
 #ARG BaseImage=ubuntu:latest
 ARG BaseImage=apache/airflow:2.10.4
@@ -24,6 +25,7 @@ ENV CMAKE_CXX_COMPILER="clang-16"
 RUN ln -s /usr/bin/clang++-16 /usr/bin/clang++
 
 #INSTALL AND BUILD Boost
+USER root
 RUN wget https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2 && \
             tar -xf boost_1_87_0.tar.bz2 && \
             rm boost_1_87_0.tar.bz2
@@ -32,8 +34,13 @@ RUN ./bootstrap.sh --with-libraries=json,program_options --with-toolset=clang
 RUN ./b2
 RUN ./b2 install
 
-#BUILD APP
+#INSTALL python packages
+USER airflow
+RUN pip install openpyxl
+
+#======================BUILD APP============================
 FROM build AS build_app
+USER root
 ADD ./src /app/src/
 WORKDIR /app/build
 RUN cmake -DCMAKE_CXX_COMPILER=clang++-16 -DCMAKE_BUILD_TYPE=Release ../src  && \
@@ -42,13 +49,15 @@ RUN cmake -DCMAKE_CXX_COMPILER=clang++-16 -DCMAKE_BUILD_TYPE=Release ../src  && 
 #CHANGE AIRFLOW SETTINGS
 #RUN sed -i 's/dag_dir_list_interval.*/dag_dir_list_interval = 30/g' /opt/airflow/airflow.cfg
  
+#=======================RUN APP==============================
 #FROM ubuntu:latest
 FROM $BaseImage
 USER root
-RUN apt update -y
-RUN apt install libboost-program-options1.81.0 libboost-json1.81.0 libboost-container1.81.0
-USER airflow
+#RUN apt update -y
+#RUN apt install libboost-program-options1.81.0 libboost-json1.81.0 libboost-container1.81.0
 COPY --from=build_app /app /app
 ENV PATH="/app/build/bin:$PATH"
 USER airflow
+RUN pip install openpyxl
+
 

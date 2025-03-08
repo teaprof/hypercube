@@ -175,18 +175,23 @@ class SingleRun {   // maybe rename to Runner
             return res;
         }
         void saveResults(const std::string& filename) {
-            using boost::interprocess::named_mutex, boost::interprocess::open_or_create, boost::interprocess::scoped_lock;
-            boost::interprocess::named_mutex m(open_or_create, "hypercube_singlerun_save_results");
-            scoped_lock<named_mutex> s(m);
             SubtaskResultsDB results_db; 
-            if(std::filesystem::exists(filename)) {
-                //boost::interprocess::file_lock flock(filename.c_str()); //can be used only if file exists
-                results_db.readFromFile(filename);
-                results_db.add(tasks_, subtask_results_, times_);
-                results_db.writeToFile(filename);
-            } else {
-                results_db.add(tasks_, subtask_results_, times_);
-                results_db.writeToFile(filename);
+            std::cout<<"Saving to file "<<filename<<std::endl;
+            {
+                using boost::interprocess::named_mutex, boost::interprocess::open_or_create, boost::interprocess::scoped_lock;
+                named_mutex m(open_or_create, "hypercube_singlerun_save_results");
+                scoped_lock<named_mutex> s(m);
+                if(std::filesystem::exists(filename)) {
+                    std::cout<<"File exists, append to it"<<std::endl;
+                    //boost::interprocess::file_lock flock(filename.c_str()); //can be used only if file exists
+                    results_db.readFromFile(filename);
+                    results_db.add(tasks_, subtask_results_, times_);
+                    results_db.writeToFile(filename);
+                } else {
+                    std::cout<<"File doesn't exists, a new file will be created"<<std::endl;
+                    results_db.add(tasks_, subtask_results_, times_);
+                    results_db.writeToFile(filename);
+                }
             }
         }
 };

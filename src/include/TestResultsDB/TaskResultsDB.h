@@ -93,6 +93,11 @@ class TaskResultsDB {
         const std::vector<TaskResultsRecord>& records() {
             return records_;
         }
+        void clear() {
+            // this can be called when reading of the input file failed and all records should be removed since
+            // they can be corrupted
+            records_.clear();
+        }
     private:
     std::vector<TaskResultsRecord> records_;
 };

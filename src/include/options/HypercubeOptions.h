@@ -1,12 +1,11 @@
 #ifndef __HYPERCUBE_OPTIONS_H__
 #define __HYPERCUBE_OPTIONS_H__
 
-#include <options/BasicOptions.h>
-#include <options/ProgramOptions.h>
+#include <ProgramOptionsHeavy.h>
 #include <stat_tests/hypercube/HypercubeTest.h>
 #include <options/cartesian_product.h>
 
-class HypercubeOptions : public OptionsGroup {
+class HypercubeOptions : public program_options_heavy::OptionsGroup {
     public:
         using cartesian_product_t = CartesianProduct2<std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>, std::vector<size_t>>;
         HypercubeOptions() : OptionsGroup("Hypercube test options") {            

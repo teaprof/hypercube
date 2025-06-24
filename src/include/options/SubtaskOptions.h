@@ -1,10 +1,10 @@
 #ifndef __SUB_TASK_OPTIONS_H__
 #define  __SUB_TASK_OPTIONS_H__
 
-#include <options/BasicOptions.h>
+#include <ProgramOptionsHeavy.h>
 #include <stat_tests/chi2based/StatisticalTestBase.h>
 
-class SubtaskOptions : public OptionsGroup {
+class SubtaskOptions : public program_options_heavy::OptionsGroup {
     public:
         SubtaskOptions() : OptionsGroup("Subtask options") {
             namespace po = boost::program_options;

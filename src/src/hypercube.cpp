@@ -1,7 +1,6 @@
-#include "options/ProgramOptions.h"
+#include <ProgramOptionsHeavy.h>
 #include <cassert>
 #include <iostream>
-#include "options/BasicOptions.h"
 #include "singlerun.h"
 #include "gatherer.h"
 #include "taskgenerator.h"
@@ -9,67 +8,51 @@
 
 #include<memory>
 
-class DefaultOptions : public ProgramOptions {
+class MyProgramOptions : public program_options_heavy::SubcommandsParser {
     public:
-    DefaultOptions() {
-        help_options = std::make_shared<HelpOptions>();
-        addGroup(help_options);
-    }
-    std::shared_ptr<HelpOptions> help_options;
-};
-
-class MyProgramOptions : public ProgramModesOptions {
-    public:
-    MyProgramOptions() {
+    MyProgramOptions(int argc, const char* argv[]) : SubcommandsParser(argc, argv) {
         single_run_options = std::make_shared<SingleRunOptions>();
         gather_options = std::make_shared<GatherOptions>();
         task_generator_options = std::make_shared<TaskGeneratorOptions>();
-        default_options = std::make_shared<DefaultOptions>();
-        program_description="Hypercube statistical test for random number generators.";        
-        push_back("default", default_options);
+        help_options = std::make_shared<program_options_heavy::HelpSubcommand>();
+        program_description="Hypercube statistical test for random number generators.";
         push_back("generate", task_generator_options);
         push_back("run", single_run_options->manual_single_run_options); // run subtasks and gather
         push_back("subtask", single_run_options->batched_run_options); // run subtasks and gather
         push_back("gather", gather_options); // gather only
-        this->setDefaultModeName("default");
-        this->showDefaultModeName(false);
+        push_back("default", help_options);
+        this->setDefaultSubcommand("default", true);
 
-        //(*this)["all"].setTitle("Run all options");
-        //(*this)["all"].setHeader("run the default set of tests.");
-        (*this)["default"]->title = "Help options";
-        (*this)["run"]->title="Manual run options";
-        (*this)["run"]->description="run manually specified task";
-        (*this)["subtask"]->title="Run options";
-        (*this)["subtask"]->description="run the specified subtasks from subtask json file";
-        (*this)["gather"]->title="Gather only options";
-        (*this)["gather"]->description="gather results of the finished subtasks and update final statistics";
-        (*this)["generate"]->title="Generate subtasks options";
-        (*this)["generate"]->description="generate subtasks";
+        (*this)["run"]->program_description="run manually specified task";
+        (*this)["subtask"]->program_description="run the specified subtasks from subtask json file";
+        (*this)["gather"]->program_description="gather results of the finished subtasks and update final statistics";
+        (*this)["generate"]->program_description="generate subtasks";
+        //(*this)["default"]->program_description="--help - produce this help";
     }
     std::shared_ptr<SingleRunOptions> single_run_options;
     std::shared_ptr<GatherOptions> gather_options;
     std::shared_ptr<TaskGeneratorOptions> task_generator_options;
-    std::shared_ptr<DefaultOptions> default_options;
+    std::shared_ptr<program_options_heavy::HelpSubcommand> help_options;
 };
 
 class MyApplication {
     public:
-        MyApplication(int argc, const char* argv[]) {
+        MyApplication(int argc, const char* argv[]) : options_(argc, argv) {
             options_.parse(argc, argv);
         }
         MyProgramOptions& options() {
             return options_;
         }
         void init() {
-            if(options_.selectedModeName() == "run" || options_.selectedModeName() == "subtask") {
+            if(options_.selectedSubcommandName() == "run" || options_.selectedSubcommandName() == "subtask") {
                 single_run.emplace(options_.single_run_options);
                 gatherer.emplace(options_.single_run_options->io_options);
                 single_run->init();
                 gatherer->init();
-            } else if(options_.selectedModeName() == "gather") {
+            } else if(options_.selectedSubcommandName() == "gather") {
                 gatherer.emplace(options_.gather_options);
                 gatherer->init();
-            } else if(options_.selectedModeName() == "generate") {
+            } else if(options_.selectedSubcommandName() == "generate") {
                 task_generator.emplace(options_.task_generator_options);
                 task_generator->init();
             }
@@ -110,10 +93,13 @@ int main(int argc, const char* argv[]) {
             std::cout<<"    "<<argv[n]<<std::endl;
         }*/
         MyApplication app(argc, argv);
-        if(argc==1 || app.options().default_options->help_options->needHelp()) {
-            PrettyPrinter printer;
-            ProgramModesOptionsPrinter pmo_printer;
-            printer.print(*pmo_printer.print(app.options()));
+        if(argc==1 || app.options().help_options->help_options->needHelp()) {
+            program_options_heavy::printers::ProgramSubcommandsPrinter printer;
+            auto dom = printer.print(app.options());
+
+            program_options_heavy::printers::PrettyPrinter pp;
+            dom->accept(pp);
+    
             return 0;
         }
         app.init();

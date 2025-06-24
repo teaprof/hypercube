@@ -6,7 +6,7 @@
 #include<tuple>
 #include<cassert>
 
-class CartesianProduct {
+class CartesianProduct3 {
     public:
         void addDimension(size_t nElements) {
             space_dimensions.push_back(nElements);

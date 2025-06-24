@@ -1,8 +1,8 @@
 #ifndef __IO_OPTIONS_H__
 #define __IO_OPTIONS_H__
-#include <options/BasicOptions.h>
+#include <ProgramOptionsHeavy.h>
 
-class IOOptions : public OptionsGroup {
+class IOOptions : public program_options_heavy::OptionsGroup {
     public:
     IOOptions(const std::string& io_options_name) : OptionsGroup(io_options_name) {
         namespace po = boost::program_options;
@@ -26,7 +26,7 @@ class IOOptions : public OptionsGroup {
     std::string tasksResultsFileName;
 };
 
-class GatherIOOptions : public OptionsGroup {
+class GatherIOOptions : public program_options_heavy::OptionsGroup {
     public:
     GatherIOOptions() : OptionsGroup("gatherer io options") {
         namespace po = boost::program_options;
@@ -45,7 +45,7 @@ class GatherIOOptions : public OptionsGroup {
     std::string tasksResultsFileName;
 };
 
-class GeneratorOutputOptions : public OptionsGroup {
+class GeneratorOutputOptions : public program_options_heavy::OptionsGroup {
     public:
     GeneratorOutputOptions() : OptionsGroup("subtasks output options") {
         namespace po = boost::program_options;

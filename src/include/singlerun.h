@@ -8,13 +8,12 @@
 #include "options/SubtaskOptions.h"
 #include "options/HypercubeOptions.h"
 #include "options/MetaDataOptions.h"
-#include "options/ProgramOptions.h"
+#include <ProgramOptionsHeavy.h>
 #include "options/IOoptions.h"
 #include "serializers/prettyserializer.h"
 #include <cassert>
 #include <iostream>
 #include <filesystem>
-#include "options/BasicOptions.h"
 //#include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
@@ -22,9 +21,9 @@
 #include<memory>
 
 
-class ManualRunOptions : public ProgramOptions {
+class ManualRunOptions : public program_options_heavy::ProgramOptionsParser {
 public:
-    ManualRunOptions() : ProgramOptions() {
+    ManualRunOptions() : ProgramOptionsParser() {
         rng_options = std::make_shared<RNGOptions>();
         bits_repack_options = std::make_shared<BitsRepackOptions>();
         //sampling_options = std::make_shared<SamplingOptions>();
@@ -43,9 +42,9 @@ public:
     std::shared_ptr<SubtaskOptions> subtask_options;
 };
 
-class BatchedRunOptions : public ProgramOptions {
+class BatchedRunOptions : public program_options_heavy::ProgramOptionsParser {
 public:
-    BatchedRunOptions() : ProgramOptions() {
+    BatchedRunOptions() : ProgramOptionsParser() {
         meta_data_options = std::make_shared<MetaDataOptions>();
         addGroup(meta_data_options);
     }
@@ -58,7 +57,7 @@ public:
     SingleRunOptions() {
         manual_single_run_options = std::make_shared<ManualRunOptions>();
         batched_run_options = std::make_shared<BatchedRunOptions>();
-        multithread_options = std::make_shared<MultithreadOptions>();
+        multithread_options = std::make_shared<program_options_heavy::MultithreadOptions>();
         io_options = std::make_shared<IOOptions>("run io options");
         manual_single_run_options->addGroup(multithread_options);
         manual_single_run_options->addGroup(io_options);
@@ -68,7 +67,7 @@ public:
     std::shared_ptr<ManualRunOptions> manual_single_run_options;
     std::shared_ptr<BatchedRunOptions> batched_run_options;
 
-    std::shared_ptr<MultithreadOptions> multithread_options;
+    std::shared_ptr<program_options_heavy::MultithreadOptions> multithread_options;
     std::shared_ptr<IOOptions> io_options;
 };
 

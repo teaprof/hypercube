@@ -8,24 +8,23 @@
 #include "options/SubtaskOptions.h"
 #include "options/HypercubeOptions.h"
 #include "options/MetaDataOptions.h"
-#include "options/ProgramOptions.h"
+#include <ProgramOptionsHeavy.h>
 #include "options/IOoptions.h"
 #include "serializers/prettyserializer.h"
 #include<cassert>
 #include<iostream>
 #include<filesystem>
-#include "options/BasicOptions.h"
 #include <boost/interprocess/sync/file_lock.hpp>
 
 #include<memory>
 
-class GatherOptions : public ProgramOptions {
+class GatherOptions : public program_options_heavy::ProgramOptionsParser {
     public:
-    GatherOptions() {
+    GatherOptions() : ProgramOptionsParser() {
         io_options = std::make_shared<GatherIOOptions>();
         addGroup(io_options);
     }
-    GatherOptions(std::shared_ptr<IOOptions> io_opts)  {
+    GatherOptions(std::shared_ptr<IOOptions> io_opts) : ProgramOptionsParser() {
         io_options = std::make_shared<GatherIOOptions>();
         io_options->subtasksResultsFileName = io_opts->subtasksFileName;
         io_options->tasksResultsFileName = io_opts->tasksResultsFileName;

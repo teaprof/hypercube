@@ -3,7 +3,7 @@
 #include "TestResultsDB/SubtaskDB.h"
 #include "options/RngOptions.h"
 #include "options/HypercubeOptions.h"
-#include "options/ProgramOptions.h"
+#include <ProgramOptionsHeavy.h>
 #include "options/IOoptions.h"
 #include<cassert>
 #include<iostream>
@@ -13,9 +13,9 @@
 
 #include<memory>
 
-class TaskGeneratorOptions : public ProgramOptions {
+class TaskGeneratorOptions : public program_options_heavy::ProgramOptionsParser {
     public:
-    TaskGeneratorOptions() {
+    TaskGeneratorOptions() : ProgramOptionsParser() {
         output_options = std::make_shared<GeneratorOutputOptions>();
         hypercube_options = std::make_shared<HypercubeOptions>();
         runtime_options = std::make_shared<RuntimeOptions>();

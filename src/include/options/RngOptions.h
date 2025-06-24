@@ -1,7 +1,6 @@
 #ifndef __RNG_OPTIONS_H__
 #define __RNG_OPTIONS_H__
 
-#include <options/BasicOptions.h>
 #include <options/cartesian_product.h>
 #include <functional>
 #include <rng/dynamic/adaptors/bitsrepack.h>
@@ -19,7 +18,7 @@ std::optional<T> to_std_optional(boost::optional<T> v) {
     return std::nullopt;
 }
 
-class RNGOptions : public OptionsGroup {
+class RNGOptions : public program_options_heavy::OptionsGroup {
     public:
 
         RNGOptions() : OptionsGroup("RNG options") {
@@ -46,7 +45,7 @@ class RNGOptions : public OptionsGroup {
         size_t offset{0};
 };
 
-class BitsRepackOptions : public OptionsGroup {
+class BitsRepackOptions : public program_options_heavy::OptionsGroup {
         std::vector<bool> src_little_endian, dst_little_endian;
         std::vector<uint16_t> dst_sample_bits;
     public:        

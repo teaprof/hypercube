@@ -1,10 +1,10 @@
 #ifndef __TASK_GENERATOR_OPTIONS_H__
 #define  __TASK_GENERATOR_OPTIONS_H__
 
-#include <options/BasicOptions.h>
+#include <ProgramOptionsHeavy.h>
 #include <stat_tests/chi2based/StatisticalTestBase.h>
 
-class RuntimeOptions : public OptionsGroup {
+class RuntimeOptions : public program_options_heavy::OptionsGroup {
     public:
         RuntimeOptions() : OptionsGroup("Runtime options") {
             namespace po = boost::program_options;

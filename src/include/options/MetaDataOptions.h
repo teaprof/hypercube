@@ -1,9 +1,9 @@
 #ifndef __METADATA_OPTIONS_H__
 #define __METADATA_OPTIONS_H__
-#include <options/BasicOptions.h>
+#include <ProgramOptionsHeavy.h>
 #include <boost/optional.hpp>
 
-class MetaDataOptions : public OptionsGroup {
+class MetaDataOptions : public program_options_heavy::OptionsGroup {
     public:
         MetaDataOptions() : OptionsGroup("Metadata options") {
             namespace po = boost::program_options;

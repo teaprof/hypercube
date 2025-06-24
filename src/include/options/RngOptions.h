@@ -1,11 +1,14 @@
 #ifndef __RNG_OPTIONS_H__
 #define __RNG_OPTIONS_H__
 
-#include <options/cartesian_product.h>
-#include <functional>
 #include <rng/dynamic/adaptors/bitsrepack.h>
 #include <rng/dynamic/generators/RandomNumberWrapper.h>
 #include <stat_tests/rng.h>
+#include <options/cartesian_product.h>
+
+#include <ProgramOptionsHeavy.h>
+
+#include <functional>
 #include <boost/optional.hpp>
 //#include <boost/endian.hpp>
 #include <cstdint>
@@ -39,8 +42,8 @@ class RNGOptions : public program_options_heavy::OptionsGroup {
         RandomNumberGeneratorDescription description() {
             return {number, to_std_optional(seed), offset};
         }
-        std::string name;
-        size_t number{0};
+        std::string name; // rng name
+        size_t number{0}; // rng number (i.e. uniq ID)
         boost::optional<size_t> seed;
         size_t offset{0};
 };

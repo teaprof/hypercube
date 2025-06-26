@@ -1,10 +1,10 @@
 #ifndef __PYTHON_HYPERCUBE_H__
 #define __PYTHON_HYPERCUBE_H__
 
-#include <stat_tests/rng.h>
-#include <stat_tests/chi2based/StatisticalTestBase.h>
-#include <stat_tests/hypercube/HypercubeProblem.h>
-#include <stat_tests/hypercube/HypercubeSampler.h>
+#include <stattests/stat_tests/rng.h>
+#include <stattests/stat_tests/chi2based/StatisticalTestBase.h>
+#include <stattests/stat_tests/hypercube/HypercubeProblem.h>
+#include <stattests/stat_tests/hypercube/HypercubeSampler.h>
 
 
 

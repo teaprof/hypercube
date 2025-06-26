@@ -1,4 +1,4 @@
-#include<rng/dynamic/adaptors/bitsrepack.h>
+#include<rnglib/rng/dynamic/adaptors/bitsrepack.h>
 #include<vector>
 #include<sstream>
 #include<gtest/gtest.h>

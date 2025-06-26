@@ -28,12 +28,12 @@ namespace std {
 %apply std::vector<uint8_t> &INPUT {const std::vector<uint8_t>& msg};
 
 
-%include "rng/dynamic/generators/RandomBitGenerator.h"
+%include "rnglib/rng/dynamic/generators/RandomBitGenerator.h"
 
-%include "stat_tests/rng.h"
-%include "stat_tests/chi2based/StatisticalTestBase.h"
-%include "stat_tests/hypercube/HypercubeProblem.h"
-%include "stat_tests/hypercube/HypercubeSampler.h"
+%include "stattests/stat_tests/rng.h"
+%include "stattests/stat_tests/chi2based/StatisticalTestBase.h"
+%include "stattests/stat_tests/hypercube/HypercubeProblem.h"
+%include "stattests/stat_tests/hypercube/HypercubeSampler.h"
 
 %template(Chi2BasedTest1) Chi2BasedTest<HistogramAtomic>;
 

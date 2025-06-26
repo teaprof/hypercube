@@ -1,4 +1,4 @@
-#include "stat_tests/hypercube/HypercubeSampler.h"
+#include "stattests/stat_tests/hypercube/HypercubeSampler.h"
 
 #include <gtest/gtest.h>
 

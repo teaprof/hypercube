@@ -1,6 +1,6 @@
 #include "stat_tests/chi2based/StatisticalTestBase.h"
 #include "progress/tictoc.h"
-#include "stat_tests/hypercube/HypercubeTest.h"
+//#include "stat_tests/hypercube/HypercubeSampler.h"
 #include "TestResultsDB/SubtasksResultsDB.h"
 #include "TestResultsDB/SubtaskDB.h"
 #include "TestResultsDB/TaskResultsDB.h"

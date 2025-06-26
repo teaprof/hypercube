@@ -1,4 +1,4 @@
-#include "stat_tests/hypercube/HypercubeTest.h"
+#include "stat_tests/hypercube/HypercubeSampler.h"
 
 #include <gtest/gtest.h>
 
@@ -78,7 +78,8 @@ class HypercubeTestSuite : public testing::TestWithParam<std::tuple<size_t, size
             HypercubeProblem problem{dim, mIntervals, stride, NPoints};
             received = {0, 0};
             for(size_t n = 0; n < nSubtasks; n++) {
-                auto sampler = std::make_shared<HypercubeSampler>(problem);
+                //auto sampler = std::make_shared<HypercubeSampler>(problem);
+                HypercubeSampler sampler(problem);
                 auto rng = std::make_shared<MT19937Wrapper>();
                 SubtaskParameters subtask{.Ntasks=nSubtasks,.cur_task=n};
                 Chi2BasedTest<HistogramAtomic> test;

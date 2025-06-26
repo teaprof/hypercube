@@ -30,8 +30,8 @@ struct StatiscticalTestResults {
 };
 
 struct SubtaskParameters {
-    size_t Ntasks;
-    size_t cur_task;
+    size_t Ntasks{1};
+    size_t cur_task{1};
     bool operator==(const SubtaskParameters& other) const {
         return Ntasks == other.Ntasks && cur_task == other.cur_task;
     }
@@ -59,9 +59,9 @@ public:
     Chi2BasedTest() {}
     virtual ~Chi2BasedTest() {}
 
-    SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler,
+    SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler,
                     std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
-        assert(problem.n_cells_total == sampler->max() + 1);
+        assert(problem.n_cells_total == sampler.max() + 1);
         size_t data_size = getSubarraySize(problem, subtask);
         data.allocate(data_size);
         std::vector<std::thread> threads;
@@ -71,10 +71,10 @@ public:
             // MultiindexGeneratorT>(task, subtask, rng, sampler, subtask.n_threads,
             // thread_id);
             auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
-            sampler->discardN(thread_start - prev_thread_start, *rng);
+            sampler.discardN(thread_start - prev_thread_start, *rng);
             prev_thread_start = thread_start;
             //Chi2BasedTest::runThread(problem, subtask, sampler, rng->copy(), n_threads, thread_id);
-             std::thread thread(&Chi2BasedTest::runThread, this, problem, subtask, sampler->copy(), rng->copy(), n_threads, thread_id);
+             std::thread thread(&Chi2BasedTest::runThread, this, problem, subtask, sampler.copy(), rng->copy(), n_threads, thread_id);
             threads.emplace_back(std::move(thread));
         }
         for (auto &it : threads)
@@ -151,6 +151,8 @@ private:
     }
     Histogram data;
 };
+
+//using Chi2BasedTest1 = Chi2BasedTest<HistogramAtomic>;
 
 // using HypercubeSampler = KIndependentGenerator;
 

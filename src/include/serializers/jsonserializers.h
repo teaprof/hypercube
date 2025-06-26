@@ -2,7 +2,7 @@
 #define __SERIALIZERS_H__
 #include<boost/json.hpp>
 #include<stat_tests/chi2based/StatisticalTestBase.h>
-#include<stat_tests/hypercube/HypercubeTest.h>
+#include<stat_tests/hypercube/HypercubeSampler.h>
 #include<stat_tests/rng.h>
 #include<TestResultsDB/MetaData.h>
 

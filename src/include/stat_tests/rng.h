@@ -26,7 +26,7 @@ struct BitsRepackDescription {
     }
 };
 
-std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, std::optional<BitsRepackDescription> bits_repack_descr) {
+std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const std::optional<BitsRepackDescription> bits_repack_descr) {
     auto rng = std::make_shared<MT19937Wrapper>();
     if(rng_descr.seed) {
         rng->rng.seed(*rng_descr.seed);
@@ -43,6 +43,13 @@ std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorD
         return repacker;
     }
     return rng;
+}
+
+std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr) {
+    return createGenerator(rng_descr, std::nullopt);
+}
+std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const BitsRepackDescription& bits_repack_descr) {
+    return createGenerator(rng_descr, std::make_optional(bits_repack_descr));
 }
 
 #endif

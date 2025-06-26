@@ -1,6 +1,6 @@
 #include "stat_tests/chi2based/StatisticalTestBase.h"
 #include "progress/tictoc.h"
-#include "stat_tests/hypercube/HypercubeTest.h"
+#include "stat_tests/hypercube/HypercubeSampler.h"
 #include "TestResultsDB/SubtasksResultsDB.h"
 #include "TestResultsDB/SubtaskDB.h"
 #include "TestResultsDB/TaskResultsDB.h"
@@ -119,7 +119,8 @@ class SingleRun {   // maybe rename to Runner
 
             for(auto task : tasks_) {
                 auto rng = createGenerator(task.rng, task.repack); 
-                auto sampler = std::make_shared<HypercubeSampler>(task.problem);
+                //auto sampler = std::make_shared<HypercubeSampler>(task.problem);
+                HypercubeSampler sampler(task.problem);
                 Chi2BasedTest<HistogramAtomic> test;
                 
                 tic();

@@ -14,8 +14,8 @@
             "binaryDir": "${sourceDir}/../build/${presetName}",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
-                "CMAKE_C_COMPILER": "/usr/bin/clang-15",
-                "CMAKE_CXX_COMPILER": "/usr/bin/clang++-15",
+                "CMAKE_C_COMPILER": "/usr/bin/clang",
+                "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "On"
             }
         },

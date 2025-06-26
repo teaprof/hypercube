@@ -7,6 +7,7 @@
 
 class RandomBitGenerator {
 public:
+    virtual ~RandomBitGenerator() {}
     virtual uint64_t operator()() = 0;
     virtual uint16_t nbits() = 0;
     virtual std::shared_ptr<RandomBitGenerator> copy() = 0;

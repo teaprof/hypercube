@@ -1,5 +1,5 @@
 #include "stat_tests/chi2based/StatisticalTestBase.h"
-#include "stat_tests/hypercube/HypercubeTest.h"
+//#include "stat_tests/hypercube/HypercubeSampler.h"
 #include "TestResultsDB/SubtaskDB.h"
 #include "options/RngOptions.h"
 #include "options/HypercubeOptions.h"

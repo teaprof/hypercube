@@ -4,7 +4,6 @@
 #include<functional>
 #include<boost/crc.hpp>
 #include<stat_tests/chi2based/StatisticalTestBase.h>
-#include<stat_tests/hypercube/HypercubeTest.h>
 
 typedef boost::crc_optimal<64, 0x42F0E1EBA9EA3693, 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, true, true> crc_64_type;
 typedef crc_64_type::value_type hash_t;

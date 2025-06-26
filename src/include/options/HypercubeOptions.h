@@ -2,7 +2,7 @@
 #define __HYPERCUBE_OPTIONS_H__
 
 #include <ProgramOptionsHeavy.h>
-#include <stat_tests/hypercube/HypercubeTest.h>
+//#include <stat_tests/hypercube/HypercubeSampler.h>
 #include <options/cartesian_product.h>
 
 class HypercubeOptions : public program_options_heavy::OptionsGroup {

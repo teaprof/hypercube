@@ -1,6 +1,6 @@
 #include <rng/dynamic/generators/RandomNumberWrapper.h>
 #include <rng/dynamic/adaptors/bitsrepack.h>
-#include <stat_tests/hypercube/HypercubeTest.h>
+#include <stat_tests/hypercube/HypercubeSampler.h>
 #include <progress/tictoc.h>
 
 #include <utility>
@@ -55,7 +55,8 @@ static void bitsRepackFast(benchmark::State& state) {
 static void hypercubeBenchSingleThread(benchmark::State& state) {
     const size_t Nsamples = 1'000'000;
     HypercubeProblem problem(3, 16, 16, Nsamples);
-    auto sampler = std::make_shared<HypercubeSampler>(problem);
+    //auto sampler = std::make_shared<HypercubeSampler>(problem);
+    HypercubeSampler sampler(problem);
     SubtaskParameters subtask{.Ntasks=1,.cur_task=0};
     auto rng = std::make_shared<MT19937Wrapper>();
     Chi2BasedTest<Histogram> test;
@@ -76,7 +77,8 @@ static void hypercubeBenchAtomic(benchmark::State& state) {
     const size_t Nsamples = 1'000'000;
     const size_t threads = 8;
     HypercubeProblem problem(3, 16, 16, Nsamples);
-    auto sampler = std::make_shared<HypercubeSampler>(problem);
+    //auto sampler = std::make_shared<HypercubeSampler>(problem);
+    HypercubeSampler sampler(problem);
     SubtaskParameters subtask{.Ntasks=1,.cur_task=0};
     auto rng = std::make_shared<MT19937Wrapper>();
     Chi2BasedTest<HistogramAtomic> test_atomic;
@@ -95,7 +97,8 @@ static void hypercubeBenchMutexed(benchmark::State& state) {
     const size_t Nsamples = 1'000'000;
     const size_t threads = 8;
     HypercubeProblem problem(3, 16, 16, Nsamples);
-    auto sampler = std::make_shared<HypercubeSampler>(problem);
+    //auto sampler = std::make_shared<HypercubeSampler>(problem);
+    HypercubeSampler sampler(problem);
     SubtaskParameters subtask{.Ntasks=1,.cur_task=0};
     auto rng = std::make_shared<MT19937Wrapper>();
     Chi2BasedTest<HistogramMutexed> test_mutexed;

@@ -19,6 +19,7 @@ namespace std {
     %template(DVector) vector<double>;
     %template(FVector) vector<float>;
     %template(UInt8Vector) vector<uint8_t>;
+    %template(SubtaskResultsVector) vector<SubtaskResults>;
 }
 
 %apply std::vector<uint8_t> &OUTPUT {std::vector<uint8_t>& restored_codeword};

@@ -63,12 +63,13 @@ public:
                     std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
         assert(problem.n_cells_total == sampler.max() + 1);
         size_t data_size = getSubarraySize(problem, subtask);
+        std::cout<<"data_size = "<<data_size<<std::endl;
         data.allocate(data_size);
         std::vector<std::thread> threads;
         size_t prev_thread_start = 0;
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
-            // MultiindexGeneratorT>(task, subtask, rng, sampler, subtask.n_threads,
+            // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads,
             // thread_id);
             auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
             sampler.discardN(thread_start - prev_thread_start, *rng);
@@ -85,19 +86,19 @@ public:
         return res;
     }
 
-    StatiscticalTestResults collect(const Chi2BasedProblem &task, size_t n_subtasks,
+    StatiscticalTestResults collect(const Chi2BasedProblem &problem, size_t n_subtasks,
                                     const std::vector<SubtaskResults> &subtask_results) {
         assert(n_subtasks == subtask_results.size());
         StatiscticalTestResults res{.dof = 0, .chi2 = 0, .sum = 0, .sum2 = 0, .N = 0};
-        res.dof = task.n_cells_total - 1;
-        res.N = task.N;
+        res.dof = problem.n_cells_total - 1;
+        res.N = problem.N;
         res.sum = std::accumulate(subtask_results.begin(), subtask_results.end(), static_cast<uint64_t>(0),
                                   [](auto sum, auto &it) { return sum + it.sum; });
         res.sum2 = std::accumulate(subtask_results.begin(), subtask_results.end(), static_cast<uint64_t>(0),
                                    [](auto sum2, auto &it) { return sum2 + it.sum2; });
-        res.mean = static_cast<double>(res.N)/task.n_cells_total;
+        res.mean = static_cast<double>(res.N)/problem.n_cells_total;
         res.chi2 = res.sum2/res.mean - res.N;
-        res.dof = task.n_cells_total-1;
+        res.dof = problem.n_cells_total-1;
         boost::math::chi_squared_distribution dist(res.dof);
         res.chi2cdf = boost::math::cdf(dist, res.chi2);
         return res;

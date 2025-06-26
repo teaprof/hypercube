@@ -1,14 +1,18 @@
 #ifndef __TASK_DB_H__
 #define __TASK_DB_H__
 
+#include<app/TestResultsDB/MetaData.h>
+#include<app/serializers/jsonserializers.h>
+
+#include<stattests/stat_tests/chi2based/StatisticalTestBase.h>
+#include<stattests/stat_tests/rng.h>
+
+#include<boost/json.hpp>
+
 #include<string>
 #include<fstream>
 #include<set>
 #include<optional>
-#include<boost/json.hpp>
-#include<stattests/stat_tests/chi2based/StatisticalTestBase.h>
-#include<stattests/stat_tests/rng.h>
-#include<app/serializers/jsonserializers.h>
 
 struct TaskRecord {
     std::optional<MetaData> meta;

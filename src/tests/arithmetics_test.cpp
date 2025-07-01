@@ -4,7 +4,7 @@
  *  Created on: Mar 17, 2019
  *      Author: tea
  */
-#include<rnglib/rng/static/auxiliary/arithmetics.h>
+#include<librandom/rng/static/auxiliary/arithmetics.h>
 #include<gtest/gtest.h>
 
 void muladdTest(uint32_t a, uint32_t b, uint32_t c)

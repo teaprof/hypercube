@@ -1,7 +1,7 @@
 #ifndef __ADAPTORS_H__
 #define __ADAPTORS_H__
 
-#include <rnglib/rng/dynamic/generators/RandomBitGenerator.h>
+#include <librandom/rng/dynamic/generators/RandomBitGenerator.h>
 #include <memory>
 
 class RandomBitAdaptor : public RandomBitGenerator {

@@ -1,8 +1,8 @@
 #ifndef __BITS_REPACK_H__
 #define __BITS_REPACK_H__
 
-#include <rnglib/rng/dynamic/adaptors/adaptor.h>
-#include <rnglib/rng/dynamic/adaptors/circularbuffer.h>
+#include <librandom/rng/dynamic/adaptors/adaptor.h>
+#include <librandom/rng/dynamic/adaptors/circularbuffer.h>
 #include <queue>
 #include <bit>
 

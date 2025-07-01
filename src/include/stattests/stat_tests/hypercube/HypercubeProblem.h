@@ -11,7 +11,7 @@ public:
         n_cells_total = 1;
         for (size_t k = 0; k < dim; k++)
             n_cells_total *= m_intervals_per_dim;
-    };
+    }
     HypercubeProblem(size_t _dim, size_t _m_intervals_per_dim, size_t _stride, size_t _N) : Chi2BasedProblem{.N=_N, .n_cells_total=0}, 
         dim(_dim), m_intervals_per_dim(_m_intervals_per_dim), stride(_stride) {
         n_cells_total = 1;

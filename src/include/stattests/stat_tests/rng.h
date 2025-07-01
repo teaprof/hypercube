@@ -1,9 +1,9 @@
 #ifndef __STAT_TESTS_RNG_H_
 #define __STAT_TESTS_RNG_H_
 
-#include<rnglib/rng/dynamic/generators/RandomBitGenerator.h>
-#include<rnglib/rng/dynamic/generators/RandomNumberWrapper.h>
-#include<rnglib/rng/dynamic/adaptors/bitsrepack.h>
+#include<librandom/rng/dynamic/generators/RandomBitGenerator.h>
+#include<librandom/rng/dynamic/generators/RandomNumberWrapper.h>
+#include<librandom/rng/dynamic/adaptors/bitsrepack.h>
 #include<memory>
 #include<cstddef>
 #include<optional>

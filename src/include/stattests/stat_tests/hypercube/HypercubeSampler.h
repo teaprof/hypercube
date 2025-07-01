@@ -2,8 +2,8 @@
 #define __HYPERCUBE_TEST_H__
 
 #include <stattests/stat_tests/hypercube/HypercubeProblem.h>
-#include <rnglib/distributions/Distribution.h>
-#include <rnglib/rng/dynamic/generators/RandomNumberWrapper.h>
+#include <librandom/distributions/Distribution.h>
+#include <librandom/rng/dynamic/generators/RandomNumberWrapper.h>
 #include <deque>
 
 
@@ -42,7 +42,7 @@ public:
 
 protected:
     const HypercubeProblem problem_;
-    UniformIntDistribution int_distribution_;
+    UniformIntDistributionRough int_distribution_;
     std::deque<uint64_t> multi_index_;
     template<class T>
     size_t sub2ind(const T &multiindex) {

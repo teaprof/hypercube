@@ -28,7 +28,7 @@ namespace std {
 %apply std::vector<uint8_t> &INPUT {const std::vector<uint8_t>& msg};
 
 
-%include "rnglib/rng/dynamic/generators/RandomBitGenerator.h"
+%include "librandom/rng/dynamic/generators/RandomBitGenerator.h"
 
 %include "stattests/stat_tests/rng.h"
 %include "stattests/stat_tests/chi2based/StatisticalTestBase.h"

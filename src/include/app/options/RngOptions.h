@@ -1,8 +1,8 @@
 #ifndef __RNG_OPTIONS_H__
 #define __RNG_OPTIONS_H__
 
-#include <rnglib/rng/dynamic/adaptors/bitsrepack.h>
-#include <rnglib/rng/dynamic/generators/RandomNumberWrapper.h>
+#include <librandom/rng/dynamic/adaptors/bitsrepack.h>
+#include <librandom/rng/dynamic/generators/RandomNumberWrapper.h>
 #include <stattests/stat_tests/rng.h>
 #include <app/options/cartesian_product.h>
 

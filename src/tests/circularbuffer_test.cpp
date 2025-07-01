@@ -1,4 +1,4 @@
-#include<rnglib/rng/dynamic/adaptors/circularbuffer.h>
+#include<librandom/rng/dynamic/adaptors/circularbuffer.h>
 #include<gtest/gtest.h>
 
 TEST(CircularBufferTest, Simple)

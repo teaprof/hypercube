@@ -1,5 +1,5 @@
-#include <rnglib/rng/dynamic/generators/RandomNumberWrapper.h>
-#include <rnglib/rng/dynamic/adaptors/bitsrepack.h>
+#include <librandom/rng/dynamic/generators/RandomNumberWrapper.h>
+#include <librandom/rng/dynamic/adaptors/bitsrepack.h>
 #include <app/progress/tictoc.h>
 
 

@@ -1,7 +1,7 @@
 #ifndef RANDOM_NUMBER_WRAPPER_H
 #define RANDOM_NUMBER_WRAPPER_H
 
-#include <rnglib/rng/dynamic/generators/RandomBitGenerator.h>
+#include <librandom/rng/dynamic/generators/RandomBitGenerator.h>
 
 #include <cassert>
 #include <random>

@@ -7,8 +7,8 @@
 #ifndef RNGCONCEPT_H
 #define RNGCONCEPT_H
 
-#include <rnglib/rng/static/auxiliary/arithmetics.h>
-#include <rnglib/rng/static/auxiliary/inttraits.h>
+#include <librandom/rng/static/auxiliary/arithmetics.h>
+#include <librandom/rng/static/auxiliary/inttraits.h>
 #include <concepts>
 #include <random>
 

@@ -1,7 +1,7 @@
 #ifndef _DYNAMIC_RANDOM_H_
 #define _DYNAMIC_RANDOM_H_
 
-#include <rnglib/rng/static/lcg.h>
+#include <librandom/rng/static/lcg.h>
 
 #include <memory>
 

@@ -8,7 +8,7 @@
 #ifndef a10RNG_RNG_H_
 #define a10RNG_RNG_H_
 
-#include "rnglib/rng/static/rngconcept.h"
+#include "librandom/rng/static/rngconcept.h"
 #include "auxiliary/arithmetics.h"
 
 #include <cstdint>

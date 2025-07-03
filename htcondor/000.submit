@@ -1,0 +1,8 @@
+Executable = /bin/python3
+Arguments = hypercube_job.py 000.pickle
+request_cpus = 1
+request_memory = 51M
+Output = job.out
+Error = job.err
+Log = job.log
+Queue

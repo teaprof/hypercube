@@ -6,7 +6,7 @@ tester = StatTest()
 res = tester.run(rng, None, problem, 10)
 print(res.chi2cdf())
 
-repack = BitsRepack(256, False, True)
+repack = BitsRepack(25, False, True)
 res = tester.run(rng, repack, problem, 10)
 print(res.chi2cdf())
 print(res.sum, ":", res.sum2)

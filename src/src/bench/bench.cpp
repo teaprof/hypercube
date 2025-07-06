@@ -23,18 +23,18 @@ static void teaMT19937(benchmark::State& state) {
     state.counters["rate"] = benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
 }
 
-static void bitsRepackStd(benchmark::State& state) {
+static void bitsRepackStd25(benchmark::State& state) {
     auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
-    BitsRepackStd repacker(rng, 32, true, true);
+    BitsRepackStd repacker(rng, 25, true, true);
     for(auto _: state) {
         repacker(*rng);
     }
     state.counters["rate"] = benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);        
 }
 
-static void bitsRepackCircular(benchmark::State& state) {
+static void bitsRepackCircular25(benchmark::State& state) {
     auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
-    BitsRepackCircular repacker(rng, 32, true, true);
+    BitsRepackCircular repacker(rng, 25, true, true);
     for(auto _: state) {
         repacker(*rng);
     }
@@ -42,9 +42,19 @@ static void bitsRepackCircular(benchmark::State& state) {
 }
 
 template<bool src_little_endian, bool dst_little_endian>
-static void bitsRepackFast(benchmark::State& state) {
+static void bitsRepackFast25(benchmark::State& state) {
     auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
-    BitsRepackFast repacker(rng, 32,src_little_endian, dst_little_endian);
+    BitsRepackFast repacker(rng, 25,src_little_endian, dst_little_endian);
+    for(auto _: state) {
+        repacker(*rng);
+    }
+    state.counters["rate"] = benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);        
+}
+
+template<bool src_little_endian, bool dst_little_endian>
+static void bitsRepackFast42(benchmark::State& state) {
+    auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
+    BitsRepackFast repacker(rng, 42,src_little_endian, dst_little_endian);
     for(auto _: state) {
         repacker(*rng);
     }
@@ -115,12 +125,16 @@ static void hypercubeBenchMutexed(benchmark::State& state) {
 
 BENCHMARK(stdMT19937);
 BENCHMARK(teaMT19937);
-BENCHMARK(bitsRepackStd);
-BENCHMARK(bitsRepackCircular);
-BENCHMARK_TEMPLATE(bitsRepackFast, false, false);
-BENCHMARK_TEMPLATE(bitsRepackFast, false, true);
-BENCHMARK_TEMPLATE(bitsRepackFast, true, false);
-BENCHMARK_TEMPLATE(bitsRepackFast, true, true);
+BENCHMARK(bitsRepackStd25);
+BENCHMARK(bitsRepackCircular25);
+BENCHMARK_TEMPLATE(bitsRepackFast25, false, false);
+BENCHMARK_TEMPLATE(bitsRepackFast25, false, true);
+BENCHMARK_TEMPLATE(bitsRepackFast25, true, false);
+BENCHMARK_TEMPLATE(bitsRepackFast25, true, true);
+BENCHMARK_TEMPLATE(bitsRepackFast42, false, false);
+BENCHMARK_TEMPLATE(bitsRepackFast42, false, true);
+BENCHMARK_TEMPLATE(bitsRepackFast42, true, false);
+BENCHMARK_TEMPLATE(bitsRepackFast42, true, true);
 BENCHMARK(hypercubeBenchSingleThread);
 BENCHMARK(hypercubeBenchAtomic);
 BENCHMARK(hypercubeBenchMutexed);

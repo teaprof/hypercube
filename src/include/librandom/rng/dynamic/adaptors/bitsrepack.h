@@ -61,7 +61,7 @@ private:
 template<class BoolQueue>
 class BitsPackT {
 public:
-    BitsPackT(uint16_t sample_size_bits, bool little_endian): little_endian_{little_endian}, sample_size_bits_{sample_size_bits}{ }
+    BitsPackT(uint_fast8_t sample_size_bits, bool little_endian): little_endian_{little_endian}, sample_size_bits_{sample_size_bits}{ }
     BitsPackT(const BitsPackT<BoolQueue>& other) : little_endian_{other.little_endian_}, sample_size_bits_{other.sample_size_bits_} {}
     uint64_t operator()(BitsUnpackT<BoolQueue>& bits_unpacked, RandomBitGenerator& rng) {
         if(little_endian_) {
@@ -94,7 +94,7 @@ private:
         return res;
     }
     bool little_endian_;
-    uint16_t sample_size_bits_;
+    uint_fast8_t sample_size_bits_;
 };
 
 
@@ -160,8 +160,9 @@ public:
         pop();
         return res;
     }
-    uint64_t pop_front_little_endian(RandomBitGenerator &rng, uint_fast8_t nbits) { // todo: here is error
+    uint64_t pop_front_little_endian(RandomBitGenerator &rng, uint_fast8_t nbits) { 
         assert(nbits != 0);
+        assert(nbits <= 64);
         uint64_t res = 0;
         uint_fast8_t remaining = nbits;
         uint_fast8_t mask_len = 0;
@@ -171,8 +172,8 @@ public:
                 refill(rng);
                 assert(buf_len_ > 0);
             }
-            mask_len = std::min(buf_len_, remaining);        
-            uint64_t mask = (1 << mask_len) - 1;
+            mask_len = std::min(buf_len_, remaining);            
+            uint64_t mask = mask_len == 64? ~uint64_t(0) : (uint64_t(1) << mask_len) - 1;
             uint64_t term = ((buf_ & mask) << ready);
             res += term;
 

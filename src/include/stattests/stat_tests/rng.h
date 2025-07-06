@@ -8,8 +8,6 @@
 #include<cstddef>
 #include<optional>
 
-#include <iostream>
-
 struct RandomNumberGeneratorDescription {
     size_t rng_id;
     std::optional<size_t> seed; // if not set the default value for selected generator is used
@@ -41,12 +39,7 @@ std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorD
             //if bits_repack_descr.bits_per_sample is set, use this value
             bits_per_sample = *bits_repack_descr->bits_per_sample;
         }
-        std::cout<<bits_per_sample<<" "<<bits_repack_descr->src_little_endian<<" "<<bits_repack_descr->dst_little_endian<<std::endl;
         auto repacker = std::make_shared<BitsRepackFast>(rng, bits_per_sample, bits_repack_descr->src_little_endian, bits_repack_descr->dst_little_endian);
-        for(size_t n = 0; n < 10; n++) {
-            std::cout<<(*repacker)()<<" ";
-        }
-        std::cout<<std::endl;
         return repacker;
     }
     return rng;

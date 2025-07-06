@@ -52,6 +52,17 @@ static void bitsRepackFast25(benchmark::State& state) {
 }
 
 template<bool src_little_endian, bool dst_little_endian>
+static void bitsRepackFast32(benchmark::State& state) {
+    auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
+    BitsRepackFast repacker(rng, 32,src_little_endian, dst_little_endian);
+    for(auto _: state) {
+        repacker(*rng);
+    }
+    state.counters["rate"] = benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);        
+}
+
+
+template<bool src_little_endian, bool dst_little_endian>
 static void bitsRepackFast42(benchmark::State& state) {
     auto rng = std::make_shared<MT19937Wrapper>(); /// \todo: use fake but fast generator
     BitsRepackFast repacker(rng, 42,src_little_endian, dst_little_endian);
@@ -131,6 +142,10 @@ BENCHMARK_TEMPLATE(bitsRepackFast25, false, false);
 BENCHMARK_TEMPLATE(bitsRepackFast25, false, true);
 BENCHMARK_TEMPLATE(bitsRepackFast25, true, false);
 BENCHMARK_TEMPLATE(bitsRepackFast25, true, true);
+BENCHMARK_TEMPLATE(bitsRepackFast32, false, false);
+BENCHMARK_TEMPLATE(bitsRepackFast32, false, true);
+BENCHMARK_TEMPLATE(bitsRepackFast32, true, false);
+BENCHMARK_TEMPLATE(bitsRepackFast32, true, true);
 BENCHMARK_TEMPLATE(bitsRepackFast42, false, false);
 BENCHMARK_TEMPLATE(bitsRepackFast42, false, true);
 BENCHMARK_TEMPLATE(bitsRepackFast42, true, false);

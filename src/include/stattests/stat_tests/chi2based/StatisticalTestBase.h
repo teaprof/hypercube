@@ -84,11 +84,11 @@ public:
                     std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
         assert(problem.n_cells_total == sampler.max() + 1);
         size_t data_size = getSubarraySize(problem, subtask);
-        std::cout<<"Allocating "<<data_size<<" cells"<<std::endl;
+        //std::cout<<"Allocating "<<data_size<<" cells"<<std::endl;
         data.allocate(data_size);
         std::vector<std::thread> threads;
         size_t prev_thread_start = 0;
-        std::cout<<"problem.N = "<<problem.N<<std::endl;
+        //std::cout<<"problem.N = "<<problem.N<<std::endl;
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
             // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads,
@@ -172,7 +172,7 @@ private:
         SubtaskResults res{.sum = 0, .sum2 = 0};
         auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
         //sampler->discardN(thread_start, *rng);
-        std::cout<<thread_end - thread_start<<std::endl;
+        //std::cout<<thread_end - thread_start<<std::endl;
         for (size_t n = 0; n < thread_end - thread_start; n++) {
             size_t idx = (*sampler)(*rng);
             increment(subtask, idx);

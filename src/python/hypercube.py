@@ -1,8 +1,8 @@
 import hashlib
 from typing import Optional
 import sys, os, math, pickle
-sys.path.append(os.path.abspath("../build/release/python"))
-sys.path.append(os.path.abspath("../../build/release/python"))
+sys.path.append(os.path.abspath("../build/debug/python"))
+sys.path.append(os.path.abspath("../../build/debug/python"))
 import pyhypercube
 from typing import List
 

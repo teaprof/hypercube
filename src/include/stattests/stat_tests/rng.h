@@ -44,7 +44,7 @@ std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorD
         std::cout<<bits_per_sample<<" "<<bits_repack_descr->src_little_endian<<" "<<bits_repack_descr->dst_little_endian<<std::endl;
         auto repacker = std::make_shared<BitsRepackFast>(rng, bits_per_sample, bits_repack_descr->src_little_endian, bits_repack_descr->dst_little_endian);
         for(size_t n = 0; n < 10; n++) {
-            std::cout<<(*repacker)(rng)<<" ";
+            std::cout<<(*repacker)()<<" ";
         }
         std::cout<<std::endl;
         return repacker;

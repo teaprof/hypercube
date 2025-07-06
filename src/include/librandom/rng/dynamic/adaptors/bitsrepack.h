@@ -107,6 +107,10 @@ public:
     virtual uint64_t operator()(RandomBitGenerator& rng) override {
         return bits_packer(bits_unpacker, rng);
     }
+    virtual uint64_t operator()() override {
+        return (*this)(*rng());
+        //return rng()->operator()();
+    }
     uint64_t max() override {
         return bits_packer.max();
     }
@@ -156,7 +160,8 @@ public:
         pop();
         return res;
     }
-    uint64_t pop_front_little_endian(RandomBitGenerator &rng, uint_fast8_t nbits) {
+    uint64_t pop_front_little_endian(RandomBitGenerator &rng, uint_fast8_t nbits) { // todo: here is error
+        assert(nbits != 0);
         uint64_t res = 0;
         uint_fast8_t remaining = nbits;
         uint_fast8_t mask_len = 0;
@@ -210,6 +215,7 @@ public:
     BitsPackFast(uint16_t sample_size_bits, bool little_endian): order{little_endian? std::endian::little : std::endian::big}, sample_size_bits_{sample_size_bits}{ }
     BitsPackFast(const BitsPackFast& other) : order{other.order}, sample_size_bits_{other.sample_size_bits_} {}
     uint64_t operator()(BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
+        assert(sample_size_bits_ != 0);
         uint64_t val = bits_unpacked.pop_front_little_endian(rng, sample_size_bits_);
         if(order == std::endian::big) {
             reverseBits(val, sample_size_bits_);

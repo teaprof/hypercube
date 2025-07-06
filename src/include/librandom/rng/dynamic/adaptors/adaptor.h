@@ -9,11 +9,12 @@ class RandomBitAdaptor : public RandomBitGenerator {
     RandomBitAdaptor(std::shared_ptr<RandomBitGenerator> rng) : rng_(rng) {}
     RandomBitAdaptor(const RandomBitAdaptor& other) : rng_(other.rng_->copy()) {}
     virtual uint64_t operator()(RandomBitGenerator& rng) = 0;
-    virtual uint64_t operator()() {return (*this)(*rng_);};
-    virtual uint64_t max() {
+    virtual uint64_t operator()() override {return (*this)(*rng_);};
+    virtual uint64_t max() override {
         return (1<<(nbits())) - 1;
     }
-    virtual uint16_t nbits() = 0;
+    virtual uint16_t nbits() override = 0;
+    std::shared_ptr<RandomBitGenerator> rng() { return rng_; }
 private:
     std::shared_ptr<RandomBitGenerator> rng_;
 };

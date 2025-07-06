@@ -130,4 +130,4 @@ class HypercubeJob:
     def __hash__(self):
         h = hashlib.blake2b(digest_size=8)
         h.update(repr(self).encode())
-        return int.from_bytes(h.digest())
+        return int.from_bytes(h.digest(), 'big')

@@ -20,6 +20,14 @@ namespace std {
     %template(FVector) vector<float>;
     %template(UInt8Vector) vector<uint8_t>;
     %template(SubtaskResultsVector) vector<SubtaskResults>;
+
+%typemap(in) std::optional<uint16_t> {
+    if ($input == Py_None) {
+        $1 = std::nullopt;
+    } else {
+        $1 = PyInt_AsLong($input);
+    }
+}
 }
 
 %apply std::vector<uint8_t> &OUTPUT {std::vector<uint8_t>& restored_codeword};
@@ -34,6 +42,8 @@ namespace std {
 %include "stattests/stat_tests/chi2based/StatisticalTestBase.h"
 %include "stattests/stat_tests/hypercube/HypercubeProblem.h"
 %include "stattests/stat_tests/hypercube/HypercubeSampler.h"
+%include "stattests/stat_tests/rng.h"
+
 
 %template(Chi2BasedTest1) Chi2BasedTest<HistogramAtomic>;
 

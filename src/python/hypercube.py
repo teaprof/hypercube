@@ -1,4 +1,5 @@
 import hashlib
+from typing import Optional
 import sys, os, math, pickle
 sys.path.append(os.path.abspath("../build/release/python"))
 sys.path.append(os.path.abspath("../../build/release/python"))
@@ -9,15 +10,40 @@ class RNG:
     def __init__(self, rng_id = 0, offset = 0):
         self.rng_id = rng_id
         self.offset = offset
-                
-    def rng(self):
+        
+    def rngDescr(self):
         rng_opts = pyhypercube.RandomNumberGeneratorDescription()
         rng_opts.offset = self.rng_id
         rng_opts.rng_id = self.offset
+        return rng_opts
+                
+    def rng(self):
+        rng_opts = self.rngDescr()
         return pyhypercube.createGenerator(rng_opts)
     
     def __repr__(self):
         return f"{self.rng_id} {self.offset}"
+
+class BitsRepack:
+    def __init__(self, bits_per_sample, src_little_endian, dst_little_endian):
+        self.bits_per_sample = bits_per_sample
+        self.src_little_endian = src_little_endian
+        self.dst_little_endian = dst_little_endian
+        
+    def repackOpts(self):
+        opts = pyhypercube.BitsRepackDescription()
+        opts.bits_per_sample = self.bits_per_sample
+        opts.src_little_endian = self.src_little_endian
+        opts.dst_little_endian = self.dst_little_endian
+        return opts
+    
+    def rng(self, source_rng: RNG):
+        rng_opts = source_rng.rngDescr()
+        repack_opts = self.repackOpts()            
+        return pyhypercube.createGenerator(rng_opts, repack_opts)
+
+    def __repr__(self):
+        return f"{self.bits_per_sample} {self.src_little_endian} {self.dst_little_endian}"
         
 class HypercubeProblem:
     def __init__(self, dim = 2, m_intervals_per_dim = 10, Npoints = 10000):
@@ -65,17 +91,25 @@ class StatTest:
     def __init__(self):
         pass
         
-    def run(self, rng: RNG, problem: HypercubeProblem, nthreads = 1):
+    def run(self, rng: RNG, repack: Optional[BitsRepack], problem: HypercubeProblem, nthreads = 1):
         tester = pyhypercube.Chi2BasedTest1()
         subtask = Subtask(cur_task=0, Ntasks=1)
         sampler = HypercubeSampler(problem)
-        subtask_results = tester.run(problem.problem(), subtask.subtask(), sampler.sampler(), rng.rng(), nthreads)
+        if repack is not None:
+            rng_obj = repack.rng(rng)
+        else:
+            rng_obj = rng.rng()
+        subtask_results = tester.run(problem.problem(), subtask.subtask(), sampler.sampler(), rng_obj, nthreads)
         return self.collect(problem, 1, [subtask_results])       
         
-    def runSubtask(self, rng: RNG, problem: HypercubeProblem, subtask: Subtask, nthreads = 1):
+    def runSubtask(self, rng: RNG, repack: Optional[BitsRepack], problem: HypercubeProblem, subtask: Subtask, nthreads = 1):
         tester = pyhypercube.Chi2BasedTest1()
         sampler = HypercubeSampler(problem)
-        res = tester.run(problem.problem(), subtask.subtask(), sampler.sampler(), rng.rng(), nthreads)
+        if repack is not None:
+            rng_obj = repack.rng(rng)
+        else:
+            rng_obj = rng.rng()
+        res = tester.run(problem.problem(), subtask.subtask(), sampler.sampler(), rng_obj, nthreads)
         return res
     
     def collect(self, problem: HypercubeProblem, Nsubtasks: int, subtask_results: List[pyhypercube.SubtaskResults]):
@@ -85,14 +119,15 @@ class StatTest:
         
         
 class HypercubeJob:
-    def __init__(self, rng: RNG, problem: HypercubeProblem, subtask: Subtask):
+    def __init__(self, rng: RNG, bitsRepack: BitsRepack, problem: HypercubeProblem, subtask: Subtask):
         self.rng = rng
+        self.bitsRepack = bitsRepack
         self.problem = problem
         self.subtask = subtask    
         
     def run(self):
         test = StatTest()
-        res = test.runSubtask(self.rng, self.problem, self.subtask)
+        res = test.runSubtask(self.rng, self.bitsRepack, self.problem, self.subtask)
         return res
     
     def maxMemory(self):
@@ -125,7 +160,7 @@ class HypercubeJob:
             pickle.dump(self, f)
             
     def __repr__(self):
-        return repr(self.rng) + " " + repr(self.problem) + " " + repr(self.subtask)
+        return repr(self.rng) + " " + repr(self.bitsRepack) + " " + repr(self.problem) + " " + repr(self.subtask)
        
     def __hash__(self):
         h = hashlib.blake2b(digest_size=8)

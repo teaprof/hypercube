@@ -20,7 +20,7 @@ def createFilesForSubmit(maxMemory):
             for cursubtask in range(nsubtasks):
                 subtask = Subtask(cursubtask, nsubtasks)
                 job = HypercubeJob(rng, problem, subtask)
-                job.printSubmit(f"{cnt:03}.submit", f"{cnt:03}.pickle")
+                job.printCondorSubmit(f"{cnt:03}.submit", f"{cnt:03}.pickle")
                 cnt += 1
                 
 if __name__ == '__main__':

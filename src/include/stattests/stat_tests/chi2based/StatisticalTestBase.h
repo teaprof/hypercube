@@ -21,11 +21,21 @@ struct Chi2BasedProblem {
 
 struct StatiscticalTestResults {
     size_t dof; // degrees of freedom
-    double chi2, chi2cdf, mean;
-    size_t sum, sum2;
-    size_t N;
+    uint64_t sum, sum2;
+    size_t N; // should be equal to sum
     bool operator==(const StatiscticalTestResults& other) const {
-        return dof == other.dof && chi2 == other.chi2 && chi2cdf == other.chi2cdf && mean == other.mean && sum == other.sum && sum2 == other.sum2 && N == other.N;
+        //return dof == other.dof && chi2 == other.chi2 && chi2cdf == other.chi2cdf && mean == other.mean && sum == other.sum && sum2 == other.sum2 && N == other.N;
+        return dof == other.dof && sum == other.sum && sum2 == other.sum2 && N == other.N;
+    }
+    double mean() const {
+        return static_cast<double>(N)/(dof+1);
+    }
+    double chi2() const {
+        return sum2/mean() - sum;
+    }
+    double chi2cdf() const {
+        boost::math::chi_squared_distribution dist(dof);
+        return boost::math::cdf(dist, chi2());
     }
 };
 
@@ -38,9 +48,20 @@ struct SubtaskParameters {
 };
 
 struct SubtaskResults {
+    size_t dof;
     size_t sum, sum2;
     bool operator==(const SubtaskResults& other) const {
         return sum == other.sum && sum2 == other.sum2;
+    }
+    double mean() const {
+        return static_cast<double>(sum)/(dof+1);
+    }
+    double chi2() const {
+        return sum2/mean() - sum;
+    }
+    double chi2cdf() const {
+        boost::math::chi_squared_distribution dist(dof);
+        return boost::math::cdf(dist, chi2());
     }
 };
 
@@ -63,9 +84,11 @@ public:
                     std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
         assert(problem.n_cells_total == sampler.max() + 1);
         size_t data_size = getSubarraySize(problem, subtask);
+        std::cout<<"Allocating "<<data_size<<" cells"<<std::endl;
         data.allocate(data_size);
         std::vector<std::thread> threads;
         size_t prev_thread_start = 0;
+        std::cout<<"problem.N = "<<problem.N<<std::endl;
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
             // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads,
@@ -79,7 +102,7 @@ public:
         }
         for (auto &it : threads)
             it.join();
-        SubtaskResults res = getResults();
+        SubtaskResults res = getResults(problem, subtask);
         // data.clear();
         // data.shrink_to_fit();
         return res;
@@ -88,18 +111,19 @@ public:
     StatiscticalTestResults collect(const Chi2BasedProblem &problem, size_t n_subtasks,
                                     const std::vector<SubtaskResults> &subtask_results) {
         assert(n_subtasks == subtask_results.size());
-        StatiscticalTestResults res{.dof = 0, .chi2 = 0, .sum = 0, .sum2 = 0, .N = 0};
+        //StatiscticalTestResults res{.dof = 0, .chi2 = 0, .sum = 0, .sum2 = 0, .N = 0};
+        StatiscticalTestResults res{.dof = 0, .sum = 0, .sum2 = 0, .N = 0};
         res.dof = problem.n_cells_total - 1;
         res.N = problem.N;
         res.sum = std::accumulate(subtask_results.begin(), subtask_results.end(), static_cast<uint64_t>(0),
                                   [](auto sum, auto &it) { return sum + it.sum; });
         res.sum2 = std::accumulate(subtask_results.begin(), subtask_results.end(), static_cast<uint64_t>(0),
                                    [](auto sum2, auto &it) { return sum2 + it.sum2; });
-        res.mean = static_cast<double>(res.N)/problem.n_cells_total;
-        res.chi2 = res.sum2/res.mean - res.N;
+        //res.mean = static_cast<double>(res.N)/problem.n_cells_total;
+        //res.chi2 = res.sum2/res.mean - res.N;
         res.dof = problem.n_cells_total-1;
-        boost::math::chi_squared_distribution dist(res.dof);
-        res.chi2cdf = boost::math::cdf(dist, res.chi2);
+        //boost::math::chi_squared_distribution dist(res.dof);
+        //res.chi2cdf = boost::math::cdf(dist, res.chi2);
         return res;
     }
 private:
@@ -113,14 +137,18 @@ private:
         return {start, end};
     }
 
-    SubtaskResults getResults() {
+    SubtaskResults getResults(const Chi2BasedProblem &problem, const SubtaskParameters& subtask) {
         uint64_t sum = 0, sum2 = 0;
         for (size_t n = 0; n < data.size(); n++) {
             uint64_t v = data[n];
             sum += v;
             sum2 += v * v;
         }
-        return {sum, sum2};
+        SubtaskResults res;
+        res.dof = data.size() - 1;
+        res.sum2 = sum2;
+        res.sum = sum;
+        return res;
     }
 
     size_t getSubarraySize(const Chi2BasedProblem problem, const SubtaskParameters& subtask) {

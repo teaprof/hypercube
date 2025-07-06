@@ -1,6 +1,7 @@
+import hashlib
 import sys, os, math, pickle
-sys.path.append(os.path.abspath("../build/debug/python"))
-sys.path.append(os.path.abspath("../../build/debug/python"))
+sys.path.append(os.path.abspath("../build/release/python"))
+sys.path.append(os.path.abspath("../../build/release/python"))
 import pyhypercube
 from typing import List
 
@@ -14,6 +15,9 @@ class RNG:
         rng_opts.offset = self.rng_id
         rng_opts.rng_id = self.offset
         return pyhypercube.createGenerator(rng_opts)
+    
+    def __repr__(self):
+        return f"{self.rng_id} {self.offset}"
         
 class HypercubeProblem:
     def __init__(self, dim = 2, m_intervals_per_dim = 10, Npoints = 10000):
@@ -32,6 +36,9 @@ class HypercubeProblem:
     
     def maxMemory(self):
         return 4*self.n_cells_total #in bytes
+    
+    def __repr__(self):
+        return f"{self.dim} {self.m_intervals_per_dim} {self.Npoints} {self.n_cells_total}"
                 
 class HypercubeSampler:
     def __init__(self, problem: HypercubeProblem):
@@ -50,6 +57,9 @@ class Subtask:
         s.cur_task = self.cur_task
         s.Ntasks = self.Ntasks
         return s
+    
+    def __repr__(self):
+        return f"{self.cur_task} {self.Ntasks}"
         
 class StatTest:
     def __init__(self):
@@ -78,14 +88,17 @@ class HypercubeJob:
     def __init__(self, rng: RNG, problem: HypercubeProblem, subtask: Subtask):
         self.rng = rng
         self.problem = problem
-        self.subtask = subtask
+        self.subtask = subtask    
         
     def run(self):
         test = StatTest()
         res = test.runSubtask(self.rng, self.problem, self.subtask)
         return res
     
-    def submitDescription(self, data_filename):
+    def maxMemory(self):
+        return self.problem.maxMemory()    
+    
+    def condorSubmitDescription(self, data_filename):
         mem = self.problem.maxMemory()
         mem = math.ceil(mem/1024/1024) + 50
         mem = f"{mem}M"
@@ -100,8 +113,8 @@ class HypercubeJob:
             "Log": "job.log",
             "Queue": "1"}
     
-    def printSubmit(self, submit_filename, data_filename):
-        descr = self.submitDescription(data_filename)
+    def printCondorSubmit(self, submit_filename, data_filename):
+        descr = self.condorSubmitDescription(data_filename)
         with open(submit_filename, "w") as f:
             for key, value in descr.items():
                 if key != "Queue":
@@ -110,3 +123,11 @@ class HypercubeJob:
                     f.write(f"{key} {value}\n")
         with open(data_filename, "wb") as f:
             pickle.dump(self, f)
+            
+    def __repr__(self):
+        return repr(self.rng) + " " + repr(self.problem) + " " + repr(self.subtask)
+       
+    def __hash__(self):
+        h = hashlib.blake2b(digest_size=8)
+        h.update(repr(self).encode())
+        return int.from_bytes(h.digest())

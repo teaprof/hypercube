@@ -97,26 +97,28 @@ const boost::json::object& operator>>(const boost::json::object& object, Chi2Bas
 }
 
 boost::json::object& operator<<(boost::json::object& object, const StatiscticalTestResults& results) {
-    AssertOnlyFields(results, results.dof, results.mean, results.sum, results.sum2, results.N, results.chi2, results.chi2cdf);
+    //AssertOnlyFields(results, results.dof, results.mean, results.sum, results.sum2, results.N, results.chi2, results.chi2cdf);
+    AssertOnlyFields(results, results.dof, results.sum, results.sum2, results.N);
     object.emplace("dof", results.dof);
-    object.emplace("mean", results.mean);
+    object.emplace("mean", results.mean());
     object.emplace("sum", results.sum);
     object.emplace("sum2", results.sum2);
     object.emplace("N", results.N);
-    object.emplace("chi2", results.chi2);
-    object.emplace("chi2cdf", results.chi2cdf);
+    object.emplace("chi2", results.chi2());
+    object.emplace("chi2cdf", results.chi2cdf());
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, StatiscticalTestResults& results) {
-    AssertOnlyFields(results, results.dof, results.mean, results.sum, results.sum2, results.N, results.chi2, results.chi2cdf);
+    //AssertOnlyFields(results, results.dof, results.mean, results.sum, results.sum2, results.N, results.chi2, results.chi2cdf);
+    AssertOnlyFields(results, results.dof, results.sum, results.sum2, results.N);
     results.dof = object.at("dof").to_number<uint64_t>();
-    results.mean = object.at("mean").as_double();
+    //results.mean = object.at("mean").as_double();
     results.sum = object.at("sum").to_number<uint64_t>();
     results.sum2 = object.at("sum2").to_number<uint64_t>();
     results.N = object.at("N").to_number<uint64_t>();
-    results.chi2 = object.at("chi2").as_double();
-    results.chi2cdf = object.at("chi2cdf").as_double();
+    //results.chi2 = object.at("chi2").as_double();
+    //results.chi2cdf = object.at("chi2cdf").as_double();
     return object;
 }
 
@@ -135,14 +137,14 @@ const boost::json::object& operator>>(const boost::json::object& object, Subtask
 }
 
 boost::json::object& operator<<(boost::json::object& object, const SubtaskResults& results) {
-    AssertOnlyFields(results, results.sum, results.sum2);
+    AssertOnlyFields(results, results.sum, results.sum2, results.dof);
     object.emplace("sum", results.sum);
     object.emplace("sum2", results.sum2);
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, SubtaskResults& results) {
-    AssertOnlyFields(results, results.sum, results.sum2);
+    AssertOnlyFields(results, results.sum, results.sum2, results.dof);
     results.sum = object.at("sum").to_number<uint64_t>();
     results.sum2 = object.at("sum2").to_number<uint64_t>();
     return object;

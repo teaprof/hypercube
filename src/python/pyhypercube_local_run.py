@@ -1,5 +1,3 @@
-import hashlib
-import multiprocessing.managers
 from operator import mul
 from hypercube import *
 import itertools, math
@@ -57,7 +55,7 @@ class Resource:
             self._release(amount)
             
 class JobsTracker:
-    class JobStatus:
+    class JobStatus(enum.Enum):
         Pending = 0
         Running = 1
         Ready = 2
@@ -66,7 +64,8 @@ class JobsTracker:
         self.mutex = multiprocessing.Lock()
         self.map = multiprocessing.Manager().dict()
         
-    def add_if_not_exists(self, key, value: int = JobStatus.Pending):
+       
+    def add_if_not_exists(self, key, value: JobStatus = JobStatus.Pending):
         with self.mutex:
             if key not in self.map:
                 self.map[key] = value
@@ -74,7 +73,7 @@ class JobsTracker:
             else:
                 return False
     
-    def compare_and_swap(self, key, expected: int, newvalue: int):
+    def compare_and_swap(self, key, expected: JobStatus, newvalue: JobStatus):
         with self.mutex:
             assert key in self.map
             if self.map[key] == expected:
@@ -82,31 +81,45 @@ class JobsTracker:
                 return expected
             else:
                 return self.map[key]
-            
-    def save(self):
+
+    def markAsFinishedByHash(self, hashes: List[int]):
+        """
+        The first way to skip the jobs that are already solved.
+        Also, you can save the state and later reload it (see save and load functions)
+        """
         with self.mutex:
-            # create a local copy of dict from proxy object
+            for h in hashes:
+                self.map[h] = JobsTracker.JobStatus.Ready
+                
+    @staticmethod
+    def load(filename):
+        try:
+            with open(filename, "rb") as f:
+                obj = pickle.load(f)
+        except (FileNotFoundError, EOFError) as err:
+            return JobsTracker() #empty object
+        for key in obj.map.keys():
+            if obj.map[key] == JobsTracker.JobStatus.Running:
+                obj.map[key] = JobsTracker.JobStatus.Pending
+        return obj
+            
+    def save(self, filename):
+        with open(filename, "wb") as f:
+            pickle.dump(jobsTracker, f)
+            
+    def __getstate__(self):
+        with self.mutex:
             map = {}
             for key, value in self.map.items():
                 map[key] = value
-            # save local copy
-            with open("jobstatus.json", "w") as f:
-                json.dump(map, f)
+            res = {'map': map}
+            return res
 
-    def load(self):
-        with self.mutex:
-            self.map.clear()
-            try:
-                with open("jobstatus.json", "r") as f:
-                    map = json.load(f)                
-                for key in map.keys():                    
-                    if map[key] == JobsTracker.JobStatus.Running:
-                        map[key] = JobsTracker.JobStatus.Pending
-                for key, value in map.items():
-                    ikey = int(key)
-                    self.map[ikey] = value
-            except FileNotFoundError:
-                pass
+    def __setstate__(self, dict):
+        self.mutex = multiprocessing.Lock()        
+        self.map = multiprocessing.Manager().dict()
+        for key, value in dict['map'].items():
+            self.map[key] = value
         
             
 class JobResults:
@@ -118,23 +131,27 @@ class JobResults:
             # create header if file not exists
             try:
                 with open("results.csv", "x") as f:
-                    f.write("rng offset dim m N Mtot curtask Ntasks sum sum2 chi2cdf\n")
+                    f.write("hash rng offset dim m N Mtot curtask Ntasks sum sum2 chi2cdf\n")
             except FileExistsError:
                 pass
             # write new data to the file
             with open("results.csv", "a") as f:
-                f.write(f"{repr(job)} {res.sum} {res.sum2} {res.chi2cdf()}\n")
+                f.write(f"{hash(job)} {repr(job)} {res.sum} {res.sum2} {res.chi2cdf()}\n")
                 
-    # def getFinishedJobs(self):
-    #     jobs = []
-    #     with self.mutex:
-    #         with open("results.csv", "r"):
-    #             reader = csv.reader(f, delimiter=" ")
-    #             for row in reader:
-    #                 rng = RNG(row[0], row[1])
-    #                 problem = HypercubeProblem(row[2], row[3], row[4])
-    #                 subtask = Subtask(row[6], row[7])
-    #                 jobs.append(HypercubeJob(rng, problem, subtask))
+                
+    def getFinishedJobsHashes(self):
+        finished_jobs_hashes = []
+        with self.mutex:
+            try:
+                with open("results.csv", "r") as f:
+                    reader = csv.reader(f, delimiter=" ", )
+                    next(reader, None) # skip header
+                    for row in reader:
+                        h = int(row[0])
+                        finished_jobs_hashes.append(h)
+            except FileNotFoundError:
+                pass
+        return finished_jobs_hashes
                 
         
             
@@ -170,28 +187,25 @@ def run(job: HypercubeJob):
     
     
 if __name__ == '__main__':
-    maxMemory = 4*1024**3
+    maxMemory = 1*1024**3
     jobs = createFilesForSubmit(maxMemory)
-    h = [hash(j) for j in jobs]
-    #assert(len(h) == len(set(h)))
+    jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
     memoryResource.resource.value = maxMemory//(1024**2)
     
     assert(all(j.maxMemory() < maxMemory for j in jobs))
     print(max(j.maxMemory() for j in jobs)/1024**2)
-    
-    jobsTracker.load()
-    #print(len(jobsTracker.map.values()))
+       
+    finished_jobs_hashes = jobsResults.getFinishedJobsHashes()
+    jobsTracker.markAsFinishedByHash(finished_jobs_hashes)
     
     t = time.time()
     with multiprocessing.Pool() as pool:
         for it in tqdm.tqdm(pool.imap(run, jobs), total = len(jobs)):
-            #print(len(jobsTracker.map.values()))
-            jobsTracker.save()
+            pass
 
     #for it in tqdm.tqdm(map(run, jobs), total = len(jobs)):
     #    pass
         
     print(f"Elapsed {time.time() - t} secs")
-    jobsTracker.save()
         
     assert(memoryResource.resource.value == maxMemory//(1024**2))

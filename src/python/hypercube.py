@@ -1,10 +1,9 @@
 import hashlib
-from typing import Optional
 import sys, os, math, pickle
-sys.path.append(os.path.abspath("../build/debug/python"))
-sys.path.append(os.path.abspath("../../build/debug/python"))
+sys.path.append(os.path.abspath("../build/release/python"))
+sys.path.append(os.path.abspath("../../build/release/python"))
 import pyhypercube
-from typing import List
+from typing import List, Optional
 
 class RNG:
     def __init__(self, rng_id = 0, offset = 0):
@@ -25,7 +24,7 @@ class RNG:
         return f"{self.rng_id} {self.offset}"
 
 class BitsRepack:
-    def __init__(self, bits_per_sample, src_little_endian, dst_little_endian):
+    def __init__(self, bits_per_sample, src_little_endian=True, dst_little_endian=True):
         self.bits_per_sample = bits_per_sample
         self.src_little_endian = src_little_endian
         self.dst_little_endian = dst_little_endian
@@ -119,7 +118,7 @@ class StatTest:
         
         
 class HypercubeJob:
-    def __init__(self, rng: RNG, bitsRepack: BitsRepack, problem: HypercubeProblem, subtask: Subtask):
+    def __init__(self, rng: RNG, bitsRepack: Optional[BitsRepack], problem: HypercubeProblem, subtask: Subtask):
         self.rng = rng
         self.bitsRepack = bitsRepack
         self.problem = problem

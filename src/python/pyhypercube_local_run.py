@@ -6,23 +6,28 @@ import multiprocessing, ctypes, contextlib
 import time, csv, json, enum
 
 
-def createFilesForSubmit(maxMemory):
+def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     maxcells = maxMemory//4
     rng_type = [1]
-    dimensions = [1, 2, 3, 4, 5, 6, 7, 8]
-    m_intervals_per_dim = [10, 20, 100]
+    bits_repack_sample_size = [16, None]
+    dimensions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]    
+    m_intervals_per_dim = [10, 20, 100, 200, 500, 1000, 10000, 100000, 1000000, 10000000]
     n_points_per_cell = [10, 20, 50, 100, 1000, 10000, 100000]
     jobs = []
-    for rng, dim, m, n_per_cell in itertools.product(rng_type, dimensions, m_intervals_per_dim, n_points_per_cell):
+    for rng, sample_size, dim, m, n_per_cell in itertools.product(rng_type, bits_repack_sample_size, dimensions, m_intervals_per_dim, n_points_per_cell):
+        if sample_size:
+            bits_repack = BitsRepack(sample_size)
+        else:
+            bits_repack = None
         rng = RNG(rng, 0)
         total_cells = m ** dim
         total_points = n_per_cell*total_cells
         problem = HypercubeProblem(dim, m, total_points)
-        if total_cells < maxcells:
+        if total_cells < maxcells and total_points < maxPoints:
             nsubtasks = math.ceil(total_cells / maxcells)
             for cursubtask in range(nsubtasks):
                 subtask = Subtask(cursubtask, nsubtasks)
-                job = HypercubeJob(rng, problem, subtask)
+                job = HypercubeJob(rng, bits_repack, problem, subtask)
                 jobs.append(job)
         else:
             #print(total_cells*4)
@@ -109,6 +114,7 @@ class JobsTracker:
             
     def __getstate__(self):
         with self.mutex:
+            # create a local copy of dict from proxy object
             map = {}
             for key, value in self.map.items():
                 map[key] = value
@@ -187,7 +193,7 @@ def run(job: HypercubeJob):
     
     
 if __name__ == '__main__':
-    maxMemory = 1*1024**3
+    maxMemory = 64*1024**3
     jobs = createFilesForSubmit(maxMemory)
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
     memoryResource.resource.value = maxMemory//(1024**2)
@@ -199,7 +205,7 @@ if __name__ == '__main__':
     jobsTracker.markAsFinishedByHash(finished_jobs_hashes)
     
     t = time.time()
-    with multiprocessing.Pool() as pool:
+    with multiprocessing.Pool(12) as pool:
         for it in tqdm.tqdm(pool.imap(run, jobs), total = len(jobs)):
             pass
 

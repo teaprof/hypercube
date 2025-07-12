@@ -11,7 +11,8 @@ def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     rng_type = [1]
     bits_repack_sample_size = [16, None]
     dimensions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]    
-    m_intervals_per_dim = [10, 20, 100, 200, 500, 1000, 10000, 100000, 1000000, 10000000]
+    m_intervals_per_dim = [10, 20, 30, 40, 100, 200, 500, 1000, 10000, 100000, 1000000, 10000000]
+    m_intervals_per_dim.extend([2**n for n in range(1, 40)])
     n_points_per_cell = [10, 20, 50, 100, 1000, 10000, 100000]
     jobs = []
     for rng, sample_size, dim, m, n_per_cell in itertools.product(rng_type, bits_repack_sample_size, dimensions, m_intervals_per_dim, n_points_per_cell):
@@ -142,7 +143,7 @@ class JobResults:
                 pass
             # write new data to the file
             with open("results.csv", "a") as f:
-                f.write(f"{hash(job)} {repr(job)} {res.sum} {res.sum2} {res.chi2cdf()}\n")
+                f.write(f"{hash(job):016x} {repr(job)} {res.sum} {res.sum2} {res.chi2cdf()}\n")
                 
                 
     def getFinishedJobsHashes(self):
@@ -153,7 +154,7 @@ class JobResults:
                     reader = csv.reader(f, delimiter=" ", )
                     next(reader, None) # skip header
                     for row in reader:
-                        h = int(row[0])
+                        h = int(row[0], 16)
                         finished_jobs_hashes.append(h)
             except FileNotFoundError:
                 pass
@@ -172,7 +173,7 @@ def run(job: HypercubeJob):
     h = hash(job)
     jobsTracker.add_if_not_exists(h, JobsTracker.JobStatus.Pending)
     if jobsTracker.compare_and_swap(h, JobsTracker.JobStatus.Pending, JobsTracker.JobStatus.Running) != JobsTracker.JobStatus.Pending:
-        print(f"Skipping job {h}")
+        print(f"Skipping job {h:016x}")
         return
     
     # lock memory for the job
@@ -194,12 +195,15 @@ def run(job: HypercubeJob):
     
 if __name__ == '__main__':
     maxMemory = 64*1024**3
-    jobs = createFilesForSubmit(maxMemory)
+    maxPoints = 1e+9
+    jobs = createFilesForSubmit(maxMemory, maxPoints)
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
     memoryResource.resource.value = maxMemory//(1024**2)
+
+    mm = [j.maxMemory() for j in jobs]
     
     assert(all(j.maxMemory() < maxMemory for j in jobs))
-    print(max(j.maxMemory() for j in jobs)/1024**2)
+    print("max memory for task: %d MB", max(j.maxMemory() for j in jobs)/1024**2)    
        
     finished_jobs_hashes = jobsResults.getFinishedJobsHashes()
     jobsTracker.markAsFinishedByHash(finished_jobs_hashes)

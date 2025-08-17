@@ -9,7 +9,7 @@ import time, csv, json, enum
 def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     maxcells = maxMemory//4
     rng_type = [1]
-    bits_repack_sample_size = [16, None]
+    bits_repack_sample_size = [8, 16, None]
     dimensions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]    
     m_intervals_per_dim = [10, 20, 30, 40, 100, 200, 500, 1000, 10000, 100000, 1000000, 10000000]
     m_intervals_per_dim.extend([2**n for n in range(1, 40)])
@@ -44,8 +44,9 @@ class Resource:
         
     def _acquire(self, amount):
         with self.condition:
-            self.condition.wait_for(lambda: self.resource.value >= amount)
+            #self.condition.wait_for(lambda: self.resource.value >= amount)            
             self.resource.value -= amount
+            print(f"Borrowing {amount}, left {self.resource.value}")
             
     def _release(self, amount):
         with self.condition:
@@ -55,7 +56,7 @@ class Resource:
     @contextlib.contextmanager
     def borrow(self, amount):
         self._acquire(amount)
-        try:
+        try:            
             yield
         finally:
             self._release(amount)
@@ -69,7 +70,7 @@ class JobsTracker:
     def __init__(self):
         self.mutex = multiprocessing.Lock()
         self.map = multiprocessing.Manager().dict()
-        
+
        
     def add_if_not_exists(self, key, value: JobStatus = JobStatus.Pending):
         with self.mutex:
@@ -172,6 +173,7 @@ def run(job: HypercubeJob):
     # check if the job is not done yet
     h = hash(job)
     jobsTracker.add_if_not_exists(h, JobsTracker.JobStatus.Pending)
+    print(jobsTracker.map[h])
     if jobsTracker.compare_and_swap(h, JobsTracker.JobStatus.Pending, JobsTracker.JobStatus.Running) != JobsTracker.JobStatus.Pending:
         print(f"Skipping job {h:016x}")
         return
@@ -185,7 +187,10 @@ def run(job: HypercubeJob):
         print(f"job {h}: {float(job.problem.Npoints):g} points, mem slots = {mem}")
         #time.sleep(delay)
         print(repr(job))
+        t1 = time.time()
         res = job.run()
+        t2 = time.time()        
+        print(f"finished: {repr(job)} in {t2-t1} seconds")
     
     jobsResults.addResults(job, res)
     
@@ -203,14 +208,14 @@ if __name__ == '__main__':
     mm = [j.maxMemory() for j in jobs]
     
     assert(all(j.maxMemory() < maxMemory for j in jobs))
-    print("max memory for task: %d MB", max(j.maxMemory() for j in jobs)/1024**2)    
+    print("max memory for task: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))
        
     finished_jobs_hashes = jobsResults.getFinishedJobsHashes()
     jobsTracker.markAsFinishedByHash(finished_jobs_hashes)
-    
+
     t = time.time()
-    with multiprocessing.Pool(12) as pool:
-        for it in tqdm.tqdm(pool.imap(run, jobs), total = len(jobs)):
+    with multiprocessing.Pool(72) as pool:
+        for it in tqdm.tqdm(pool.map(run, jobs), total = len(jobs)):
             pass
 
     #for it in tqdm.tqdm(map(run, jobs), total = len(jobs)):

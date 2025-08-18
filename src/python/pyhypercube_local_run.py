@@ -139,7 +139,7 @@ class JobResults:
             # create header if file not exists
             try:
                 with open("results.csv", "x") as f:
-                    f.write("hash rng offset dim m N Mtot curtask Ntasks sum sum2 chi2cdf\n")
+                    f.write("hash rng offset bitsPerSample srcLittleEndian dstLittleEndian dim m N Mtot curtask Ntasks sum sum2 chi2cdf\n")
             except FileExistsError:
                 pass
             # write new data to the file

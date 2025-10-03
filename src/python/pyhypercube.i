@@ -8,7 +8,7 @@
 };*/
 
 %{
-#include "Hypercube.h"
+#include "pyhypercube.h"
 void run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler) {}
 %}
 

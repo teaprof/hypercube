@@ -44,7 +44,7 @@ class Resource:
         
     def _acquire(self, amount):
         with self.condition:
-            #self.condition.wait_for(lambda: self.resource.value >= amount)            
+            self.condition.wait_for(lambda: self.resource.value >= amount)            
             self.resource.value -= amount
             print(f"Borrowing {amount}, left {self.resource.value}")
             
@@ -71,7 +71,6 @@ class JobsTracker:
         self.mutex = multiprocessing.Lock()
         self.map = multiprocessing.Manager().dict()
 
-       
     def add_if_not_exists(self, key, value: JobStatus = JobStatus.Pending):
         with self.mutex:
             if key not in self.map:
@@ -168,8 +167,7 @@ memoryResource = Resource(0)
 jobsTracker = JobsTracker()
 jobsResults = JobResults()
 
-
-def run(job: HypercubeJob):    
+def run(job: HypercubeJob): 
     # check if the job is not done yet
     h = hash(job)
     jobsTracker.add_if_not_exists(h, JobsTracker.JobStatus.Pending)
@@ -179,7 +177,7 @@ def run(job: HypercubeJob):
         return
     
     # lock memory for the job
-    global memoryResource    
+    global memoryResource
     mem = math.ceil(job.maxMemory() / 1024**2) # MB
     with memoryResource.borrow(mem):
         #delay = min(10, job.problem.Npoints*1e-10 + 0.1)
@@ -190,7 +188,7 @@ def run(job: HypercubeJob):
         t1 = time.time()
         res = job.run()
         t2 = time.time()        
-        print(f"finished: {repr(job)} in {t2-t1} seconds")
+        print(f"finished: {repr(job)} in {t2-t1} seconds at {time.ctime()}")
     
     jobsResults.addResults(job, res)
     
@@ -208,18 +206,17 @@ if __name__ == '__main__':
     mm = [j.maxMemory() for j in jobs]
     
     assert(all(j.maxMemory() < maxMemory for j in jobs))
-    print("max memory for task: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))
+    print("max memory for task: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))    
        
     finished_jobs_hashes = jobsResults.getFinishedJobsHashes()
     jobsTracker.markAsFinishedByHash(finished_jobs_hashes)
+    print(f"Yet unfinished jobs: {len(jobs) - len(finished_jobs_hashes)}")
 
     t = time.time()
     with multiprocessing.Pool(72) as pool:
-        for it in tqdm.tqdm(pool.map(run, jobs), total = len(jobs)):
+        for it in tqdm.tqdm(pool.map(run, jobs, chunksize=1), total = len(jobs)):
+        #for it in tqdm.tqdm(pool.imap_unordered(run, jobs), total=len(jobs)):
             pass
-
-    #for it in tqdm.tqdm(map(run, jobs), total = len(jobs)):
-    #    pass
         
     print(f"Elapsed {time.time() - t} secs")
         

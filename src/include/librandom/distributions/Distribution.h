@@ -15,7 +15,7 @@ class UniformIntDistributionRough : public Distribution {
 public:
     UniformIntDistributionRough(uint64_t max_value) : max_value_(max_value) {}
     uint64_t operator()(RandomBitGenerator &rng) {
-        assert(max_value_ < (1 << (rng.nbits() - 1)));
+        assert(max_value_ <= rng.max());
         return rng() % (max_value_ + 1);
     }
     uint64_t max() {

@@ -5,6 +5,7 @@ import tqdm
 import multiprocessing, ctypes, contextlib
 import time, csv, json, enum
 
+results_filename= "results.txt"
 
 def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     maxcells = maxMemory//4
@@ -141,12 +142,12 @@ class JobResults:
         with self.mutex:            
             # create header if file not exists
             try:
-                with open("results.csv", "x") as f:
+                with open(results_filename, "x") as f:
                     f.write("hash rng offset bitsPerSample srcLittleEndian dstLittleEndian dim m N Mtot curtask Ntasks sum sum2 chi2cdf\n")
             except FileExistsError:
                 pass
             # write new data to the file
-            with open("results.csv", "a") as f:
+            with open(results_filename, "a") as f:
                 f.write(f"{hash(job):016x} {repr(job)} {res.sum} {res.sum2} {res.chi2cdf()}\n")
                 
                 
@@ -154,7 +155,7 @@ class JobResults:
         finished_jobs_hashes = []
         with self.mutex:
             try:
-                with open("results.csv", "r") as f:
+                with open(results_filename, "r") as f:
                     reader = csv.reader(f, delimiter=" ", )
                     next(reader, None) # skip header
                     for row in reader:

@@ -20,11 +20,14 @@ struct ReferenceTest {
         std::deque<size_t> values;
         for(size_t n = 0; n < Nsamples; n++) {
             if(values.empty()) {
-                for(size_t n = 0; n < dim; n++)
-                    values.push_back(rng() % m_intervals_per_dim);
+                for(size_t n = 0; n < dim; n++) {
+                    uint32_t r = rng();
+                    values.push_back(r % m_intervals_per_dim);
+                }
             } else {
                 for(size_t n = 0; n < stride; n++) {
-                    values.push_back(rng() % m_intervals_per_dim);
+                    uint32_t r = rng();
+                    values.push_back(r % m_intervals_per_dim);
                     values.pop_front();
                 }
             }
@@ -70,7 +73,8 @@ class HypercubeTestSuite : public testing::TestWithParam<std::tuple<size_t, size
         void calculateExpected() {
             ReferenceTest reference_test{.dim=dim,.m_intervals_per_dim=mIntervals,.stride=stride,.Nsamples=NPoints};
             auto expected_cur = reference_test();
-            expected = {expected_cur.first, expected_cur.second};
+            static size_t dof_dummy = 0;
+            expected = {dof_dummy, expected_cur.first, expected_cur.second};
         }
 
         SubtaskResults received;

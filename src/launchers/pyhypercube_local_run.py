@@ -11,9 +11,13 @@ def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     rng_type = [1]
     bits_repack_sample_size = [8, 16, None]
     dimensions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]    
-    m_intervals_per_dim = [10, 20, 30, 40, 100, 200, 500, 1000, 10000, 100000, 1000000, 10000000]
+    m_intervals_per_dim = [10, 20, 30, 40, 1e+2, 2e+2, 5e+2, 1e+3, 1e+4, 1e+5, 1e+6, 1e+7]
     m_intervals_per_dim.extend([2**n for n in range(1, 40)])
-    n_points_per_cell = [10, 20, 50, 100, 1000, 10000, 100000]
+    n_points_per_cell = [10, 20, 50, 1e+2, 1e+3, 1e+4, 1e+5, 1e+6]
+
+    # convert to int
+    m_intervals_per_dim = [int(n) for n in m_intervals_per_dim]
+    n_points_per_cell = [int(n) for n in n_points_per_cell]
     jobs = []
     for rng, sample_size, dim, m, n_per_cell in itertools.product(rng_type, bits_repack_sample_size, dimensions, m_intervals_per_dim, n_points_per_cell):
         if sample_size:
@@ -188,7 +192,7 @@ def run(job: HypercubeJob):
         t1 = time.time()
         res = job.run()
         t2 = time.time()        
-        print(f"finished: {repr(job)} in {t2-t1} seconds at {time.ctime()}")
+        print(f"{h} finished: {repr(job)} in {t2-t1} seconds at {time.ctime()}")
     
     jobsResults.addResults(job, res)
     
@@ -198,7 +202,7 @@ def run(job: HypercubeJob):
     
 if __name__ == '__main__':
     maxMemory = 64*1024**3
-    maxPoints = 1e+9
+    maxPoints = 1e+10
     jobs = createFilesForSubmit(maxMemory, maxPoints)
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
     memoryResource.resource.value = maxMemory//(1024**2)

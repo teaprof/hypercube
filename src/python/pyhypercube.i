@@ -3,6 +3,7 @@
 
 %include <std_shared_ptr.i>
 %shared_ptr(RandomBitGenerator)
+%shared_ptr(RandomNumberWrapperStd<std::mt19937>)
 
 /*class RandomBitGenerator {
 };*/
@@ -37,17 +38,19 @@ namespace std {
 
 
 %include "librandom/rng/dynamic/generators/RandomBitGenerator.h"
+%include "librandom/rng/dynamic/generators/RandomNumberWrapper.h"
 
 %include "stattests/stat_tests/rng.h"
 %include "stattests/stat_tests/chi2based/StatisticalTestBase.h"
 %include "stattests/stat_tests/hypercube/HypercubeProblem.h"
 %include "stattests/stat_tests/hypercube/HypercubeSampler.h"
-%include "stattests/stat_tests/rng.h"
 
 
 %template(Chi2BasedTest1) Chi2BasedTest<HistogramAtomic>;
 
 //SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler, std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
+
+%template(MT19937Wrapper) RandomNumberWrapperStd<std::mt19937>;
 
 void run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler);
 

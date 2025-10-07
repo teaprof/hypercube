@@ -6,6 +6,4 @@
 #include <stattests/stat_tests/hypercube/HypercubeProblem.h>
 #include <stattests/stat_tests/hypercube/HypercubeSampler.h>
 
-
-
 #endif // __PYTHON_HYPERCUBE_H__

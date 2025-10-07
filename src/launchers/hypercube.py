@@ -1,8 +1,8 @@
 import hashlib
 import sys, os, math, pickle
-sys.path.append(os.path.abspath("./build/release/python"))
-sys.path.append(os.path.abspath("../build/release/python"))
-sys.path.append(os.path.abspath("../../build/release/python"))
+sys.path.append(os.path.abspath("./build/debug/python"))
+sys.path.append(os.path.abspath("../build/debug/python"))
+sys.path.append(os.path.abspath("../../build/debug/python"))
 import pyhypercube
 from typing import List, Optional
 
@@ -22,7 +22,7 @@ class RNG:
         return pyhypercube.createGenerator(rng_opts)
     
     def __repr__(self):
-        return f"{self.rng_id} {self.offset}"
+        return f"{self.rng_id:4} {self.offset:4}"
 
 class BitsRepack:
     def __init__(self, bits_per_sample, src_little_endian=True, dst_little_endian=True):
@@ -33,6 +33,8 @@ class BitsRepack:
     def repackOpts(self):
         opts = pyhypercube.BitsRepackDescription()
         opts.bits_per_sample = self.bits_per_sample
+        if opts.bits_per_sample == 0:
+            opts.bits_per_sample = None
         opts.src_little_endian = self.src_little_endian
         opts.dst_little_endian = self.dst_little_endian
         return opts
@@ -42,15 +44,29 @@ class BitsRepack:
         repack_opts = self.repackOpts()            
         return pyhypercube.createGenerator(rng_opts, repack_opts)
 
-    def __repr__(self):
-        return f"{self.bits_per_sample} {self.src_little_endian} {self.dst_little_endian}"
+    #def __repr__(self):
+    #    return f"{self.bits_per_sample:4} {self.src_little_endian:4} {self.dst_little_endian:4}"
+    
+    @staticmethod
+    def tostr(obj: Optional["BitsRepack"]):
+        bits_per_sample = 0
+        src_little_endian = True
+        dst_little_endian = True        
+        if obj:
+            bits_per_sample = obj.bits_per_sample
+            src_little_endian = obj.src_little_endian
+            dst_little_endiad = obj.dst_little_endian
+        return f"{bits_per_sample:4} {src_little_endian:4} {dst_little_endian:4}"
         
 class HypercubeProblem:
-    def __init__(self, dim = 2, m_intervals_per_dim = 10, Npoints = 10000):
+    def __init__(self, dim = 2, m_intervals_per_dim = 10, Npoints = 10000, stride = None):
         self.dim = dim
         self.m_intervals_per_dim = m_intervals_per_dim
         self.Npoints = Npoints
         self.n_cells_total = m_intervals_per_dim ** dim
+        if stride == None:
+            stride = self.dim
+        self.stride = stride
     
     def problem(self):
         p = pyhypercube.HypercubeProblem()
@@ -58,14 +74,14 @@ class HypercubeProblem:
         p.m_intervals_per_dim = self.m_intervals_per_dim
         p.N = self.Npoints
         p.n_cells_total = self.n_cells_total
-        p.stride = 1
+        p.stride = self.stride
         return p
     
     def maxMemory(self):
         return 4*self.n_cells_total #in bytes
     
     def __repr__(self):
-        return f"{self.dim} {self.m_intervals_per_dim} {self.Npoints} {self.n_cells_total}"
+        return f"{self.dim:4} {self.m_intervals_per_dim:10} {self.stride:6} {self.Npoints:10} {self.n_cells_total:10}"
                 
 class HypercubeSampler:
     def __init__(self, problem: HypercubeProblem):
@@ -86,7 +102,7 @@ class Subtask:
         return s
     
     def __repr__(self):
-        return f"{self.cur_task} {self.Ntasks}"
+        return f"{self.cur_task:4} {self.Ntasks:4}"
         
 class StatTest:
     def __init__(self):
@@ -166,7 +182,7 @@ class HypercubeJob:
             pickle.dump(self, f)
             
     def __repr__(self):
-        return repr(self.rng) + " " + repr(self.bitsRepack) + " " + repr(self.problem) + " " + repr(self.subtask)
+        return repr(self.rng) + " " + BitsRepack.tostr(self.bitsRepack) + " " + repr(self.problem) + " " + repr(self.subtask)
        
     def __hash__(self):
         h = hashlib.blake2b(digest_size=8)

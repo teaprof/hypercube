@@ -5,7 +5,7 @@ import tqdm
 import multiprocessing, ctypes, contextlib
 import time, csv, json, enum
 
-results_filename= "results.txt"
+results_filename= "results.csv"
 
 def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     maxcells = maxMemory//4
@@ -15,20 +15,23 @@ def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     m_intervals_per_dim = [10, 20, 30, 40, 1e+2, 2e+2, 5e+2, 1e+3, 1e+4, 1e+5, 1e+6, 1e+7]
     m_intervals_per_dim.extend([2**n for n in range(1, 40)])
     n_points_per_cell = [10, 20, 50, 1e+2, 1e+3, 1e+4, 1e+5, 1e+6]
+    strides = [None, 1] # Node for stride == dim
 
     # convert to int
     m_intervals_per_dim = [int(n) for n in m_intervals_per_dim]
     n_points_per_cell = [int(n) for n in n_points_per_cell]
     jobs = []
-    for rng, sample_size, dim, m, n_per_cell in itertools.product(rng_type, bits_repack_sample_size, dimensions, m_intervals_per_dim, n_points_per_cell):
+    for rng, sample_size, dim, m, n_per_cell, stride in itertools.product(rng_type, bits_repack_sample_size, dimensions, m_intervals_per_dim, n_points_per_cell, strides):
         if sample_size:
             bits_repack = BitsRepack(sample_size)
         else:
             bits_repack = None
         rng = RNG(rng, 0)
         total_cells = m ** dim
+        if sample_size and 2**sample_size < total_cells:
+            continue
         total_points = n_per_cell*total_cells
-        problem = HypercubeProblem(dim, m, total_points)
+        problem = HypercubeProblem(dim, m, total_points, stride)
         if total_cells < maxcells and total_points < maxPoints:
             nsubtasks = math.ceil(total_cells / maxcells)
             for cursubtask in range(nsubtasks):
@@ -138,17 +141,18 @@ class JobResults:
     def __init__(self):
         self.mutex = multiprocessing.Lock()
     
-    def addResults(self, job, res):
+    def addResults(self, job, res, time_elapsed):
         with self.mutex:            
             # create header if file not exists
-            try:
+            try:                
                 with open(results_filename, "x") as f:
-                    f.write("hash rng offset bitsPerSample srcLittleEndian dstLittleEndian dim m N Mtot curtask Ntasks sum sum2 chi2cdf\n")
+                    #f.write(f"{'hash':>16} {'date':>10} {'time':>8} {'elapsed':>10} {'rng':>4} {'ofs':>4} {'bps':>4} {'srLE':>4} {'dsLE':>4} {'dim':>4} {'m':>10} {'stride':>6} {'N':>10} {'Mtot':>10} {'curt':>4} {'Ntsk':>4} {'sum':>20} {'sum2':>20} {'chi2cdf':>20}\n")
+                    f.write("hash date time elapsed rng offset bitsPerSample srcLittleEndian dstLittleEndian dim m stride N Mtotal curtask Ntasks sum sum2 chi2cdf\n");
             except FileExistsError:
                 pass
             # write new data to the file
             with open(results_filename, "a") as f:
-                f.write(f"{hash(job):016x} {repr(job)} {res.sum} {res.sum2} {res.chi2cdf()}\n")
+                f.write(f"{hash(job):016x} {time.strftime('%Y.%m.%d %H:%M:%S')} {time_elapsed:10.2e} {repr(job)} {res.sum:20} {res.sum2:20} {res.chi2cdf():20.15e}\n")
                 
                 
     def getFinishedJobsHashes(self):
@@ -195,7 +199,7 @@ def run(job: HypercubeJob):
         t2 = time.time()        
         print(f"{h} finished: {repr(job)} in {t2-t1} seconds at {time.ctime()}")
     
-    jobsResults.addResults(job, res)
+    jobsResults.addResults(job, res, t2 - t1)
     
     # mark the job as finished
     assert jobsTracker.compare_and_swap(h, JobsTracker.JobStatus.Running, JobsTracker.JobStatus.Ready) == JobsTracker.JobStatus.Running
@@ -220,9 +224,11 @@ if __name__ == '__main__':
     t = time.time()
     with multiprocessing.Pool(72) as pool:
         for it in tqdm.tqdm(pool.map(run, jobs, chunksize=1), total = len(jobs)):
-        #for it in tqdm.tqdm(pool.imap_unordered(run, jobs), total=len(jobs)):
             pass
-        
+
+    #for it in tqdm.tqdm(map(run, jobs), total = len(jobs)):
+    #    pass
+
     print(f"Elapsed {time.time() - t} secs")
         
     assert(memoryResource.resource.value == maxMemory//(1024**2))

@@ -1,5 +1,6 @@
 import hashlib
 import sys, os, math, pickle
+sys.path.append(os.path.abspath("./build/release/python"))
 sys.path.append(os.path.abspath("../build/release/python"))
 sys.path.append(os.path.abspath("../../build/release/python"))
 import pyhypercube
@@ -12,8 +13,8 @@ class RNG:
         
     def rngDescr(self):
         rng_opts = pyhypercube.RandomNumberGeneratorDescription()
-        rng_opts.offset = self.rng_id
-        rng_opts.rng_id = self.offset
+        rng_opts.offset = self.offset
+        rng_opts.rng_id = self.rng_id
         return rng_opts
                 
     def rng(self):
@@ -49,7 +50,7 @@ class HypercubeProblem:
         self.dim = dim
         self.m_intervals_per_dim = m_intervals_per_dim
         self.Npoints = Npoints
-        self.n_cells_total = m_intervals_per_dim ** dim 
+        self.n_cells_total = m_intervals_per_dim ** dim
     
     def problem(self):
         p = pyhypercube.HypercubeProblem()
@@ -57,6 +58,7 @@ class HypercubeProblem:
         p.m_intervals_per_dim = self.m_intervals_per_dim
         p.N = self.Npoints
         p.n_cells_total = self.n_cells_total
+        p.stride = 1
         return p
     
     def maxMemory(self):
@@ -109,6 +111,11 @@ class StatTest:
         else:
             rng_obj = rng.rng()
         res = tester.run(problem.problem(), subtask.subtask(), sampler.sampler(), rng_obj, nthreads)
+        # dummy results:
+        #res = pyhypercube.SubtaskResults()
+        #res.dof = 1
+        #res.sum = 20
+        #res.sum2 = 200
         return res
     
     def collect(self, problem: HypercubeProblem, Nsubtasks: int, subtask_results: List[pyhypercube.SubtaskResults]):

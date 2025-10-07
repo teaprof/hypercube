@@ -40,8 +40,8 @@ class HypercubeOptions : public program_options_heavy::OptionsGroup {
         HypercubeProblem description(const cartesian_product_t::index_t multi_index) const {            
             size_t dim = options_combinations_.get<0>(multi_index, dim_default);
             size_t nIntervals = options_combinations_.get<1>(multi_index, nIntervals_default);
-            std::optional<size_t> nSamples_opt = options_combinations_.get<3>(multi_index);
-            std::optional<size_t> nSamplesPerCell_opt = options_combinations_.get<4>(multi_index, nsamples_per_cell_default);
+            std::optional<size_t> nSamples_opt = options_combinations_.get<2>(multi_index);
+            std::optional<size_t> nSamplesPerCell_opt = options_combinations_.get<3>(multi_index, nsamples_per_cell_default);
             size_t stride = options_combinations_.get<4>(multi_index, dim);
 
             size_t nSamples = 0;

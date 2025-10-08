@@ -7,30 +7,36 @@
 #include<app/TestResultsDB/MetaData.h>
 
 // This is a sentinel mechanism that should detect if new fields have been added to structure `S`.
-// The implementation is based on the comparison of the structure size and total size of all fields that
-// are expected to be the only fields of the structure. Of course, this can't detect all possible modifications
-// of the original structure, but in many cases this mechanism is sufficient to detect modifications that are
-// important for correct serialization or hash calculation.
+// The implementation is based on the structured binding. 
 template<typename S, typename ... Args>
 struct AssertOnlyFields {
-    static constexpr size_t size_expected = (... + sizeof(Args));
-    static_assert(size_expected==sizeof(S), "The structure have been changed, please update calling function");
-    AssertOnlyFields(const S& s, const Args& ... args) {}
+    //static constexpr size_t size_expected = (... + sizeof(Args));
+    //static_assert(size_expected==sizeof(S), 
+    AssertOnlyFields(const S& s, const Args& ... args) {
+        if constexpr (sizeof...(args) == 1) {
+            auto [a] = s;
+            /// \todo: static assert on typeof(a) == typeof(args[0]) here and below
+        }
+        if constexpr (sizeof...(args) == 2) {
+            auto [a, b] = s;
+        }
+        if constexpr (sizeof...(args) == 3) {
+            auto [a, b, c] = s;
+        }
+        if constexpr (sizeof...(args) == 4) {
+            auto [a, b, c, d] = s;
+        }
+        if constexpr (sizeof...(args) == 5) {
+            auto [a, b, c, d, e] = s;
+        }
+        if constexpr (sizeof...(args) == 6) {
+            auto [a, b, c, d, e, f] = s;
+        }
+    }    
 };
-
-template<typename BaseClass, typename S, typename ... Args>
-struct AssertFieldsAndBaseClass {
-    static constexpr size_t size_expected = (... + sizeof(Args)) + sizeof(BaseClass);
-    static_assert(size_expected==sizeof(S), "The structure have been changed, please update calling function");
-    AssertFieldsAndBaseClass(const S& s, size_t BaseClassSize, const Args& ... args) {
-        
-    }
-};
-
-
 
 boost::json::object& operator<<(boost::json::object& object, const RandomNumberGeneratorDescription& rng_descr) {
-    AssertOnlyFields(rng_descr, rng_descr.offset, rng_descr.rng_id, rng_descr.seed);
+    AssertOnlyFields(rng_descr, rng_descr.rng_id, rng_descr.seed, rng_descr.offset);
     object.emplace("rng_id", rng_descr.rng_id);
     if(rng_descr.seed) {
         object.emplace("seed", *rng_descr.seed);
@@ -42,7 +48,7 @@ boost::json::object& operator<<(boost::json::object& object, const RandomNumberG
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, RandomNumberGeneratorDescription& rng_descr) {
-    AssertOnlyFields(rng_descr, rng_descr.offset, rng_descr.rng_id, rng_descr.seed);
+    AssertOnlyFields(rng_descr, rng_descr.rng_id, rng_descr.seed, rng_descr.offset);
     rng_descr.rng_id = object.at("rng_id").to_number<uint64_t>();
     auto v = object.at("seed");
     if(v.is_null()) {
@@ -56,7 +62,7 @@ const boost::json::object& operator>>(const boost::json::object& object, RandomN
 }
 
 boost::json::object& operator<<(boost::json::object& object, const BitsRepackDescription& bits_repack_descr) {
-    AssertOnlyFields(bits_repack_descr, bits_repack_descr.bits_per_sample, bits_repack_descr.src_little_endian, bits_repack_descr.dst_little_endian);
+    AssertOnlyFields(bits_repack_descr, bits_repack_descr.src_little_endian, bits_repack_descr.dst_little_endian, bits_repack_descr.bits_per_sample);
     if(bits_repack_descr.bits_per_sample) {
         object.emplace("repack_bits_per_sample", *bits_repack_descr.bits_per_sample);        
     } else {
@@ -68,7 +74,7 @@ boost::json::object& operator<<(boost::json::object& object, const BitsRepackDes
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, BitsRepackDescription& bits_repack_descr) {
-    AssertOnlyFields(bits_repack_descr, bits_repack_descr.bits_per_sample, bits_repack_descr.src_little_endian, bits_repack_descr.dst_little_endian);
+    AssertOnlyFields(bits_repack_descr, bits_repack_descr.src_little_endian, bits_repack_descr.dst_little_endian, bits_repack_descr.bits_per_sample);
     auto v = object.at("repack_bits_per_sample");
     if(v.is_null()) {
         bits_repack_descr.bits_per_sample = std::nullopt;
@@ -137,14 +143,14 @@ const boost::json::object& operator>>(const boost::json::object& object, Subtask
 }
 
 boost::json::object& operator<<(boost::json::object& object, const SubtaskResults& results) {
-    AssertOnlyFields(results, results.sum, results.sum2, results.dof);
+    AssertOnlyFields(results, results.sum, results.sum2, results.dof, results.parameters_ok);
     object.emplace("sum", results.sum);
     object.emplace("sum2", results.sum2);
     return object;
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, SubtaskResults& results) {
-    AssertOnlyFields(results, results.sum, results.sum2, results.dof);
+    AssertOnlyFields(results, results.sum, results.sum2, results.dof, results.parameters_ok);
     results.sum = object.at("sum").to_number<uint64_t>();
     results.sum2 = object.at("sum2").to_number<uint64_t>();
     return object;
@@ -152,7 +158,8 @@ const boost::json::object& operator>>(const boost::json::object& object, Subtask
 
 
 boost::json::object& operator<<(boost::json::object& object, const HypercubeProblem& problem) {
-    AssertOnlyFields(problem, static_cast<const Chi2BasedProblem&>(problem), problem.dim, problem.m_intervals_per_dim, problem.stride);
+    //AssertOnlyFields(problem, problem, problem.N, problem.n_cells_total, problem.dim, problem.m_intervals_per_dim, problem.stride);
+    static_assert(sizeof(problem) == 40, "structure S have been changed, please update IO operators");
     object.emplace("dim", problem.dim);
     object.emplace("m_intervals_per_dim", problem.m_intervals_per_dim);
     object.emplace("stride", problem.stride);
@@ -161,7 +168,8 @@ boost::json::object& operator<<(boost::json::object& object, const HypercubeProb
 }
 
 const boost::json::object& operator>>(const boost::json::object& object, HypercubeProblem& problem) {
-    AssertOnlyFields(problem, static_cast<const Chi2BasedProblem&>(problem), problem.dim, problem.m_intervals_per_dim, problem.stride);
+    //AssertOnlyFields(problem, problem, problem.N, problem.n_cells_total, problem.dim, problem.m_intervals_per_dim, problem.stride);
+    static_assert(sizeof(problem) == 40, "structure S have been changed, please update IO operators");
     problem.dim = object.at("dim").to_number<uint64_t>();
     problem.m_intervals_per_dim = object.at("m_intervals_per_dim").to_number<uint64_t>();
     problem.stride = object.at("stride").to_number<uint64_t>();

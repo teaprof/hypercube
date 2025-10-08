@@ -146,8 +146,8 @@ class JobResults:
             # create header if file not exists
             try:                
                 with open(results_filename, "x") as f:
-                    f.write(f"{'hash':>16} {'date':>10} {'time':>8} {'elapsed':>10} {'rng':>4} {'ofs':>4} {'bps':>4} {'srLE':>4} {'dsLE':>4} {'dim':>4} {'m':>10} {'stride':>6} {'N':>10} {'Mtot':>10} {'curt':>4} {'Ntsk':>4} {'sum':>20} {'sum2':>20} {'chi2cdf':>21} {'p_ok':>4}\n")
-                    #f.write("hash date time elapsed rng offset bitsPerSample srcLittleEndian dstLittleEndian dim m stride N Mtotal curtask Ntasks sum sum2 chi2cdf parameters_ok\n");
+                    #f.write(f"{'hash':>16} {'date':>10} {'time':>8} {'elapsed':>10} {'rng':>4} {'ofs':>4} {'bps':>4} {'srLE':>4} {'dsLE':>4} {'dim':>4} {'m':>10} {'stride':>6} {'N':>10} {'Mtot':>10} {'curt':>4} {'Ntsk':>4} {'sum':>20} {'sum2':>20} {'chi2cdf':>21} {'p_ok':>4}\n")
+                    f.write("hash date time elapsed rng offset bitsPerSample srcLittleEndian dstLittleEndian dim m stride N Mtotal curtask Ntasks sum sum2 chi2cdf parameters_ok\n");
             except FileExistsError:
                 pass
             # write new data to the file
@@ -167,10 +167,7 @@ class JobResults:
                         finished_jobs_hashes.append(h)
             except FileNotFoundError:
                 pass
-        return finished_jobs_hashes
-                
-        
-            
+        return finished_jobs_hashes                                
 
 memoryResource = Resource(0)
 jobsTracker = JobsTracker()
@@ -207,7 +204,7 @@ def run(job: HypercubeJob):
     
 if __name__ == '__main__':
     maxMemory = 64*1024**3
-    maxPoints = 1e+10
+    maxPoints = 1e+8
     jobs = createFilesForSubmit(maxMemory, maxPoints)
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
     memoryResource.resource.value = maxMemory//(1024**2)

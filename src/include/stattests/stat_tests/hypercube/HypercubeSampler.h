@@ -30,17 +30,24 @@ public:
             }
         }
         return sub2ind(multi_index_);
-    }    
+    }
+    double getProbability(size_t value, const RandomBitGenerator& rng) const override {
+        double res = 1;
+        const auto& multiindex = ind2sub(value);
+        for(const auto& v : multiindex) 
+            res *= int_distribution_.getProbability(v, rng);
+        return res;
+    }
 
     void discardN(size_t N, RandomBitGenerator &rng) override {
         for (size_t n = 0; n < N; n++)
             (*this)(rng);
     }
-    uint64_t max() override {
+    uint64_t max() const override {
         return problem_.n_cells_total - 1;
     }
 
-    uint64_t getNumberOfRngCalls(uint64_t numberOfSampleCalls) override {
+    uint64_t getNumberOfRngCalls(uint64_t numberOfSampleCalls) const override {
         assert(numberOfSampleCalls > 0);
         return problem_.dim + (numberOfSampleCalls-1)*problem_.stride;
     }
@@ -49,14 +56,26 @@ protected:
     const HypercubeProblem problem_;
     UniformIntDistributionRough int_distribution_;
     std::deque<uint64_t> multi_index_;
+    
     template<class T>
-    size_t sub2ind(const T &multiindex) {
+    size_t sub2ind(const T &multiindex) const {
         size_t idx = 0;
         assert(multiindex.size() == problem_.dim);
         for (auto& it : multiindex) {
             idx = idx*problem_.m_intervals_per_dim + it;
         }
         return idx;
+    }
+
+    std::vector<size_t> ind2sub(uint64_t idx) const {
+        std::vector<size_t> res;
+        res.assign(problem_.dim, 0);
+        for(size_t n = 0; n < problem_.dim; n++) {
+            size_t i = idx % problem_.m_intervals_per_dim;
+            res[res.size() - n - 1] = i;
+            idx /= problem_.m_intervals_per_dim; 
+        }
+        return res;
     }
 };
 

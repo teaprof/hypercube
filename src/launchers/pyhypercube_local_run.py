@@ -11,21 +11,30 @@ def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     maxcells = maxMemory//4
     rng_type = [1]
     bits_repack_sample_size = [8, 16, None]
+    srcLittleEndian = [False, True]
+    dstLittleEndian = [False, True]
     dimensions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]    
     m_intervals_per_dim = [10, 20, 30, 40, 1e+2, 2e+2, 5e+2, 1e+3, 1e+4, 1e+5, 1e+6, 1e+7]
     m_intervals_per_dim.extend([2**n for n in range(1, 40)])
     n_points_per_cell = [10, 20, 50, 1e+2, 1e+3, 1e+4, 1e+5, 1e+6]
-    strides = [None, 1] # Node for stride == dim
+    strides = [None, 1, 2, 3, 4, 5, 6, 7] # Node for stride == dim
 
     # convert to int
     m_intervals_per_dim = [int(n) for n in m_intervals_per_dim]
     n_points_per_cell = [int(n) for n in n_points_per_cell]
     jobs = []
-    for rng, sample_size, dim, m, n_per_cell, stride in itertools.product(rng_type, bits_repack_sample_size, dimensions, m_intervals_per_dim, n_points_per_cell, strides):
+    for rng, sample_size, srcLE, dstLE, dim, m, n_per_cell, stride in itertools.product(rng_type, bits_repack_sample_size, srcLittleEndian, dstLittleEndian, dimensions, m_intervals_per_dim, n_points_per_cell, strides):
         if sample_size:
-            bits_repack = BitsRepack(sample_size)
+            bits_repack = BitsRepack(sample_size, srcLE, dstLE)
         else:
-            bits_repack = None
+            if srcLE == True and dstLE == True:
+                #only one combination for bits_repack = None
+                bits_repack = None
+            else:
+                continue
+        if stride == None and dim == 1:
+            # this combination is the same as stride == None and dim == 1
+            continue
         rng = RNG(rng, 0)
         total_cells = m ** dim
         if sample_size and 2**sample_size < total_cells:

@@ -127,14 +127,15 @@ class SingleRun {   // maybe rename to Runner
                 auto cur_res = test.run(task.problem, task.subtask, sampler, rng->copy(), nThreads);
                 double time = toc();        
                 tic();
+                std::cout<<"elapsed: "<<time*1000<<" ms"<<std::endl;
                 std::cout<<"sum = "<<cur_res.sum<<", sum2 = "<<cur_res.sum2<<std::endl;
-                std::cout<<"chi2 = "<<cur_res.chi2()<<std::endl;
-                std::cout<<"chi2cdf = "<<cur_res.chi2cdf()<<std::endl;                
+                std::cout<<"        chi2 = "<<cur_res.chi2()<<std::endl;
+                std::cout<<"chi2_precise = "<<cur_res.chi2_precise<<std::endl;
+                std::cout<<"*** chi2cdf = "<<cur_res.chi2cdf()<<std::endl;                
                 std::cout<<"parameters are ok = "<<cur_res.parameters_ok<<std::endl;
                 if(!cur_res.parameters_ok) {
                     std::cout<<"Warning: parameters of the hypercube problem are not compatible!";
                 }
-                std::cout<<"elapsed: "<<time*1000<<" ms"<<std::endl;
                 subtask_results_.push_back(cur_res);
                 times_.push_back(time);
             }

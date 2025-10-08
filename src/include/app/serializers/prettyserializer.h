@@ -28,6 +28,7 @@ std::ostream& operator<<(std::ostream& str, const SubtaskRecord& task) {
     str<<"nIntervals = "<<task.problem.m_intervals_per_dim<<std::endl;
     str<<"nIntervalsTotal = "<<task.problem.n_cells_total<<std::endl;
     str<<"nSamples = "<<task.problem.N<<std::endl;
+    str<<"stride = "<<task.problem.stride<<std::endl;
 
     str<<"nSubtask = "<<task.subtask.Ntasks<<std::endl;
     str<<"current subtask = "<<task.subtask.cur_task<<std::endl;

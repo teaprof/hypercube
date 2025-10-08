@@ -55,7 +55,7 @@ class BitsRepack:
         if obj:
             bits_per_sample = obj.bits_per_sample
             src_little_endian = obj.src_little_endian
-            dst_little_endiad = obj.dst_little_endian
+            dst_little_endian = obj.dst_little_endian
         return f"{bits_per_sample:4} {src_little_endian:4} {dst_little_endian:4}"
         
 class HypercubeProblem:

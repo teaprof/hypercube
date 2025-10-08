@@ -17,7 +17,12 @@ struct Chi2BasedProblem {
     bool operator==(const Chi2BasedProblem& other) const {
         return N == other.N && n_cells_total == other.n_cells_total;
     }
+    bool checkRNGSufficiency(const RandomBitGenerator &rng) const {
+        (void)rng;
+        return true;
+    }
 };
+
 
 struct StatiscticalTestResults {
     size_t dof; // degrees of freedom
@@ -50,6 +55,7 @@ struct SubtaskParameters {
 struct SubtaskResults {
     size_t dof;
     size_t sum, sum2;
+    bool parameters_ok;
     bool operator==(const SubtaskResults& other) const {
         return sum == other.sum && sum2 == other.sum2;
     }
@@ -69,9 +75,11 @@ class DistributionSampler {
 public:
     virtual ~DistributionSampler() {}
     virtual std::shared_ptr<DistributionSampler> copy() = 0;
-    virtual size_t operator()(RandomBitGenerator &rng) = 0;
+    virtual size_t operator()(RandomBitGenerator &rng) = 0; 
     virtual size_t max() = 0;
     virtual void discardN(size_t N, RandomBitGenerator &rng) = 0;
+    /// return number of rng calls to produce the desired number outputs
+    virtual uint64_t getNumberOfRngCalls(uint64_t numberOfSampleCalls) = 0;
 };
 
 template <class Histogram> 
@@ -80,8 +88,10 @@ public:
     Chi2BasedTest() {}
     virtual ~Chi2BasedTest() {}
 
-    SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler,
-                    std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
+        template<class ProblemType>
+        SubtaskResults run(const ProblemType &problem, const SubtaskParameters &subtask, DistributionSampler& sampler,
+                    std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {                    
+        static_assert(std::derived_from<ProblemType, Chi2BasedProblem>); // we cant use `requires` clause since it is not supported by SWIG
         assert(problem.n_cells_total == sampler.max() + 1);
         size_t data_size = getSubarraySize(problem, subtask);
         //std::cout<<"Allocating "<<data_size<<" cells"<<std::endl;
@@ -91,8 +101,7 @@ public:
         //std::cout<<"problem.N = "<<problem.N<<std::endl;
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
-            // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads,
-            // thread_id);
+            // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads, thread_id);
             auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
             sampler.discardN(thread_start - prev_thread_start, *rng);
             prev_thread_start = thread_start;
@@ -103,7 +112,8 @@ public:
         for (auto &it : threads)
             it.join();
         SubtaskResults res = getResults(problem, subtask);
-        // data.clear();
+        res.parameters_ok = problem.checkRNGSufficiency(*rng);
+        // data.clear()
         // data.shrink_to_fit();
         return res;
     }
@@ -148,6 +158,7 @@ private:
         res.dof = data.size() - 1;
         res.sum2 = sum2;
         res.sum = sum;
+        res.parameters_ok = false;
         return res;
     }
 

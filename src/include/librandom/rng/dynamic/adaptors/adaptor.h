@@ -10,10 +10,10 @@ class RandomBitAdaptor : public RandomBitGenerator {
     RandomBitAdaptor(const RandomBitAdaptor& other) : rng_(other.rng_->copy()) {}
     virtual uint64_t operator()(RandomBitGenerator& rng) = 0;
     virtual uint64_t operator()() override {return (*this)(*rng_);};
-    virtual uint64_t max() override {
-        return (1<<(nbits())) - 1;
+    virtual uint64_t max() const override {
+        return (static_cast<uint64_t>(1)<<(nbits())) - 1;        
     }
-    virtual uint16_t nbits() override = 0;
+    virtual uint16_t nbits() const override = 0;
     std::shared_ptr<RandomBitGenerator> rng() { return rng_; }
 private:
     std::shared_ptr<RandomBitGenerator> rng_;

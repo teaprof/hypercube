@@ -54,11 +54,13 @@ namespace std {
 %include "stattests/stat_tests/hypercube/HypercubeSampler.h"
 
 
+%template(run) Chi2BasedTest::run<HypercubeProblem>;
 %template(Chi2BasedTest1) Chi2BasedTest<HistogramAtomic>;
 
 //SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler, std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
 
 %template(MT19937Wrapper) RandomNumberWrapperStd<std::mt19937>;
+
 
 void run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler);
 

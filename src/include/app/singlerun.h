@@ -128,6 +128,12 @@ class SingleRun {   // maybe rename to Runner
                 double time = toc();        
                 tic();
                 std::cout<<"sum = "<<cur_res.sum<<", sum2 = "<<cur_res.sum2<<std::endl;
+                std::cout<<"chi2 = "<<cur_res.chi2()<<std::endl;
+                std::cout<<"chi2cdf = "<<cur_res.chi2cdf()<<std::endl;                
+                std::cout<<"parameters are ok = "<<cur_res.parameters_ok<<std::endl;
+                if(!cur_res.parameters_ok) {
+                    std::cout<<"Warning: parameters of the hypercube problem are not compatible!";
+                }
                 std::cout<<"elapsed: "<<time*1000<<" ms"<<std::endl;
                 subtask_results_.push_back(cur_res);
                 times_.push_back(time);
@@ -182,13 +188,13 @@ class SingleRun {   // maybe rename to Runner
                 named_mutex m(open_or_create, "hypercube_singlerun_save_results");
                 scoped_lock<named_mutex> s(m);
                 if(std::filesystem::exists(filename)) {
-                    std::cout<<"File exists, append to it"<<std::endl;
+                    std::cout<<"File "<<filename<<" updated"<<std::endl;
                     //boost::interprocess::file_lock flock(filename.c_str()); //can be used only if file exists
                     results_db.readFromFile(filename);
                     results_db.add(tasks_, subtask_results_, times_);
                     results_db.writeToFile(filename);
                 } else {
-                    std::cout<<"File doesn't exists, a new file will be created"<<std::endl;
+                    std::cout<<"File "<<filename<<" doesn't exists, it will be created"<<std::endl;
                     results_db.add(tasks_, subtask_results_, times_);
                     results_db.writeToFile(filename);
                 }

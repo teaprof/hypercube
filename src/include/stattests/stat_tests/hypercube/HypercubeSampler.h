@@ -40,6 +40,11 @@ public:
         return problem_.n_cells_total - 1;
     }
 
+    uint64_t getNumberOfRngCalls(uint64_t numberOfSampleCalls) override {
+        assert(numberOfSampleCalls > 0);
+        return problem_.dim + (numberOfSampleCalls-1)*problem_.stride;
+    }
+
 protected:
     const HypercubeProblem problem_;
     UniformIntDistributionRough int_distribution_;

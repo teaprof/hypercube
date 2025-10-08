@@ -17,10 +17,10 @@ class FixedSequenceGenerator : public RandomBitGenerator {
         buf_.erase(buf_.begin());
         return res;
     }
-    uint16_t nbits() override {
+    uint16_t nbits() const override {
         return nbits_;
     }
-    std::shared_ptr<RandomBitGenerator> copy() override {
+    std::shared_ptr<RandomBitGenerator> copy() const override {
         return std::make_shared<FixedSequenceGenerator>(*this);
     }
 

@@ -25,9 +25,9 @@ public:
         counter++;
         return rng();
     }
-    uint64_t max() override { return rng.max(); }
-    uint16_t nbits() override { return nbits_; }
-    std::shared_ptr<RandomBitGenerator> copy() override {
+    uint64_t max() const override { return rng.max(); }
+    uint16_t nbits() const override { return nbits_; }
+    std::shared_ptr<RandomBitGenerator> copy() const override {
         return std::make_shared<RandomNumberWrapperStd<Rng>>(*this);
     }
 private:

@@ -9,10 +9,10 @@ class RandomBitGenerator {
 public:
     virtual ~RandomBitGenerator() {}
     virtual uint64_t operator()() = 0;
-    virtual uint16_t nbits() = 0;
-    virtual std::shared_ptr<RandomBitGenerator> copy() = 0;
+    virtual uint16_t nbits() const = 0;
+    virtual std::shared_ptr<RandomBitGenerator> copy() const = 0;
 
-    virtual uint64_t max() {
+    virtual uint64_t max() const {
         return (static_cast<uint64_t>(1)<<nbits()) - 1;
     }
     virtual void discard() { (*this)(); }

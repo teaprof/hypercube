@@ -69,10 +69,10 @@ public:
         }
         return packBigEndian(bits_unpacked, rng);
     }
-    uint64_t max() {
-        return (1<<sample_size_bits_) - 1;
+    uint64_t max() const {
+        return (static_cast<uint64_t>(1)<<sample_size_bits_) - 1;
     }
-    uint16_t nbits() {
+    uint16_t nbits() const {
         return sample_size_bits_;
     }
 private:
@@ -111,13 +111,13 @@ public:
         return (*this)(*rng());
         //return rng()->operator()();
     }
-    uint64_t max() override {
+    uint64_t max() const override {
         return bits_packer.max();
     }
-    uint16_t nbits() override {
+    uint16_t nbits() const override {
         return bits_packer.nbits();
     }
-    std::shared_ptr<RandomBitGenerator> copy() override {
+    std::shared_ptr<RandomBitGenerator> copy() const override {
         return std::make_shared<BitsRepackT<Unpacker, Packer>>(*this);
     }
 private:
@@ -223,10 +223,10 @@ public:
         }
         return val;
     }
-    uint64_t max() {
-        return (1<<sample_size_bits_) - 1;
+    uint64_t max() const {
+        return (static_cast<uint64_t>(1)<<sample_size_bits_) - 1;
     }
-    uint16_t nbits() {
+    uint16_t nbits() const {
         return sample_size_bits_;
     }
 private:

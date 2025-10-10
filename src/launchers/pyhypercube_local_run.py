@@ -7,8 +7,8 @@ import time, csv, json, enum
 
 results_filename= "results.csv"
 
-def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
-    maxcells = maxMemory//4
+def createFilesForSubmit(maxMemoryMB, maxPoints = int(1e+9)):
+    maxcells = maxMemoryMB*1024*1024//HypercubeProblem.bytes_per_cell
     rng_type = [1]
     bits_repack_sample_size = [8, 16, None]
     srcLittleEndian = [False, True]
@@ -17,7 +17,8 @@ def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
     m_intervals_per_dim = [10, 20, 30, 40, 1e+2, 2e+2, 5e+2, 1e+3, 1e+4, 1e+5, 1e+6, 1e+7]
     m_intervals_per_dim.extend([2**n for n in range(1, 40)])
     n_points_per_cell = [10, 20, 50, 1e+2, 1e+3, 1e+4, 1e+5, 1e+6]
-    strides = [None, 1, 2, 3, 4, 5, 6, 7] # Node for stride == dim
+    strides = [None] # Node for stride == dim
+    strides.extend(range(10)) 
 
     # convert to int
     m_intervals_per_dim = [int(n) for n in m_intervals_per_dim]
@@ -41,7 +42,7 @@ def createFilesForSubmit(maxMemory, maxPoints = int(1e+9)):
             continue
         total_points = n_per_cell*total_cells
         problem = HypercubeProblem(dim, m, total_points, stride)
-        if total_cells < maxcells and total_points < maxPoints:
+        if total_cells <= maxcells and total_points <= maxPoints:
             nsubtasks = math.ceil(total_cells / maxcells)
             for cursubtask in range(nsubtasks):
                 subtask = Subtask(cursubtask, nsubtasks)
@@ -186,18 +187,18 @@ def run(job: HypercubeJob):
     # check if the job is not done yet
     h = hash(job)
     jobsTracker.add_if_not_exists(h, JobsTracker.JobStatus.Pending)
-    print(jobsTracker.map[h])
+    #print(jobsTracker.map[h])
     if jobsTracker.compare_and_swap(h, JobsTracker.JobStatus.Pending, JobsTracker.JobStatus.Running) != JobsTracker.JobStatus.Pending:
         print(f"Skipping job {h:016x}")
         return
     
     # lock memory for the job
     global memoryResource
-    mem = math.ceil(job.maxMemory() / 1024**2) # MB
-    with memoryResource.borrow(mem):
+    memMB = math.ceil(job.maxMemory() / 1024**2) # MB
+    with memoryResource.borrow(memMB):
         #delay = min(10, job.problem.Npoints*1e-10 + 0.1)
         #print(f"job {h}: {job.problem.Npoints} -> {delay} secs, mem slots = {mem}")
-        print(f"job {h}: {float(job.problem.Npoints):g} points, mem slots = {mem}")
+        print(f"job {h}: {float(job.problem.Npoints):g} points, mem slots = {memMB}")
         #time.sleep(delay)
         print(repr(job))
         t1 = time.time()
@@ -212,23 +213,22 @@ def run(job: HypercubeJob):
     
     
 if __name__ == '__main__':
-    maxMemory = 64*1024**3
-    maxPoints = 1e+8
-    jobs = createFilesForSubmit(maxMemory, maxPoints)
+    maxMemoryMB = 64*1024 # MBytes
+    maxPoints = 1e+11
+    jobs = createFilesForSubmit(maxMemoryMB, maxPoints)
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
-    memoryResource.resource.value = maxMemory//(1024**2)
-
-    mm = [j.maxMemory() for j in jobs]
+    memoryResource.resource.value = maxMemoryMB
     
-    assert(all(j.maxMemory() < maxMemory for j in jobs))
-    print("max memory for task: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))    
+    assert(all(j.maxMemory() <= maxMemoryMB*1024**2 for j in jobs))
+    print("max memory for task: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))
+    print("max memory for task: %d B" % max(j.maxMemory() for j in jobs))
        
     finished_jobs_hashes = jobsResults.getFinishedJobsHashes()
     jobsTracker.markAsFinishedByHash(finished_jobs_hashes)
     print(f"Yet unfinished jobs: {len(jobs) - len(finished_jobs_hashes)}")
 
     t = time.time()
-    with multiprocessing.Pool(72) as pool:
+    with multiprocessing.Pool(60) as pool:
         for it in tqdm.tqdm(pool.map(run, jobs, chunksize=1), total = len(jobs)):
             pass
 
@@ -237,4 +237,4 @@ if __name__ == '__main__':
 
     print(f"Elapsed {time.time() - t} secs")
         
-    assert(memoryResource.resource.value == maxMemory//(1024**2))
+    assert(memoryResource.resource.value == maxMemoryMB)

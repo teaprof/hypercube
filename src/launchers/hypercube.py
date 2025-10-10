@@ -59,6 +59,7 @@ class BitsRepack:
         return f"{bits_per_sample:4} {src_little_endian:4} {dst_little_endian:4}"
         
 class HypercubeProblem:
+    bytes_per_cell = 8
     def __init__(self, dim = 2, m_intervals_per_dim = 10, Npoints = 10000, stride = None):
         self.dim = dim
         self.m_intervals_per_dim = m_intervals_per_dim
@@ -78,7 +79,7 @@ class HypercubeProblem:
         return p
     
     def maxMemory(self):
-        return 4*self.n_cells_total #in bytes
+        return HypercubeProblem.bytes_per_cell*self.n_cells_total #in bytes
     
     def __repr__(self):
         return f"{self.dim:4} {self.m_intervals_per_dim:10} {self.stride:6} {self.Npoints:10} {self.n_cells_total:10}"

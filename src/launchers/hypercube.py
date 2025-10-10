@@ -23,6 +23,9 @@ class RNG:
     
     def __repr__(self):
         return f"{self.rng_id:4} {self.offset:4}"
+    
+    def __eq__(self, other):
+        return self.rng_id == other.rng_id and self.offset == other.offset
 
 class BitsRepack:
     def __init__(self, bits_per_sample, src_little_endian=True, dst_little_endian=True):
@@ -43,6 +46,9 @@ class BitsRepack:
         rng_opts = source_rng.rngDescr()
         repack_opts = self.repackOpts()            
         return pyhypercube.createGenerator(rng_opts, repack_opts)
+    
+    def __eq__(self, other):
+        return self.bits_per_sample == other.bits_per_sample and self.src_little_endian == other.src_little_endian and self.dst_little_endian == other.dst_little_endian
 
     #def __repr__(self):
     #    return f"{self.bits_per_sample:4} {self.src_little_endian:4} {self.dst_little_endian:4}"
@@ -77,6 +83,10 @@ class HypercubeProblem:
         p.n_cells_total = self.n_cells_total
         p.stride = self.stride
         return p
+
+    def __eq__(self, other):
+        return self.dim == other.dim and self.m_intervals_per_dim == other.m_intervals_per_dim and self.Npoints == other.Npoints and self.stride == other.stride
+    
     
     def maxMemory(self):
         return HypercubeProblem.bytes_per_cell*self.n_cells_total #in bytes
@@ -87,6 +97,9 @@ class HypercubeProblem:
 class HypercubeSampler:
     def __init__(self, problem: HypercubeProblem):
         self.problem = problem
+
+    def __eq__(self, other):
+        return self.sampler == other.sampler
         
     def sampler(self):
         return pyhypercube.HypercubeSampler(self.problem.problem())
@@ -101,6 +114,9 @@ class Subtask:
         s.cur_task = self.cur_task
         s.Ntasks = self.Ntasks
         return s
+    
+    def __eq__(self, other):
+        return self.cur_task == other.cur_task and self.Ntasks == other.Ntasks
     
     def __repr__(self):
         return f"{self.cur_task:4} {self.Ntasks:4}"
@@ -184,6 +200,9 @@ class HypercubeJob:
             
     def __repr__(self):
         return repr(self.rng) + " " + BitsRepack.tostr(self.bitsRepack) + " " + repr(self.problem) + " " + repr(self.subtask)
+    
+    def __eq__(self, other):
+        return self.rng == other.rng and self.bitsRepack == other.bitsRepack and self.problem == other.problem and self.subtask == other.subtask
        
     def __hash__(self):
         h = hashlib.blake2b(digest_size=8)

@@ -51,7 +51,30 @@ def createFilesForSubmit(maxMemoryMB, maxPoints = int(1e+9)):
         else:
             #print(total_cells*4)
             pass
+
+    #remove duplicates and check for cash collisions
+    if len(jobs) > 0:
+        all_hashes = [hash(j) for j in jobs]
+        all_hashes_with_idx = sorted(zip(all_hashes, range(len(all_hashes))), key = lambda x: x[0])
+        idx_to_remove = []
+        prev_hash = all_hashes_with_idx[0][0]
+        prev_idx =  all_hashes_with_idx[0][1]
+        for n in range(1, len(all_hashes_with_idx)): 
+            cur_hash = all_hashes_with_idx[n][0]
+            cur_idx =  all_hashes_with_idx[n][1]
+            if prev_hash == cur_hash:
+                assert jobs[cur_idx] == jobs[prev_idx], "Hash collision detected: two different jobs have the same hash" 
+                idx_to_remove.append(cur_idx)
+            prev_hash, prev_idx = cur_hash, cur_idx
+        idx_to_remove = sorted(idx_to_remove, reverse=True)
+        for idx in idx_to_remove:
+            jobs.pop(idx)
+        #Final check for collisions
+        all_hashes = [hash(j) for j in jobs]
+        assert len(all_hashes) == len(set(all_hashes)) #should always be passed
+
     return jobs
+
 
 
 class Resource:
@@ -114,6 +137,17 @@ class JobsTracker:
         with self.mutex:
             for h in hashes:
                 self.map[h] = JobsTracker.JobStatus.Ready
+
+    def getUnfinishedJobCount(self, jobs):
+        counter = 0
+        with self.mutex:  
+            for j in jobs:
+                key = hash(j)
+                if key in self.map.keys():
+                    if self.map[key] == JobsTracker.JobStatus.Ready:
+                        continue
+                counter += 1
+        return counter
                 
     @staticmethod
     def load(filename):
@@ -165,7 +199,7 @@ class JobResults:
                 f.write(f"{hash(job):016x} {time.strftime('%Y.%m.%d %H:%M:%S')} {time_elapsed:10.2e} {repr(job)} {res.sum:20} {res.sum2:20} {res.chi2cdf():21.15e} {res.parameters_ok:4}\n")
                 
                 
-    def getFinishedJobsHashes(self):
+    def loadFinishedJobsHashes(self):
         finished_jobs_hashes = []
         with self.mutex:
             try:
@@ -189,7 +223,7 @@ def run(job: HypercubeJob):
     jobsTracker.add_if_not_exists(h, JobsTracker.JobStatus.Pending)
     #print(jobsTracker.map[h])
     if jobsTracker.compare_and_swap(h, JobsTracker.JobStatus.Pending, JobsTracker.JobStatus.Running) != JobsTracker.JobStatus.Pending:
-        print(f"Skipping job {h:016x}")
+        #print(f"Skipping job {h:016x}")
         return
     
     # lock memory for the job
@@ -214,25 +248,34 @@ def run(job: HypercubeJob):
     
 if __name__ == '__main__':
     maxMemoryMB = 64*1024 # MBytes
-    maxPoints = 1e+11
+    maxPoints = 1e+10
     jobs = createFilesForSubmit(maxMemoryMB, maxPoints)
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
     memoryResource.resource.value = maxMemoryMB
+
     
     assert(all(j.maxMemory() <= maxMemoryMB*1024**2 for j in jobs))
-    print("max memory for task: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))
-    print("max memory for task: %d B" % max(j.maxMemory() for j in jobs))
-       
-    finished_jobs_hashes = jobsResults.getFinishedJobsHashes()
+    print("Task with max memory consumption: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))
+
+    print("Searching unfinished jobs...")       
+    finished_jobs_hashes = jobsResults.loadFinishedJobsHashes()    
     jobsTracker.markAsFinishedByHash(finished_jobs_hashes)
-    print(f"Yet unfinished jobs: {len(jobs) - len(finished_jobs_hashes)}")
+    unfinished_jobs = []
+    for j in tqdm.tqdm(jobs):
+        if hash(j) not in finished_jobs_hashes:
+            unfinished_jobs.append(j)
+    unfinished_counter = len(unfinished_jobs)
+    print(f"Yet unfinished jobs: {unfinished_counter}")
 
     t = time.time()
+    unfinished_counter = len(unfinished_jobs)
     with multiprocessing.Pool(60) as pool:
-        for it in tqdm.tqdm(pool.map(run, jobs, chunksize=1), total = len(jobs)):
-            pass
+        #for it in tqdm.tqdm(pool.map(run, unfinished_jobs, chunksize=1), total = len(jobs)):
+        for it in pool.map(run, unfinished_jobs):
+            unfinished_counter -= 1            
+            print(f"Yet unfinished jobs: {unfinished_counter}")
 
-    #for it in tqdm.tqdm(map(run, jobs), total = len(jobs)):
+    #for it in tqdm.tqdm(map(run, unfinished_jobs), total = len(jobs)):
     #    pass
 
     print(f"Elapsed {time.time() - t} secs")

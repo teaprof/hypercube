@@ -23,7 +23,10 @@ class RNG:
     
     def __repr__(self):
         return f"{self.rng_id:4} {self.offset:4}"
-    
+
+    def __str__(self):
+        return f"rngid = {self.rng_id:<4}, offset = {self.offset:<4}"
+
     def __eq__(self, other):
         return self.rng_id == other.rng_id and self.offset == other.offset
 
@@ -52,9 +55,9 @@ class BitsRepack:
 
     #def __repr__(self):
     #    return f"{self.bits_per_sample:4} {self.src_little_endian:4} {self.dst_little_endian:4}"
-    
-    @staticmethod
-    def tostr(obj: Optional["BitsRepack"]):
+
+    @staticmethod        
+    def toRepr(obj: Optional["BitsRepack"]):
         bits_per_sample = 0
         src_little_endian = True
         dst_little_endian = True        
@@ -63,7 +66,17 @@ class BitsRepack:
             src_little_endian = obj.src_little_endian
             dst_little_endian = obj.dst_little_endian
         return f"{bits_per_sample:4} {src_little_endian:4} {dst_little_endian:4}"
+
+    @staticmethod
+    def toStr(obj: Optional["BitsRepack"]):
+        if obj:
+            bits_per_sample = obj.bits_per_sample
+            src_little_endian = obj.src_little_endian
+            dst_little_endian = obj.dst_little_endian
+            return f"bps = {bits_per_sample:<4}, src_little_endian = {src_little_endian:<4}, dst_little_endian = {dst_little_endian:<4}"
+        return f"no bits repack"
         
+
 class HypercubeProblem:
     bytes_per_cell = 8
     def __init__(self, dim = 2, m_intervals_per_dim = 10, Npoints = 10000, stride = None):
@@ -93,7 +106,10 @@ class HypercubeProblem:
     
     def __repr__(self):
         return f"{self.dim:4} {self.m_intervals_per_dim:10} {self.stride:6} {self.Npoints:10} {self.n_cells_total:10}"
-                
+
+    def __str__(self):
+        return f"dim = {self.dim:<4}, m = {self.m_intervals_per_dim:<10}, stride = {self.stride:<6}, N = {self.Npoints:<8.2e}, n_cells_total = {self.n_cells_total:<8.2e}"
+
 class HypercubeSampler:
     def __init__(self, problem: HypercubeProblem):
         self.problem = problem
@@ -120,7 +136,10 @@ class Subtask:
     
     def __repr__(self):
         return f"{self.cur_task:4} {self.Ntasks:4}"
-        
+
+    def __str__(self):
+        return f"cur_task = {self.cur_task:<4}, Ntasks = {self.Ntasks:<4}"
+
 class StatTest:
     def __init__(self):
         pass
@@ -150,7 +169,18 @@ class StatTest:
         #res.sum = 20
         #res.sum2 = 200
         return res
-    
+
+    def runSubtaskSingleThreaded(self, rng: RNG, repack: Optional[BitsRepack], problem: HypercubeProblem, subtask: Subtask):
+        tester = pyhypercube.Chi2BasedTestSingleThreaded1()
+        sampler = HypercubeSampler(problem)
+        if repack is not None:
+            rng_obj = repack.rng(rng)
+        else:
+            rng_obj = rng.rng()
+        nthreads = 1
+        res = tester.run(problem.problem(), subtask.subtask(), sampler.sampler(), rng_obj, nthreads)
+        return res
+
     def collect(self, problem: HypercubeProblem, Nsubtasks: int, subtask_results: List[pyhypercube.SubtaskResults]):
         tester = pyhypercube.Chi2BasedTest1()
         res = tester.collect(problem.problem(), Nsubtasks, subtask_results)
@@ -168,7 +198,12 @@ class HypercubeJob:
         test = StatTest()
         res = test.runSubtask(self.rng, self.bitsRepack, self.problem, self.subtask)
         return res
-    
+
+    def runSingleThreaded(self):
+        test = StatTest()
+        res = test.runSubtaskSingleThreaded(self.rng, self.bitsRepack, self.problem, self.subtask)
+        return res
+
     def maxMemory(self):
         return self.problem.maxMemory()    
     
@@ -199,8 +234,11 @@ class HypercubeJob:
             pickle.dump(self, f)
             
     def __repr__(self):
-        return repr(self.rng) + " " + BitsRepack.tostr(self.bitsRepack) + " " + repr(self.problem) + " " + repr(self.subtask)
-    
+        return repr(self.rng) + " " + BitsRepack.toRepr(self.bitsRepack) + " " + repr(self.problem) + " " + repr(self.subtask)
+
+    def __str__(self):
+        return str(self.rng) + ", " + BitsRepack.toStr(self.bitsRepack) + ", " + str(self.problem) + ", " + str(self.subtask)
+
     def __eq__(self, other):
         return self.rng == other.rng and self.bitsRepack == other.bitsRepack and self.problem == other.problem and self.subtask == other.subtask
        

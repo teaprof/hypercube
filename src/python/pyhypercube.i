@@ -56,6 +56,7 @@ namespace std {
 
 %template(run) Chi2BasedTest::run<HypercubeProblem>;
 %template(Chi2BasedTest1) Chi2BasedTest<HistogramAtomic>;
+%template(Chi2BasedTestSingleThreaded1) Chi2BasedTest<Histogram>;
 
 //SubtaskResults run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, std::shared_ptr<DistributionSampler> sampler, std::shared_ptr<RandomBitGenerator> rng, size_t n_threads = 1) {
 

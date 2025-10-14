@@ -25,7 +25,7 @@ public:
     bool checkRNGSufficiency(const RandomBitGenerator &rng) const {
         // here we use that fact that the sampler uses modulus operation to produce indicies
         if((rng.max() + 1) % m_intervals_per_dim != 0)  {
-            if(rng.max() / m_intervals_per_dim < 1e+2) { /// todo: remove magic constant 
+            if((rng.max() + 1) / m_intervals_per_dim < 1e+2) { /// todo: remove magic constant 
                 // ideally, we should run the test, get chi2 value and check
                 // if the non-uniformity can impact the results
                 std::cout<<"Error: Bitsize of rng output is insufficient for the specified problem\n";

@@ -40,6 +40,8 @@ def createFilesForSubmit(maxMemoryMB, maxPoints = int(1e+9)):
         total_cells = m ** dim
         if sample_size and 2**sample_size < total_cells:
             continue
+        if sample_size and 2**sample_size / total_cells < 100:            
+            continue
         total_points = n_per_cell*total_cells
         problem = HypercubeProblem(dim, m, total_points, stride)
         if total_cells <= maxcells and total_points <= maxPoints:
@@ -234,11 +236,11 @@ def run(job: HypercubeJob):
         #print(f"job {h}: {job.problem.Npoints} -> {delay} secs, mem slots = {mem}")
         print(f"job {h}: {float(job.problem.Npoints):g} points, mem slots = {memMB}")
         #time.sleep(delay)
-        print(repr(job))
+        print(job)
         t1 = time.time()
         res = job.run()
         t2 = time.time()        
-        print(f"{h} finished: {repr(job)} in {t2-t1} seconds at {time.ctime()}")
+        print(f"{h} finished: {job} in {t2-t1} seconds at {time.ctime()}")
     
     jobsResults.addResults(job, res, t2 - t1)
     
@@ -247,8 +249,8 @@ def run(job: HypercubeJob):
     
     
 if __name__ == '__main__':
-    maxMemoryMB = 64*1024 # MBytes
-    maxPoints = 1e+10
+    maxMemoryMB = 32*1024 # MBytes
+    maxPoints = 1e+11
     jobs = createFilesForSubmit(maxMemoryMB, maxPoints)
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
     memoryResource.resource.value = maxMemoryMB
@@ -257,7 +259,7 @@ if __name__ == '__main__':
     assert(all(j.maxMemory() <= maxMemoryMB*1024**2 for j in jobs))
     print("Task with max memory consumption: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))
 
-    print("Searching unfinished jobs...")       
+    print("Counting unfinished jobs...")       
     finished_jobs_hashes = jobsResults.loadFinishedJobsHashes()    
     jobsTracker.markAsFinishedByHash(finished_jobs_hashes)
     unfinished_jobs = []
@@ -269,9 +271,10 @@ if __name__ == '__main__':
 
     t = time.time()
     unfinished_counter = len(unfinished_jobs)
-    with multiprocessing.Pool(60) as pool:
+    with multiprocessing.Pool(36) as pool:
         #for it in tqdm.tqdm(pool.map(run, unfinished_jobs, chunksize=1), total = len(jobs)):
-        for it in pool.map(run, unfinished_jobs):
+        #for it in pool.map(run, unfinished_jobs, chunksize=1):
+        for it in pool.imap_unordered(run, unfinished_jobs, chunksize=1):
             unfinished_counter -= 1            
             print(f"Yet unfinished jobs: {unfinished_counter}")
 

@@ -196,7 +196,11 @@ class HypercubeJob:
         
     def run(self):
         test = StatTest()
-        res = test.runSubtask(self.rng, self.bitsRepack, self.problem, self.subtask)
+        points_per_thread = 1e+9
+        # perform rounding up division
+        nthreads = (self.problem.Npoints + points_per_thread - 1) // points_per_thread
+        nthreads = min(nthreads, 20)
+        res = test.runSubtask(self.rng, self.bitsRepack, self.problem, self.subtask, nthreads)
         return res
 
     def runSingleThreaded(self):

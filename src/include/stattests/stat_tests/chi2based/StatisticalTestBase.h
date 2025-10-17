@@ -103,8 +103,9 @@ public:
         data.allocate(data_size);
         std::vector<std::thread> threads;
         size_t prev_thread_start = 0;
-        //std::cout<<"problem.N = "<<problem.N<<std::endl;
+        //std::cout<<"problem.N = "<<problem.N<<std::endl;        
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
+            std::cout<<"Starting thread "<<thread_id<<"\n";
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
             // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads, thread_id);
             auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);

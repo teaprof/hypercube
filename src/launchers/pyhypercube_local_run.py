@@ -38,9 +38,7 @@ def createFilesForSubmit(maxMemoryMB, maxPoints = int(1e+9)):
             continue
         rng = RNG(rng, 0)
         total_cells = m ** dim
-        if sample_size and 2**sample_size < total_cells:
-            continue
-        if sample_size and 2**sample_size / total_cells < 100:            
+        if sample_size and 2**sample_size / m < 100:            
             continue
         total_points = n_per_cell*total_cells
         problem = HypercubeProblem(dim, m, total_points, stride)
@@ -249,7 +247,7 @@ def run(job: HypercubeJob):
     
     
 if __name__ == '__main__':
-    maxMemoryMB = 32*1024 # MBytes
+    maxMemoryMB = 96*1024 # MBytes
     maxPoints = 1e+11
     jobs = createFilesForSubmit(maxMemoryMB, maxPoints)
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
@@ -278,7 +276,7 @@ if __name__ == '__main__':
             unfinished_counter -= 1            
             print(f"Yet unfinished jobs: {unfinished_counter}")
 
-    #for it in tqdm.tqdm(map(run, unfinished_jobs), total = len(jobs)):
+    # for it in tqdm.tqdm(map(run, unfinished_jobs), total = len(jobs)):
     #    pass
 
     print(f"Elapsed {time.time() - t} secs")

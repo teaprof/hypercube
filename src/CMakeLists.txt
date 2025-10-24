@@ -23,6 +23,4 @@ include_directories(${CMAKE_SOURCE_DIR}/submodules/ProgramOptionsHeavy/include)
 
 add_subdirectory(src)
 add_subdirectory(tests)
-add_subdirectory(scripts)
 add_subdirectory(python)
-#add_subdirectory(airflow)

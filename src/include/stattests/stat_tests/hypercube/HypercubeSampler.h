@@ -9,7 +9,12 @@
 
 class HypercubeSampler : public DistributionSampler {
 public:
-    HypercubeSampler(const HypercubeProblem &problem) : problem_(problem), int_distribution_(problem.m_intervals_per_dim - 1) {}
+    HypercubeSampler(const HypercubeProblem &problem) : problem_(problem), int_distribution_(problem.m_intervals_per_dim - 1) 
+    {
+        if(problem.stride == 0) {
+            throw std::runtime_error("stride should be positive non-zero value");
+        }
+    }
     HypercubeSampler(const HypercubeSampler &other) : problem_(other.problem_), int_distribution_(other.int_distribution_), multi_index_{other.multi_index_} {}
 
     std::shared_ptr<DistributionSampler> copy() override {
@@ -18,11 +23,14 @@ public:
 
     uint64_t operator()(RandomBitGenerator &rng) override {
         if (multi_index_.empty()) {
+            //initial fill of the multi_index
             for (size_t n = 0; n < problem_.dim; n++) {
                 auto v = int_distribution_(rng);
                 multi_index_.push_back(v);
             }
         } else {
+            assert(problem_.stride != 0);
+            //update multi_index: add to the end new values and shift
             for (size_t n = 0; n < problem_.stride; n++) {
                 multi_index_.pop_front();
                 auto v = int_distribution_(rng);

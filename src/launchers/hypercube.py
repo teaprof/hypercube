@@ -1,8 +1,9 @@
 import hashlib
 import sys, os, math, pickle
-sys.path.append(os.path.abspath("./build/release/python"))
-sys.path.append(os.path.abspath("../build/release/python"))
-sys.path.append(os.path.abspath("../../build/release/python"))
+#sys.path.append(os.path.abspath("./build/release/python"))
+#sys.path.append(os.path.abspath("../build/release/python"))
+#sys.path.append(os.path.abspath("../../build/release/python"))
+sys.path.append(os.path.abspath("../build/debug/python"))
 import pyhypercube
 from typing import List, Optional
 
@@ -210,33 +211,7 @@ class HypercubeJob:
 
     def maxMemory(self):
         return self.problem.maxMemory()    
-    
-    def condorSubmitDescription(self, data_filename):
-        mem = self.problem.maxMemory()
-        mem = math.ceil(mem/1024/1024) + 50
-        mem = f"{mem}M"
-        return {
-            "Executable": "/bin/python3",  # Or your Python script
-            "Arguments": f"hypercube_job.py {data_filename}",
-            "request_cpus": "1",
-            "request_memory": mem,
-            #"request_disk": "1024K",
-            "Output": "job.out",
-            "Error": "job.err",
-            "Log": "job.log",
-            "Queue": "1"}
-    
-    def printCondorSubmit(self, submit_filename, data_filename):
-        descr = self.condorSubmitDescription(data_filename)
-        with open(submit_filename, "w") as f:
-            for key, value in descr.items():
-                if key != "Queue":
-                    f.write(f"{key} = {value}\n")
-                else:
-                    f.write(f"{key} {value}\n")
-        with open(data_filename, "wb") as f:
-            pickle.dump(self, f)
-            
+                
     def __repr__(self):
         return repr(self.rng) + " " + BitsRepack.toRepr(self.bitsRepack) + " " + repr(self.problem) + " " + repr(self.subtask)
 

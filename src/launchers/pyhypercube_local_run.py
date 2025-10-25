@@ -18,7 +18,7 @@ def createFilesForSubmit(maxMemoryMB, maxPoints = int(1e+9)):
     m_intervals_per_dim.extend([2**n for n in range(1, 40)])
     n_points_per_cell = [10, 20, 50, 1e+2, 1e+3, 1e+4, 1e+5, 1e+6]
     strides = [None] # Node for stride == dim
-    strides.extend(range(10)) 
+    strides.extend(range(1, 10)) 
 
     # convert to int
     m_intervals_per_dim = [int(n) for n in m_intervals_per_dim]
@@ -33,8 +33,8 @@ def createFilesForSubmit(maxMemoryMB, maxPoints = int(1e+9)):
                 bits_repack = None
             else:
                 continue
-        if stride == None and dim == 1:
-            # this combination is the same as stride == None and dim == 1
+        if stride == None and (dim in strides):
+            # this combination is the same as stride == dim
             continue
         rng = RNG(rng, 0)
         total_cells = m ** dim
@@ -217,7 +217,7 @@ memoryResource = Resource(0)
 jobsTracker = JobsTracker()
 jobsResults = JobResults()
 
-def run(job: HypercubeJob): 
+def run(job: HypercubeJob, write_results = True): 
     # check if the job is not done yet
     h = hash(job)
     jobsTracker.add_if_not_exists(h, JobsTracker.JobStatus.Pending)
@@ -240,13 +240,42 @@ def run(job: HypercubeJob):
         t2 = time.time()        
         print(f"{h} finished: {job} in {t2-t1} seconds at {time.ctime()}")
     
-    jobsResults.addResults(job, res, t2 - t1)
+    if write_results:
+        jobsResults.addResults(job, res, t2 - t1)
     
     # mark the job as finished
     assert jobsTracker.compare_and_swap(h, JobsTracker.JobStatus.Running, JobsTracker.JobStatus.Ready) == JobsTracker.JobStatus.Running
+
+
+def runJobWithSpecificHash(hash_value):
+    maxMemoryMB = 96*1024 # MBytes
+    maxPoints = 1e+11
+    jobs = createFilesForSubmit(maxMemoryMB, maxPoints)
+    jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
+    memoryResource.resource.value = maxMemoryMB
+
+
+    j = jobs[0]
+    j.bitsRepack.bits_per_sample = 16
+    j.bitsRepack.dst_little_endian = False
+    j.bitsRepack.src_little_endian = False
+    j.problem.dim = 1
+    j.problem.m_intervals_per_dim = 4096
+    j.problem.n_cells_total = j.problem.m_intervals_per_dim ** j.problem.dim
+    j.problem.Npoints = 40960
+    j.problem.stride = 0
+    j.rng.offset = 0
+    j.subtask.cur_task = 0
+    j.subtask.Ntasks = 1
+    run(j)
     
     
-if __name__ == '__main__':
+    for j in jobs:
+        if hash(j) == hash_value:
+            run(j, write_results=False)    
+
+
+def runAllJobs():
     maxMemoryMB = 96*1024 # MBytes
     maxPoints = 1e+11
     jobs = createFilesForSubmit(maxMemoryMB, maxPoints)
@@ -282,3 +311,9 @@ if __name__ == '__main__':
     print(f"Elapsed {time.time() - t} secs")
         
     assert(memoryResource.resource.value == maxMemoryMB)
+
+    
+    
+if __name__ == '__main__':
+    #runAllJobs()
+    runJobWithSpecificHash(0x13d6cb948de589c3)

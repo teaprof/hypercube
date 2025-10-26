@@ -41,7 +41,7 @@ class StateArchive {
             seekHeaderStartP();
             size_t pos = f.tellp();
             writeState(state);
-            header_elements_.emplace_back(rng_offset, pos);
+            header_elements_.push_back(HeaderElement{rng_offset, pos});
             writeHeader(header_elements_);
         }
 
@@ -126,4 +126,4 @@ class StateArchive {
         std::vector<HeaderElement> header_elements_;
         std::string path_;
         size_t state_size_;
-}
+};

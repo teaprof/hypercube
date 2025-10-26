@@ -64,7 +64,7 @@ class TaskGenerator {
                 auto rng_descr = options_->rng_options->description();                
                 auto hash = myhash(problem, subtask);
                 MetaData meta1{.taskId=hash};
-                tasks.push_back(meta1, rng_descr, std::nullopt, problem, subtask);
+                tasks.push_back(meta1, rng_descr, std::nullopt, problem, std::nullopt, subtask);
                 if(tasks.records().size() > 100'000'000) {
                     throw std::runtime_error("The number of subtasks becomes greater than 100 millions");
                 }

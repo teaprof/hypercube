@@ -8,6 +8,7 @@
 #include "app/options/SubtaskOptions.h"
 #include "app/options/HypercubeOptions.h"
 #include "app/options/MetaDataOptions.h"
+#include "app/options/RNGArchiveOptions.h"
 #include <ProgramOptionsHeavy.h>
 #include "app/options/IOoptions.h"
 #include "app/serializers/prettyserializer.h"
@@ -29,17 +30,20 @@ public:
         //sampling_options = std::make_shared<SamplingOptions>();
         hypercube_options = std::make_shared<HypercubeOptions>();
         subtask_options = std::make_shared<SubtaskOptions>();
+        archive_options = std::make_shared<RNGArchiveOptions>();
         addGroup(rng_options);
         addGroup(bits_repack_options);
         //addGroup(sampling_options);
         addGroup(hypercube_options);
         addGroup(subtask_options);
+        addGroup(archive_options);
     }
     std::shared_ptr<RNGOptions> rng_options;
     std::shared_ptr<BitsRepackOptions> bits_repack_options;
     //std::shared_ptr<SamplingOptions> sampling_options;
     std::shared_ptr<HypercubeOptions> hypercube_options;
     std::shared_ptr<SubtaskOptions> subtask_options;
+    std::shared_ptr<RNGArchiveOptions> archive_options;
 };
 
 class BatchedRunOptions : public program_options_heavy::ProgramOptionsParser {
@@ -118,7 +122,7 @@ class SingleRun {   // maybe rename to Runner
             nThreads = 1;
 
             for(auto task : tasks_) {
-                auto rng = createGenerator(task.rng, task.repack); 
+                auto rng = createGenerator(task.rng, task.repack, task.rng_archive_description); 
                 //auto sampler = std::make_shared<HypercubeSampler>(task.problem);
                 HypercubeSampler sampler(task.problem);
                 Chi2BasedTest<HistogramAtomic> test;
@@ -176,6 +180,7 @@ class SingleRun {   // maybe rename to Runner
                     subtask.subtask = SubtaskParameters{.Ntasks=options_->manual_single_run_options->subtask_options->nSubtasks,.cur_task=options_->manual_single_run_options->subtask_options->curSubtask};
                     subtask.repack = bits_repack_description;
                     subtask.rng = options_->manual_single_run_options->rng_options->description();
+                    subtask.rng_archive_description = options_->manual_single_run_options->archive_options->description();
                     res.push_back(std::move(subtask));
                 }
             }

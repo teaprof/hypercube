@@ -19,6 +19,7 @@ struct TaskRecord {
     RandomNumberGeneratorDescription rng;
     std::optional<BitsRepackDescription> repack;
     HypercubeProblem problem;
+    std::optional<RNGArchiveDescription> rng_archive_description;
 
     bool operator==(const TaskRecord& other) const {
         return meta == other.meta && rng == other.rng && repack == other.repack && problem == other.problem;
@@ -74,8 +75,9 @@ class SubtaskDB {
                 records_.push_back(std::move(r));
             }
         }
-        void push_back(const std::optional<MetaData> meta, const RandomNumberGeneratorDescription& rng, std::optional<BitsRepackDescription> bits_repack, const HypercubeProblem& problem, const SubtaskParameters& subtask) {
-            records_.push_back({meta, rng, bits_repack, problem, subtask});
+        void push_back(const std::optional<MetaData> meta, const RandomNumberGeneratorDescription& rng, std::optional<BitsRepackDescription> bits_repack, const HypercubeProblem& problem, std::optional<RNGArchiveDescription> rng_archive, const SubtaskParameters& subtask) {
+            SubtaskRecord v{meta, rng, bits_repack, problem, rng_archive, subtask};
+            records_.push_back(std::move(v));
         }
         void writeToFile(const std::string& path) const {
             boost::json::array array;            

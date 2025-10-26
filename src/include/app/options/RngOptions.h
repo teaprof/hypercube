@@ -49,6 +49,7 @@ class RNGOptions : public program_options_heavy::OptionsGroup {
 };
 
 class BitsRepackOptions : public program_options_heavy::OptionsGroup {
+    //todo: move begin() and end() to separate class (here and in HypercubeOptions)
         std::vector<bool> src_little_endian, dst_little_endian;
         std::vector<uint16_t> dst_sample_bits;
     public:        

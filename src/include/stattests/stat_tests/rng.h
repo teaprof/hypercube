@@ -4,6 +4,7 @@
 #include<librandom/rng/dynamic/generators/RandomBitGenerator.h>
 #include<librandom/rng/dynamic/generators/RandomNumberWrapper.h>
 #include<librandom/rng/dynamic/adaptors/bitsrepack.h>
+#include<librandom/rng/dynamic/statearchive/fastforward.h>
 #include<memory>
 #include<cstddef>
 #include<optional>
@@ -26,30 +27,38 @@ struct BitsRepackDescription {
     }
 };
 
-std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const std::optional<BitsRepackDescription> bits_repack_descr) {
+struct RNGArchiveDescription {
+    std::string archive_file_name;
+};
+
+std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const std::optional<BitsRepackDescription> bits_repack_descr, 
+const std::optional<RNGArchiveDescription> rng_archive_descr) {    
     auto rng = std::make_shared<MT19937Wrapper>();
     if(rng_descr.seed) {
         rng->rng.seed(*rng_descr.seed);
     }
-    rng->discardN(rng_descr.offset);
+    std::shared_ptr<RandomBitGenerator> res = rng;
+    if(rng_archive_descr) {
+        res = std::make_shared<RngWithFastForward>(rng, rng_archive_descr->archive_file_name); 
+    }
+    res->discardN(rng_descr.offset);
     if(bits_repack_descr) {
         //Use the default value for bits_per_sample for selected rng
-        uint16_t bits_per_sample = rng->nbits();
+        uint16_t bits_per_sample = res->nbits();
         if(bits_repack_descr->bits_per_sample) {
             //if bits_repack_descr.bits_per_sample is set, use this value
             bits_per_sample = *bits_repack_descr->bits_per_sample;
         }
-        auto repacker = std::make_shared<BitsRepackFast>(rng, bits_per_sample, bits_repack_descr->src_little_endian, bits_repack_descr->dst_little_endian);
-        return repacker;
+        res = std::make_shared<BitsRepackFast>(res, bits_per_sample, bits_repack_descr->src_little_endian, bits_repack_descr->dst_little_endian);
     }
-    return rng;
+    return res;
 }
 
 std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr) {
-    return createGenerator(rng_descr, std::nullopt);
+    return createGenerator(rng_descr, std::nullopt, std::nullopt);
 }
 std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const BitsRepackDescription& bits_repack_descr) {
-    return createGenerator(rng_descr, std::make_optional(bits_repack_descr));
+    return createGenerator(rng_descr, std::make_optional(bits_repack_descr), std::nullopt);
 }
 
 #endif

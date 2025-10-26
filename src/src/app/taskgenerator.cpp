@@ -18,9 +18,9 @@ int main () {
             HypercubeProblem problem(dim, mIntervals, stride, N);
 
             MetaData meta1{.taskId=task_id++};
-            tasks.push_back(meta1, rng_descr, std::nullopt, problem, subtask);
+            tasks.push_back(meta1, rng_descr, std::nullopt, problem, std::nullopt, subtask);
             MetaData meta2{.taskId=task_id++};
-            tasks.push_back(meta2, rng_descr, bits_repack, problem, subtask);
+            tasks.push_back(meta2, rng_descr, bits_repack, problem, std::nullopt, subtask);
         }
     }
     tasks.writeToFile("subtasks.json");

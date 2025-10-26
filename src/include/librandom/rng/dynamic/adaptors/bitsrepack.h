@@ -120,6 +120,16 @@ public:
     std::shared_ptr<RandomBitGenerator> copy() const override {
         return std::make_shared<BitsRepackT<Unpacker, Packer>>(*this);
     }
+    std::vector<char> state() override {
+        throw std::logic_error("Not implemented yet");
+    }
+    void setState(const std::vector<char>& state) override {
+        throw std::logic_error("Not implemented yet");
+    }
+    size_t stateSize() override {
+        throw std::logic_error("Not implemented yet");
+    }
+
 private:
     Unpacker bits_unpacker;
     Packer bits_packer;

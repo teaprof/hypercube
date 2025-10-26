@@ -7,6 +7,7 @@
 #include <random>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 template <class Rng>
 class RandomNumberWrapperStd : public RandomBitGenerator {
@@ -30,6 +31,17 @@ public:
     std::shared_ptr<RandomBitGenerator> copy() const override {
         return std::make_shared<RandomNumberWrapperStd<Rng>>(*this);
     }
+    std::vector<char> state() override {
+        throw std::logic_error("Not implemented yet");
+    }
+    void setState(const std::vector<char>& state) override {
+        throw std::logic_error("Not implemented yet");
+    }
+    size_t stateSize() override {
+        //return sizeof(rng._M_x);
+        throw std::logic_error("Not implemented yet");
+    }
+
 private:
     uint16_t nbits_{0};
 };

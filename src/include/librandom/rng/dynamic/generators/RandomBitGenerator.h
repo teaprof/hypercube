@@ -16,11 +16,14 @@ public:
         return (static_cast<uint64_t>(1)<<nbits()) - 1;
     }
     virtual void discard() { (*this)(); }
-    virtual void discardN(size_t n) {
-        for (size_t i = 0; i < n; i++)
+    virtual void discardN(uint64_t n) {
+        for (uint64_t i = 0; i < n; i++)
             discard();
     };
     virtual void jumpTo(uint64_t pos) { discardN(pos - counter); }
+    virtual std::vector<char> state() = 0;
+    virtual void setState(const std::vector<char>& state) = 0;
+    virtual size_t stateSize() = 0;
     uint64_t counter{0};
 };
 

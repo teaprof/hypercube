@@ -81,7 +81,7 @@ public:
     virtual std::shared_ptr<DistributionSampler> copy() = 0;
     virtual size_t operator()(RandomBitGenerator &rng) = 0; 
     virtual size_t max() const = 0;
-    virtual void discardN(size_t N, RandomBitGenerator &rng) = 0;
+    virtual void discardN(uint64_t N, RandomBitGenerator &rng) = 0;
     /// return number of rng calls to produce the desired number outputs
     virtual uint64_t getNumberOfRngCalls(uint64_t numberOfSampleCalls) const = 0;
     virtual double getProbability(size_t value, const RandomBitGenerator &rng) const = 0;
@@ -105,12 +105,12 @@ public:
         size_t prev_thread_start = 0;
         //std::cout<<"problem.N = "<<problem.N<<std::endl;        
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
-            std::cout<<"Starting thread "<<thread_id<<"\n";
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
             // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads, thread_id);
-            auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
+            auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);            
             sampler.discardN(thread_start - prev_thread_start, *rng);
             prev_thread_start = thread_start;
+            std::cout<<"Starting thread "<<thread_id<<"\n";
             //Chi2BasedTest::runThread(problem, subtask, sampler, rng->copy(), n_threads, thread_id);
              std::thread thread(&Chi2BasedTest::runThread, this, problem, subtask, sampler.copy(), rng->copy(), n_threads, thread_id);
             threads.emplace_back(std::move(thread));

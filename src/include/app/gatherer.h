@@ -94,7 +94,7 @@ private:
             };
             Chi2BasedTest<Histogram> chi2_based_test; // no matter what histogram class is used here
             StatiscticalTestResults res = chi2_based_test.collect(task.problem, subtasks[0].subtask.Ntasks, subtask_results);
-            TaskResultsRecord task_results_{task.meta, task.rng, task.repack, task.problem, res};
+            TaskResultsRecord task_results_{task.meta, task.rng, task.repack, task.problem, task.rng_archive_description, };
             task_results_db.push_back(task_results_);
         }
         task_results_db.sanitize();

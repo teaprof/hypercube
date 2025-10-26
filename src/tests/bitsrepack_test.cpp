@@ -23,6 +23,15 @@ class FixedSequenceGenerator : public RandomBitGenerator {
     std::shared_ptr<RandomBitGenerator> copy() const override {
         return std::make_shared<FixedSequenceGenerator>(*this);
     }
+    std::vector<char> state() override {
+        throw std::logic_error("Not implemented yet");
+    }
+    void setState(const std::vector<char>& state) override {
+        throw std::logic_error("Not implemented yet");
+    }
+    size_t stateSize() override {
+        throw std::logic_error("Not implemented yet");
+    }
 
     private:
     std::vector<uint64_t> buf_;

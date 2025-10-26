@@ -35,6 +35,9 @@ public:
         }
         return static_cast<double>(counter)/noutcomes;
     }
+    void discard(uint64_t N, RandomBitGenerator &rng) {
+        rng.discardN(N);
+    }
 private:
     //uint16_t bitsPerValue_;
     uint64_t max_value_;

@@ -59,7 +59,7 @@ class SubtaskResultsDB {
             f<<data;
         }        
         void push_back(const SubtaskRecord& task, const SubtaskResults& results, double time) {
-            records_.push_back({task.meta, task.rng, task.repack, task.problem, task.subtask, results, time});
+            records_.push_back({task.meta, task.rng, task.repack, task.problem, task.rng_archive_description, task.subtask, results, time});
         }
         void add(const std::vector<SubtaskRecord> &tasks, const std::vector<SubtaskResults>& results, const std::vector<double> times) {
             assert(tasks.size() == results.size());

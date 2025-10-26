@@ -32,7 +32,7 @@ public:
             assert(problem_.stride != 0);
             //update multi_index: add to the end new values and shift
             for (size_t n = 0; n < problem_.stride; n++) {
-                multi_index_.pop_front();
+                multi_index_.pop_front(); /// \todo: use circular buffer
                 auto v = int_distribution_(rng);
                 multi_index_.push_back(v);
             }
@@ -47,9 +47,20 @@ public:
         return res;
     }
 
-    void discardN(size_t N, RandomBitGenerator &rng) override {
-        for (size_t n = 0; n < N; n++)
-            (*this)(rng);
+    void discardN(uint64_t N, RandomBitGenerator &rng) override {
+        // make the same job as the following loop:
+        //      for(uint64_t n = 0; n < N; n++)
+        //          this->operator()(rng);
+        // but in more smart manner using `int_distribution_.discardN` function
+        size_t steps_for_refill = intceil(problem_.dim, problem_.stride);
+        if(N < steps_for_refill) {
+            for(uint64_t n = 0; n < N; n++)
+                this->operator()(rng);
+            return;
+        };
+        int_distribution_.discard(N - steps_for_refill, rng);
+        for(size_t n = 0; n < steps_for_refill; n++)
+            this->operator()(rng);
     }
     uint64_t max() const override {
         return problem_.n_cells_total - 1;
@@ -84,6 +95,10 @@ protected:
             idx /= problem_.m_intervals_per_dim; 
         }
         return res;
+    }
+    size_t intceil(size_t divident, size_t divisor) {
+        // equals to static_cast<size_t>(ceil(divident/divisor))
+        return (divident + divisor - 1)/divisor;
     }
 };
 

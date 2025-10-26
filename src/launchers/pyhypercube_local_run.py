@@ -201,23 +201,26 @@ class JobResults:
                 
     def loadFinishedJobsHashes(self):
         finished_jobs_hashes = []
+        finished_jobs_results = []
         with self.mutex:
             try:
                 with open(results_filename, "r") as f:
-                    reader = csv.reader(f, delimiter=" ", )
+                    reader = csv.reader(f, delimiter=" ", skipinitialspace=True)
                     next(reader, None) # skip header
                     for row in reader:
                         h = int(row[0], 16)
                         finished_jobs_hashes.append(h)
+                        res = {'sum': int(row[16]), 'sum2': int(row[17]), "chi2cdf": float(row[18])}
+                        finished_jobs_results.append(res)
             except FileNotFoundError:
                 pass
-        return finished_jobs_hashes                                
+        return finished_jobs_hashes, finished_jobs_results
 
 memoryResource = Resource(0)
 jobsTracker = JobsTracker()
 jobsResults = JobResults()
 
-def run(job: HypercubeJob, write_results = True): 
+def run(job: HypercubeJob):
     # check if the job is not done yet
     h = hash(job)
     jobsTracker.add_if_not_exists(h, JobsTracker.JobStatus.Pending)
@@ -240,8 +243,7 @@ def run(job: HypercubeJob, write_results = True):
         t2 = time.time()        
         print(f"{h} finished: {job} in {t2-t1} seconds at {time.ctime()}")
     
-    if write_results:
-        jobsResults.addResults(job, res, t2 - t1)
+    jobsResults.addResults(job, res, t2 - t1)
     
     # mark the job as finished
     assert jobsTracker.compare_and_swap(h, JobsTracker.JobStatus.Running, JobsTracker.JobStatus.Ready) == JobsTracker.JobStatus.Running
@@ -254,25 +256,36 @@ def runJobWithSpecificHash(hash_value):
     jobs = sorted(jobs, key = lambda j : j.problem.Npoints)
     memoryResource.resource.value = maxMemoryMB
 
+    finished_jobs_hashes, finished_jobs_results = jobsResults.loadFinishedJobsHashes()    
 
-    j = jobs[0]
-    j.bitsRepack.bits_per_sample = 16
-    j.bitsRepack.dst_little_endian = False
-    j.bitsRepack.src_little_endian = False
-    j.problem.dim = 1
-    j.problem.m_intervals_per_dim = 4096
-    j.problem.n_cells_total = j.problem.m_intervals_per_dim ** j.problem.dim
-    j.problem.Npoints = 40960
-    j.problem.stride = 0
-    j.rng.offset = 0
-    j.subtask.cur_task = 0
-    j.subtask.Ntasks = 1
-    run(j)
-    
+
+
+    # j = jobs[0]
+    # j.bitsRepack.bits_per_sample = 16
+    # j.bitsRepack.dst_little_endian = False
+    # j.bitsRepack.src_little_endian = False
+    # j.problem.dim = 1
+    # j.problem.m_intervals_per_dim = 4096
+    # j.problem.n_cells_total = j.problem.m_intervals_per_dim ** j.problem.dim
+    # j.problem.Npoints = 40960
+    # j.problem.stride = 0
+    # j.rng.offset = 0
+    # j.subtask.cur_task = 0
+    # j.subtask.Ntasks = 1
+    # run(j)
+
+    #res = jobs[0].run()    
+    #print(jobs[0])
+    #print(res.sum2)
     
     for j in jobs:
         if hash(j) == hash_value:
-            run(j, write_results=False)    
+            res = j.run()
+            print(f"{res.sum:20} {res.sum2:20} {res.chi2cdf():21.15e}")
+            if hash_value in finished_jobs_hashes:
+                idx = finished_jobs_hashes.index(hash(j))
+                assert res.sum == finished_jobs_results[idx]["sum"]
+                assert res.sum2 == finished_jobs_results[idx]["sum2"]
 
 
 def runAllJobs():
@@ -287,7 +300,7 @@ def runAllJobs():
     print("Task with max memory consumption: %d MB" % (max(j.maxMemory() for j in jobs)/1024**2))
 
     print("Counting unfinished jobs...")       
-    finished_jobs_hashes = jobsResults.loadFinishedJobsHashes()    
+    finished_jobs_hashes, _ = jobsResults.loadFinishedJobsHashes()    
     jobsTracker.markAsFinishedByHash(finished_jobs_hashes)
     unfinished_jobs = []
     for j in tqdm.tqdm(jobs):
@@ -316,4 +329,5 @@ def runAllJobs():
     
 if __name__ == '__main__':
     #runAllJobs()
-    runJobWithSpecificHash(0x13d6cb948de589c3)
+    runJobWithSpecificHash(0x0b71e214f3f19bad)
+    #runJobWithSpecificHash(546852461734067413)

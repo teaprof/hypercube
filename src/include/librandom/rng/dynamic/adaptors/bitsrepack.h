@@ -5,6 +5,7 @@
 #include <librandom/rng/dynamic/adaptors/circularbuffer.h>
 #include <queue>
 #include <bit>
+#include <iostream>
 
 template<class BoolQueue>
 class BitsUnpackT {
@@ -20,6 +21,10 @@ public:
         buffer_.pop_front();
         return res;
     };
+    void discardN(uint64_t N, RandomBitGenerator &rng) {
+        for(uint64_t n = 0; n < N; n++)
+            pop_front(rng);
+    }
 private:        
     template<class ContainerT>
     void setCapacity(size_t maxCapacity)
@@ -69,6 +74,10 @@ public:
         }
         return packBigEndian(bits_unpacked, rng);
     }
+    void discardN(uint64_t N, BitsUnpackT<BoolQueue>& bits_unpacked, RandomBitGenerator& rng) {
+        for(uint64_t n = 0; n < N; n++)
+            this->operator()(bits_unpacked, rng);
+    }
     uint64_t max() const {
         return (static_cast<uint64_t>(1)<<sample_size_bits_) - 1;
     }
@@ -104,12 +113,16 @@ public:
     BitsRepackT(std::shared_ptr<RandomBitGenerator> rng, uint16_t dst_sample_size, bool src_little_endian, bool dst_little_endian) : RandomBitAdaptor(rng),
         bits_unpacker(src_little_endian), bits_packer(dst_sample_size, dst_little_endian) {}
     BitsRepackT(const BitsRepackT<Unpacker, Packer>& r) : RandomBitAdaptor(r), bits_unpacker(r.bits_unpacker), bits_packer(r.bits_packer) {}
+
     virtual uint64_t operator()(RandomBitGenerator& rng) override {
         return bits_packer(bits_unpacker, rng);
     }
     virtual uint64_t operator()() override {
         return (*this)(*rng());
         //return rng()->operator()();
+    }
+    void discardN(uint64_t N) override {
+        bits_packer.discardN(N, bits_unpacker, *rng());
     }
     uint64_t max() const override {
         return bits_packer.max();
@@ -163,6 +176,7 @@ public:
     BitsUnpackFast(const BitsUnpackFast& other) : order{other.order}, buf_(other.buf_), buf_len_(other.buf_len_) {}    
 
     bool pop_front(RandomBitGenerator &rng) {
+        // \todo: this function is used in tests only?
         if (empty()) {
             refill(rng);
         }
@@ -176,14 +190,14 @@ public:
         uint64_t res = 0;
         uint_fast8_t remaining = nbits;
         uint_fast8_t mask_len = 0;
-        uint_fast8_t ready = 0;        
+        uint_fast8_t ready = 0;
         while(remaining > 0) {
             if(buf_len_ == 0) {
                 refill(rng);
                 assert(buf_len_ > 0);
             }
             mask_len = std::min(buf_len_, remaining);            
-            uint64_t mask = mask_len == 64? ~uint64_t(0) : (uint64_t(1) << mask_len) - 1;
+            uint64_t mask = (mask_len == 64)? ~uint64_t(0) : (uint64_t(1) << mask_len) - 1;
             uint64_t term = ((buf_ & mask) << ready);
             res += term;
 
@@ -193,6 +207,25 @@ public:
             buf_len_ -= mask_len;
         }
         return res;
+    }
+    void discardN(uint64_t N, RandomBitGenerator& rng) {
+        if(buf_len_ == 0) {
+            refill(rng);
+        }
+        if(N < buf_len_) {
+            buf_ >>= N;
+            buf_len_ -= N;
+            return;
+        }
+        // drop existing buffer
+        N -= buf_len_;        
+        buf_len_ = 0;
+        // drop entire buffers
+        uint64_t drop_count = N / rng.nbits();
+        rng.discardN(drop_count);
+        N %= rng.nbits();
+        // drop rest of the bits
+        discardN(N, rng);
     }
 private:        
     void refill(RandomBitGenerator& rng) {
@@ -238,6 +271,11 @@ public:
     }
     uint16_t nbits() const {
         return sample_size_bits_;
+    }
+    void discardN(uint64_t N, BitsUnpackFast& bits_unpacked, RandomBitGenerator& rng) {
+        /*for(uint64_t n = 0; n < N; n++)
+            this->operator()(bits_unpacked, rng);*/
+        bits_unpacked.discardN(N*sample_size_bits_, rng);
     }
 private:
     std::endian order;

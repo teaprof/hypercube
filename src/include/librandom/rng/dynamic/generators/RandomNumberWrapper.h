@@ -4,6 +4,8 @@
 #include <librandom/rng/dynamic/generators/RandomBitGenerator.h>
 
 #include <cassert>
+#include <iostream>
+#include <sstream>
 #include <random>
 #include <vector>
 #include <memory>
@@ -24,6 +26,7 @@ public:
     RandomNumberWrapperStd(const RandomNumberWrapperStd<Rng>& other) : RandomBitGenerator(other), rng{other.rng}, nbits_{other.nbits_} {}
     uint64_t operator()() override {
         counter++;
+        //std::cout<<"counter = "<<counter<<std::endl;
         return rng();
     }
     uint64_t max() const override { return rng.max(); }
@@ -32,17 +35,28 @@ public:
         return std::make_shared<RandomNumberWrapperStd<Rng>>(*this);
     }
     std::vector<char> state() override {
-        throw std::logic_error("Not implemented yet");
+        std::stringstream str;
+        str << counter << " " << rng;
+        std::string s = std::move(str.str());
+        if(s.length() > state_size)
+            throw std::runtime_error("Generator returned state that is too large.");
+        std::vector<char> res(state_size, 0);
+        std::copy(s.begin(), s.end(), res.begin());
+        return res;
     }
     void setState(const std::vector<char>& state) override {
-        throw std::logic_error("Not implemented yet");
+        std::string str;
+        str.assign(state_size, 0);
+        std::copy(state.begin(), state.end(), str.begin());
+        std::stringstream stream(std::move(str));
+        stream >> counter >> rng;
     }
     size_t stateSize() override {
-        //return sizeof(rng._M_x);
-        throw std::logic_error("Not implemented yet");
+        return state_size;        
     }
 
 private:
+    static constexpr size_t state_size{10000};
     uint16_t nbits_{0};
 };
 

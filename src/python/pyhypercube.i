@@ -10,7 +10,20 @@
 
 %{
 #include "pyhypercube.h"
-void run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler) {}
+//void run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler) {}
+
+inline std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr) {
+    return createGenerator(rng_descr, std::nullopt, std::nullopt);
+}
+inline std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const BitsRepackDescription& bits_repack_descr) {
+    return createGenerator(rng_descr, std::make_optional(bits_repack_descr), std::nullopt);
+}
+inline std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const RNGArchiveDescription& rng_archive_descr) {
+    return createGenerator(rng_descr, std::nullopt, std::make_optional(rng_archive_descr));
+}
+inline std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const BitsRepackDescription& bits_repack_descr, const RNGArchiveDescription& rng_archive_descr) {
+    return createGenerator(rng_descr, std::make_optional(bits_repack_descr), std::make_optional(rng_archive_descr));
+}
 %}
 
 %include <stdint.i>
@@ -62,6 +75,10 @@ namespace std {
 
 %template(MT19937Wrapper) RandomNumberWrapperStd<std::mt19937>;
 
+//void run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler);
 
-void run(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler);
+std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr);
+std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const BitsRepackDescription& bits_repack_descr);
+std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const RNGArchiveDescription& rng_archive_descr);
+std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const BitsRepackDescription& bits_repack_descr, const RNGArchiveDescription& rng_archive_descr);
 

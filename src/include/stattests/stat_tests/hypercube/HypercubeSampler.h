@@ -15,7 +15,7 @@ public:
             throw std::runtime_error("stride should be positive non-zero value");
         }
     }
-    HypercubeSampler(const HypercubeSampler &other) : problem_(other.problem_), int_distribution_(other.int_distribution_), multi_index_{other.multi_index_} {}
+    HypercubeSampler(const HypercubeSampler &other) = default;
 
     std::shared_ptr<DistributionSampler> copy() override {
         return std::make_shared<HypercubeSampler>(*this);
@@ -39,28 +39,38 @@ public:
         }
         return sub2ind(multi_index_);
     }
-    double getProbability(size_t value, const RandomBitGenerator& rng) const override {
+    void initializeProbabilities(const RandomBitGenerator& rng) override {
+        for(size_t n = 0; n < problem_.m_intervals_per_dim; n++)
+            probabilities_.push_back(int_distribution_.getProbability(n, rng));
+    }
+    double getProbability(size_t value) const override {        
+        assert(probabilities_.size() == problem_.m_intervals_per_dim);
         double res = 1;
         const auto& multiindex = ind2sub(value);
         for(const auto& v : multiindex) 
-            res *= int_distribution_.getProbability(v, rng);
+            res *= probabilities_[v];
         return res;
     }
 
     void discardN(uint64_t N, RandomBitGenerator &rng) override {
-        // make the same job as the following loop:
-        //      for(uint64_t n = 0; n < N; n++)
-        //          this->operator()(rng);
-        // but in more smart manner using `int_distribution_.discardN` function
-        size_t steps_for_refill = intceil(problem_.dim, problem_.stride);
-        if(N < steps_for_refill) {
-            for(uint64_t n = 0; n < N; n++)
-                this->operator()(rng);
+        if(N == 0)
+            return;
+        if (multi_index_.empty()) {
+            uint64_t skip = problem_.stride * N;
+            int_distribution_.discard(skip, rng);
             return;
         };
-        int_distribution_.discard(N - steps_for_refill, rng);
-        for(size_t n = 0; n < steps_for_refill; n++)
-            this->operator()(rng);
+        // new rng offset relative to the position from which current multi_index was generated
+        uint64_t new_rng_offset = problem_.stride * (N + 1); 
+        // current rng relative offset
+        uint64_t cur_rng_offset = problem_.dim;
+        if(new_rng_offset > problem_.dim) {
+            int_distribution_.discard(new_rng_offset - cur_rng_offset, rng);
+            multi_index_.clear();
+        } else {
+            for(uint64_t n = 0; n < N; n++)
+                operator()(rng);
+        }
     }
     uint64_t max() const override {
         return problem_.n_cells_total - 1;
@@ -75,6 +85,9 @@ protected:
     const HypercubeProblem problem_;
     UniformIntDistributionRough int_distribution_;
     std::deque<uint64_t> multi_index_;
+
+    std::vector<double> probabilities_;
+    //probabilities[i] is the probability that single index falls into i-th interval
     
     template<class T>
     size_t sub2ind(const T &multiindex) const {
@@ -96,7 +109,7 @@ protected:
         }
         return res;
     }
-    size_t intceil(size_t divident, size_t divisor) {
+    size_t divintceil(size_t divident, size_t divisor) {
         // equals to static_cast<size_t>(ceil(divident/divisor))
         return (divident + divisor - 1)/divisor;
     }

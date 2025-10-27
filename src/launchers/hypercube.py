@@ -1,8 +1,8 @@
 import hashlib
 import sys, os, math, pickle
-sys.path.append(os.path.abspath("./build/release/python"))
+#sys.path.append(os.path.abspath("./build/release/python"))
 sys.path.append(os.path.abspath("../build/release/python"))
-sys.path.append(os.path.abspath("../../build/release/python"))
+#sys.path.append(os.path.abspath("../../build/release/python"))
 #sys.path.append(os.path.abspath("../build/debug/python"))
 import pyhypercube
 from typing import List, Optional
@@ -18,9 +18,9 @@ class RNG:
         rng_opts.rng_id = self.rng_id
         return rng_opts
                 
-    def rng(self):
-        rng_opts = self.rngDescr()
-        return pyhypercube.createGenerator(rng_opts)
+    #def rng(self):
+    #    rng_opts = self.rngDescr()
+    #    return pyhypercube.createGenerator(rng_opts)
     
     def __repr__(self):
         return f"{self.rng_id:4} {self.offset:4}"
@@ -37,7 +37,7 @@ class BitsRepack:
         self.src_little_endian = src_little_endian
         self.dst_little_endian = dst_little_endian
         
-    def repackOpts(self):
+    def repackDescr(self):
         opts = pyhypercube.BitsRepackDescription()
         opts.bits_per_sample = self.bits_per_sample
         if opts.bits_per_sample == 0:
@@ -46,10 +46,10 @@ class BitsRepack:
         opts.dst_little_endian = self.dst_little_endian
         return opts
     
-    def rng(self, source_rng: RNG):
-        rng_opts = source_rng.rngDescr()
-        repack_opts = self.repackOpts()            
-        return pyhypercube.createGenerator(rng_opts, repack_opts)
+    #def rng(self, source_rng: RNG):
+    #    rng_opts = source_rng.rngDescr()
+    #    repack_opts = self.repackDescr()            
+    #    return pyhypercube.createGenerator(rng_opts, repack_opts)
     
     def __eq__(self, other):
         return self.bits_per_sample == other.bits_per_sample and self.src_little_endian == other.src_little_endian and self.dst_little_endian == other.dst_little_endian
@@ -159,10 +159,8 @@ class StatTest:
     def runSubtask(self, rng: RNG, repack: Optional[BitsRepack], problem: HypercubeProblem, subtask: Subtask, nthreads = 1):
         tester = pyhypercube.Chi2BasedTest1()
         sampler = HypercubeSampler(problem)
-        if repack is not None:
-            rng_obj = repack.rng(rng)
-        else:
-            rng_obj = rng.rng()
+        rng_obj = self.createRng(rng, repack)         
+        
         res = tester.run(problem.problem(), subtask.subtask(), sampler.sampler(), rng_obj, nthreads)
         # dummy results:
         #res = pyhypercube.SubtaskResults()
@@ -174,10 +172,8 @@ class StatTest:
     def runSubtaskSingleThreaded(self, rng: RNG, repack: Optional[BitsRepack], problem: HypercubeProblem, subtask: Subtask):
         tester = pyhypercube.Chi2BasedTestSingleThreaded1()
         sampler = HypercubeSampler(problem)
-        if repack is not None:
-            rng_obj = repack.rng(rng)
-        else:
-            rng_obj = rng.rng()
+        rng_obj = self.createRng(rng, repack)
+        
         nthreads = 1
         res = tester.run(problem.problem(), subtask.subtask(), sampler.sampler(), rng_obj, nthreads)
         return res
@@ -186,6 +182,27 @@ class StatTest:
         tester = pyhypercube.Chi2BasedTest1()
         res = tester.collect(problem.problem(), Nsubtasks, subtask_results)
         return res
+
+    def createRng(self, rng: RNG, repack: Optional[BitsRepack]):
+        rng_descr = rng.rngDescr()
+        rng_archive_descr = pyhypercube.RNGArchiveDescription()
+        rng_archive_descr.archive_file_name = "rng.bin"       
+        #rng_archive_descr = None
+         
+        if rng_archive_descr is not None:
+            if repack is not None:
+                repack_descr = repack.repackDescr()
+                rng_obj = pyhypercube.createGenerator(rng_descr, repack_descr, rng_archive_descr)
+            else:
+                rng_obj = pyhypercube.createGenerator(rng_descr, rng_archive_descr)
+        else:
+            if repack is not None:
+                repack_descr = repack.repackDescr()
+                rng_obj = pyhypercube.createGenerator(rng_descr, repack_descr)
+            else:
+                rng_obj = pyhypercube.createGenerator(rng_descr)
+        return rng_obj
+
         
         
 class HypercubeJob:

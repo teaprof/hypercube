@@ -119,7 +119,7 @@ class SingleRun {   // maybe rename to Runner
 
         void runSubtasks() {
             size_t nThreads = options_->multithread_options->nThreads();
-            nThreads = 1;
+            std::cout<<"nThreads "<<nThreads<<std::endl;
 
             for(auto task : tasks_) {
                 auto rng = createGenerator(task.rng, task.repack, task.rng_archive_description); 

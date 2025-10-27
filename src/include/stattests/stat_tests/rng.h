@@ -32,7 +32,7 @@ struct RNGArchiveDescription {
 };
 
 std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const std::optional<BitsRepackDescription> bits_repack_descr, 
-const std::optional<RNGArchiveDescription> rng_archive_descr) {    
+const std::optional<RNGArchiveDescription> rng_archive_descr) {
     auto rng = std::make_shared<MT19937Wrapper>();
     if(rng_descr.seed) {
         rng->rng.seed(*rng_descr.seed);
@@ -54,11 +54,6 @@ const std::optional<RNGArchiveDescription> rng_archive_descr) {
     return res;
 }
 
-std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr) {
-    return createGenerator(rng_descr, std::nullopt, std::nullopt);
-}
-std::shared_ptr<RandomBitGenerator> createGenerator(const RandomNumberGeneratorDescription& rng_descr, const BitsRepackDescription& bits_repack_descr) {
-    return createGenerator(rng_descr, std::make_optional(bits_repack_descr), std::nullopt);
-}
+// the name contains suffix 3 to help SWIG
 
 #endif

@@ -84,7 +84,9 @@ public:
     virtual void discardN(uint64_t N, RandomBitGenerator &rng) = 0;
     /// return number of rng calls to produce the desired number outputs
     virtual uint64_t getNumberOfRngCalls(uint64_t numberOfSampleCalls) const = 0;
-    virtual double getProbability(size_t value, const RandomBitGenerator &rng) const = 0;
+    
+    virtual void initializeProbabilities(const RandomBitGenerator &rng) = 0;
+    virtual double getProbability(size_t value) const = 0;
 };
 
 template <class Histogram> 
@@ -107,16 +109,18 @@ public:
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
             // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads, thread_id);
-            auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);            
-            sampler.discardN(thread_start - prev_thread_start, *rng);
+            auto [thread_start, thread_end] = split(problem.N, n_threads, thread_id);
+            if(thread_start - prev_thread_start > 0)
+                sampler.discardN(thread_start - prev_thread_start, *rng);
             prev_thread_start = thread_start;
             std::cout<<"Starting thread "<<thread_id<<"\n";
-            //Chi2BasedTest::runThread(problem, subtask, sampler, rng->copy(), n_threads, thread_id);
-             std::thread thread(&Chi2BasedTest::runThread, this, problem, subtask, sampler.copy(), rng->copy(), n_threads, thread_id);
+            //Chi2BasedTest::runThread(problem, subtask, sampler.copy(), rng->copy(), n_threads, thread_id);
+            std::thread thread(&Chi2BasedTest::runThread, this, problem, subtask, sampler.copy(), rng->copy(), n_threads, thread_id);
             threads.emplace_back(std::move(thread));
         }
         for (auto &it : threads)
             it.join();
+        std::cout<<"Sampling is finished. Collecting results ..."<<std::endl;
         SubtaskResults res = getResults(problem, subtask, sampler, rng);
         res.parameters_ok = problem.checkRNGSufficiency(*rng);
         // data.clear()
@@ -173,9 +177,10 @@ private:
     
     double getChi2Precise(const Chi2BasedProblem &problem, const SubtaskParameters &subtask, DistributionSampler& sampler, std::shared_ptr<RandomBitGenerator> rng) {
         double chi2 = 0;
+        sampler.initializeProbabilities(*rng);
         for(size_t idx = 0; idx < problem.n_cells_total; idx++) {
             if(idx % subtask.Ntasks == subtask.cur_task) {
-                double expected = sampler.getProbability(idx, *rng);
+                double expected = sampler.getProbability(idx);
                 expected*=problem.N;
                 double delta = (data[idx] - expected)*(data[idx] - expected)/expected;
                 chi2 += delta;
@@ -212,7 +217,7 @@ private:
         std::cout<<(*rng)()<<std::endl;*/
         for (size_t n = 0; n < thread_end - thread_start; n++) {
             size_t idx = (*sampler)(*rng);            
-            //std::cout<<idx<<" ";
+            //std::cout<<thread_start + n <<" -> "<<idx<<std::endl;
             increment(subtask, idx);
         }
         //std::cout<<"\n";

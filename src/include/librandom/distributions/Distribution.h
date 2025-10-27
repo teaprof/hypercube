@@ -36,6 +36,8 @@ public:
         return static_cast<double>(counter)/noutcomes;
     }
     void discard(uint64_t N, RandomBitGenerator &rng) {
+        /*for(uint64_t n = 0; n < N; n++)
+            operator()(rng);*/
         rng.discardN(N);
     }
 private:

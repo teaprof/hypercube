@@ -19,11 +19,25 @@ class RngWithFastForward : public RandomBitAdaptor {
         return std::make_shared<RngWithFastForward>(rng()->copy(), filename_);
     }
 
-    void discardN(uint64_t count) override  {
-        //StateArchive arch(filename_, rng()->stateSize());
-        std::mt19937 rng;
-        for(uint64_t n = 0; n < count; n++)
+    void discardN(uint64_t count) override  {        
+        uint64_t required_counter = rng()->counter + count;        
+        {
+            StateArchive arch(filename_, rng()->stateSize());
+            auto state_descr = arch.getProxyState(required_counter);
+            if(state_descr.has_value()) {
+                auto state = arch.loadState(state_descr.value());
+                rng()->setState(state);
+                assert(rng()->counter == state_descr->rng_offset);
+            };            
+        }
+        for(uint64_t n = rng()->counter; n < required_counter; n++) {
             RandomBitAdaptor::operator()();
+        }
+        {
+            StateArchive arch(filename_, rng()->stateSize());
+            auto state = rng()->state();
+            arch.addState(state, rng()->counter);
+        }
     }
     std::vector<char> state() override {
         throw std::logic_error("Not implemented yet");

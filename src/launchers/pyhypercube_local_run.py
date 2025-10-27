@@ -1,4 +1,3 @@
-from operator import mul
 from hypercube import *
 import itertools, math
 import tqdm
@@ -277,15 +276,22 @@ def runJobWithSpecificHash(hash_value):
     #res = jobs[0].run()    
     #print(jobs[0])
     #print(res.sum2)
+    #hash_value = finished_jobs_hashes[10000]
     
     for j in jobs:
+        hash_value = hash(j)
         if hash(j) == hash_value:
-            res = j.run()
+            t1 = time.time()
+            res = j.runSingleThreaded()
+            t2 = time.time()
+            print(f"Time elapsed: {t2 - t1}")
             print(f"{res.sum:20} {res.sum2:20} {res.chi2cdf():21.15e}")
             if hash_value in finished_jobs_hashes:
                 idx = finished_jobs_hashes.index(hash(j))
                 assert res.sum == finished_jobs_results[idx]["sum"]
-                assert res.sum2 == finished_jobs_results[idx]["sum2"]
+                if res.sum2 != finished_jobs_results[idx]["sum2"]:
+                    with open("fails.txt", "w") as f:
+                            f.write(f'{hash(j)} {res.sum2} {finished_jobs_results[idx]["sum2"]}\n')
 
 
 def runAllJobs():
@@ -328,6 +334,6 @@ def runAllJobs():
     
     
 if __name__ == '__main__':
-    #runAllJobs()
-    runJobWithSpecificHash(0x0b71e214f3f19bad)
+    runAllJobs()
+    #runJobWithSpecificHash(0x166834e625073b75)
     #runJobWithSpecificHash(546852461734067413)

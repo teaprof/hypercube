@@ -9,7 +9,7 @@ class RandomBitAdaptor : public RandomBitGenerator {
     RandomBitAdaptor(std::shared_ptr<RandomBitGenerator> rng) : rng_(rng) {}
     RandomBitAdaptor(const RandomBitAdaptor& other) : rng_(other.rng_->copy()) {}
 
-    virtual uint64_t operator()(RandomBitGenerator& rng) = 0;
+    virtual uint64_t operator()(RandomBitGenerator& rng) = 0; //remove this function since it makes the code messy
     virtual uint64_t operator()() override {
         return (*this)(*rng_);
     };
@@ -28,8 +28,7 @@ class RandomBitAdaptor : public RandomBitGenerator {
     }
 
     void discardN(uint64_t count)  override {
-        for(uint64_t n = 0; n < count; n++)
-            this->operator()();
+        rng_->discardN(count);
     }
 private:
     std::shared_ptr<RandomBitGenerator> rng_;

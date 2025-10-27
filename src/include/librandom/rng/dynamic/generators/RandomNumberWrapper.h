@@ -29,6 +29,12 @@ public:
         //std::cout<<"counter = "<<counter<<std::endl;
         return rng();
     }
+    void discard() override {
+        rng.discard(1);
+    }
+    void discardN(uint64_t n) override {
+        rng.discard(n);
+    }
     uint64_t max() const override { return rng.max(); }
     uint16_t nbits() const override { return nbits_; }
     std::shared_ptr<RandomBitGenerator> copy() const override {

@@ -279,7 +279,7 @@ def runJobWithSpecificHash(hash_value):
     #hash_value = finished_jobs_hashes[10000]
     
     for j in jobs:
-        hash_value = hash(j)
+        #hash_value = hash(j)
         if hash(j) == hash_value:
             t1 = time.time()
             res = j.runSingleThreaded()

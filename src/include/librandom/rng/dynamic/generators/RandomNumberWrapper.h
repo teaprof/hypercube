@@ -31,9 +31,11 @@ public:
     }
     void discard() override {
         rng.discard(1);
+        counter++;
     }
     void discardN(uint64_t n) override {
         rng.discard(n);
+        counter += n;
     }
     uint64_t max() const override { return rng.max(); }
     uint16_t nbits() const override { return nbits_; }

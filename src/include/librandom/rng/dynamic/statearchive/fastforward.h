@@ -30,7 +30,7 @@ class RngWithFastForward : public RandomBitAdaptor {
                 assert(rng()->counter == state_descr->rng_offset);
             };            
         }
-        RandomBitAdaptor::discardN(required_counter);
+        RandomBitAdaptor::discardN(required_counter - rng()->counter);
         {
             StateArchive arch(filename_, rng()->stateSize());
             auto state = rng()->state();

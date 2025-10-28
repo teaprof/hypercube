@@ -11,6 +11,8 @@ class Distribution {
         virtual uint64_t operator()(RandomBitGenerator& rng) = 0;
         virtual uint64_t max() const = 0;
         virtual double getProbability(uint64_t value, const RandomBitGenerator& rng) const = 0;
+        virtual void discard(RandomBitGenerator &rng) = 0;
+        virtual void discardN(uint64_t N, RandomBitGenerator &rng) = 0;
 };
 
 class UniformIntDistributionRough : public Distribution {
@@ -35,9 +37,13 @@ public:
         }
         return static_cast<double>(counter)/noutcomes;
     }
-    void discard(uint64_t N, RandomBitGenerator &rng) {
-        /*for(uint64_t n = 0; n < N; n++)
-            operator()(rng);*/
+    void discard(RandomBitGenerator &rng) override {
+        rng.discard();
+    }
+    void discardN(uint64_t N, RandomBitGenerator &rng) override {
+        // The behavior is like the follows:
+        //      for(uint64_t n = 0; n < N; n++)
+        //          operator()(rng);
         rng.discardN(N);
     }
 private:

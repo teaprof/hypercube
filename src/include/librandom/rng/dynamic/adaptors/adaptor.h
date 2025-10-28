@@ -27,6 +27,10 @@ class RandomBitAdaptor : public RandomBitGenerator {
         return rng_; 
     }
 
+    void discard() override {
+        rng_->discard();
+    }
+
     void discardN(uint64_t count)  override {
         rng_->discardN(count);
     }

@@ -30,8 +30,15 @@ public:
             }
         } else {
             assert(problem_.stride != 0);
+            size_t skip = 0;
+            if(problem_.stride > problem_.dim) {
+                skip = problem_.stride - problem_.dim;
+                for(size_t n = 0; n < skip; n++)
+                    int_distribution_.discard(rng);
+                //int_distribution_.discard(skip, rng); // this is much slower then sequental call of discard(rng)
+            }
             //update multi_index: add to the end new values and shift
-            for (size_t n = 0; n < problem_.stride; n++) {
+            for (size_t n = skip; n < problem_.stride; n++) {
                 multi_index_.pop_front(); /// \todo: use circular buffer
                 auto v = int_distribution_(rng);
                 multi_index_.push_back(v);
@@ -57,7 +64,7 @@ public:
             return;
         if (multi_index_.empty()) {
             uint64_t skip = problem_.stride * N;
-            int_distribution_.discard(skip, rng);
+            int_distribution_.discardN(skip, rng);
             return;
         };
         // new rng offset relative to the position from which current multi_index was generated
@@ -65,7 +72,7 @@ public:
         // current rng relative offset
         uint64_t cur_rng_offset = problem_.dim;
         if(new_rng_offset > problem_.dim) {
-            int_distribution_.discard(new_rng_offset - cur_rng_offset, rng);
+            int_distribution_.discardN(new_rng_offset - cur_rng_offset, rng);
             multi_index_.clear();
         } else {
             for(uint64_t n = 0; n < N; n++)

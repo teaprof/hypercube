@@ -14,6 +14,9 @@ public:
         if(problem.stride == 0) {
             throw std::runtime_error("stride should be positive non-zero value");
         }
+        n_cells_total_ = 1;
+        for(size_t n = 0; n < problem_.dim; n++)
+            n_cells_total_ *= problem_.m_intervals_per_dim;
     }
     HypercubeSampler(const HypercubeSampler &other) = default;
 
@@ -22,11 +25,12 @@ public:
     }
 
     uint64_t operator()(RandomBitGenerator &rng) override {
-        if (multi_index_.empty()) {
+        if (multi_index_ == EMPTY_VALUE) {
             //initial fill of the multi_index
+            multi_index_ = 0;
             for (size_t n = 0; n < problem_.dim; n++) {
                 auto v = int_distribution_(rng);
-                multi_index_.push_back(v);
+                multi_index_ = v + multi_index_*problem_.m_intervals_per_dim;
             }
         } else {
             assert(problem_.stride != 0);
@@ -39,12 +43,13 @@ public:
             }
             //update multi_index: add to the end new values and shift
             for (size_t n = skip; n < problem_.stride; n++) {
-                multi_index_.pop_front(); /// \todo: use circular buffer
                 auto v = int_distribution_(rng);
-                multi_index_.push_back(v);
+                multi_index_ = v + multi_index_*problem_.m_intervals_per_dim;
+                multi_index_ %= n_cells_total_;
             }
         }
-        return sub2ind(multi_index_);
+        //return sub2ind(multi_index_);
+        return multi_index_;
     }
     void initializeProbabilities(const RandomBitGenerator& rng) override {
         for(size_t n = 0; n < problem_.m_intervals_per_dim; n++)
@@ -62,7 +67,7 @@ public:
     void discardN(uint64_t N, RandomBitGenerator &rng) override {
         if(N == 0)
             return;
-        if (multi_index_.empty()) {
+        if (multi_index_ == EMPTY_VALUE) {
             uint64_t skip = problem_.stride * N;
             int_distribution_.discardN(skip, rng);
             return;
@@ -73,7 +78,7 @@ public:
         uint64_t cur_rng_offset = problem_.dim;
         if(new_rng_offset > problem_.dim) {
             int_distribution_.discardN(new_rng_offset - cur_rng_offset, rng);
-            multi_index_.clear();
+            multi_index_ = EMPTY_VALUE;
         } else {
             for(uint64_t n = 0; n < N; n++)
                 operator()(rng);
@@ -91,7 +96,10 @@ public:
 protected:
     const HypercubeProblem problem_;
     UniformIntDistributionRough int_distribution_;
-    std::deque<uint64_t> multi_index_;
+    //std::deque<uint64_t> multi_index_;    
+    static constexpr uint64_t EMPTY_VALUE = std::numeric_limits<uint64_t>::max();
+    uint64_t multi_index_{EMPTY_VALUE};
+    uint64_t n_cells_total_;
 
     std::vector<double> probabilities_;
     //probabilities[i] is the probability that single index falls into i-th interval

@@ -1,4 +1,6 @@
 #include<librandom/rng/dynamic/adaptors/bitsrepack.h>
+#include<librandom/rng/dynamic/generators/RandomNumberWrapper.h>
+#include<librandom/distributions/Distribution.h>
 #include<vector>
 #include<sstream>
 #include<gtest/gtest.h>
@@ -47,11 +49,22 @@ template <class T>
 class RepackTest : public testing::Test {
 };
 
+template <class T>
+class RepackDiscardTest : public testing::Test {
+};
+
+template <class T>
+class IntDistributionDiscardTest : public testing::Test {
+};
+
+
 typedef testing::Types<BitsUnpackStd, BitsUnpackCircular, BitsUnpackFast> UnpackImplementations;
 typedef testing::Types<std::pair<BitsUnpackStd, BitsPackStd>, std::pair<BitsUnpackCircular, BitsPackCircular>, std::pair<BitsUnpackFast, BitsPackFast>> RepackImplementations;
 
 TYPED_TEST_SUITE(UnpackTest, UnpackImplementations);
 TYPED_TEST_SUITE(RepackTest, RepackImplementations);
+TYPED_TEST_SUITE(RepackDiscardTest, RepackImplementations);
+TYPED_TEST_SUITE(IntDistributionDiscardTest, RepackImplementations);
 
 
 TYPED_TEST(UnpackTest, BitsUnpackTestSimple)
@@ -223,3 +236,185 @@ TYPED_TEST(RepackTest, BitsRepack6bitLEtoLE) {
     ASSERT_EQ(res5, 43);
 }
 
+
+TYPED_TEST(RepackDiscardTest, BitsRepackLEtoLE) {
+    using BitsUnpackType = typename TypeParam::first_type;
+    using BitsPackType = typename TypeParam::second_type;
+    MT19937Wrapper gen1;
+    BitsUnpackType unpacker1(true);
+    BitsPackType packer1(6, true);
+    std::vector<uint64_t> res1;
+    const size_t N = 1000;
+    for(size_t n = 0; n < N; n++) {
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            packer1(unpacker1, gen1);
+        //sample and store
+        uint64_t v = packer1(unpacker1, gen1);
+        res1.push_back(v);
+        v = packer1(unpacker1, gen1);
+        res1.push_back(v);
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            packer1(unpacker1, gen1);
+    }
+
+    MT19937Wrapper gen2;
+    BitsUnpackType unpacker2(true);
+    BitsPackType packer2(6, true);
+    std::vector<uint64_t> res2;
+    for(size_t n = 0; n < N; n++) {
+        packer2.discardN(10, unpacker2, gen2);
+        uint64_t v = packer2(unpacker2, gen2);
+        res2.push_back(v);
+        v = packer2(unpacker2, gen2);
+        res2.push_back(v);
+        packer2.discardN(10, unpacker2, gen2);        
+    }
+
+    ASSERT_EQ(res1, res2);
+}
+
+TYPED_TEST(RepackDiscardTest, BitsRepackLEtoBE) {
+    using BitsUnpackType = typename TypeParam::first_type;
+    using BitsPackType = typename TypeParam::second_type;
+    MT19937Wrapper gen1;
+    BitsUnpackType unpacker1(false);
+    BitsPackType packer1(6, true);
+    std::vector<uint64_t> res1;
+    const size_t N = 1000;
+    for(size_t n = 0; n < N; n++) {
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            packer1(unpacker1, gen1);
+        //sample and store
+        uint64_t v = packer1(unpacker1, gen1);
+        res1.push_back(v);
+        v = packer1(unpacker1, gen1);
+        res1.push_back(v);
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            packer1(unpacker1, gen1);
+    }
+
+    MT19937Wrapper gen2;
+    BitsUnpackType unpacker2(false);
+    BitsPackType packer2(6, true);
+    std::vector<uint64_t> res2;
+    for(size_t n = 0; n < N; n++) {
+        packer2.discardN(10, unpacker2, gen2);
+        uint64_t v = packer2(unpacker2, gen2);
+        res2.push_back(v);
+        v = packer2(unpacker2, gen2);
+        res2.push_back(v);
+        packer2.discardN(10, unpacker2, gen2);        
+    }
+
+    ASSERT_EQ(res1, res2);
+}
+
+TYPED_TEST(RepackDiscardTest, BitsRepackBEtoLE) {
+    using BitsUnpackType = typename TypeParam::first_type;
+    using BitsPackType = typename TypeParam::second_type;
+    MT19937Wrapper gen1;
+    BitsUnpackType unpacker1(true);
+    BitsPackType packer1(6, false);
+    std::vector<uint64_t> res1;
+    const size_t N = 1000;
+    for(size_t n = 0; n < N; n++) {
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            packer1(unpacker1, gen1);
+        //sample and store
+        uint64_t v = packer1(unpacker1, gen1);
+        res1.push_back(v);
+        v = packer1(unpacker1, gen1);
+        res1.push_back(v);
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            packer1(unpacker1, gen1);
+    }
+
+    MT19937Wrapper gen2;
+    BitsUnpackType unpacker2(true);
+    BitsPackType packer2(6, false);
+    std::vector<uint64_t> res2;
+    for(size_t n = 0; n < N; n++) {
+        packer2.discardN(10, unpacker2, gen2);
+        uint64_t v = packer2(unpacker2, gen2);
+        res2.push_back(v);
+        v = packer2(unpacker2, gen2);
+        res2.push_back(v);
+        packer2.discardN(10, unpacker2, gen2);        
+    }
+
+    ASSERT_EQ(res1, res2);
+}
+
+TYPED_TEST(RepackDiscardTest, BitsRepackBEtoBE) {
+    using BitsUnpackType = typename TypeParam::first_type;
+    using BitsPackType = typename TypeParam::second_type;
+    MT19937Wrapper gen1;
+    BitsUnpackType unpacker1(false);
+    BitsPackType packer1(6, false);
+    std::vector<uint64_t> res1;
+    const size_t N = 1000;
+    for(size_t n = 0; n < N; n++) {
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            packer1(unpacker1, gen1);
+        //sample and store
+        uint64_t v = packer1(unpacker1, gen1);
+        res1.push_back(v);
+        v = packer1(unpacker1, gen1);
+        res1.push_back(v);
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            packer1(unpacker1, gen1);
+    }
+
+    MT19937Wrapper gen2;
+    BitsUnpackType unpacker2(false);
+    BitsPackType packer2(6, false);
+    std::vector<uint64_t> res2;
+    for(size_t n = 0; n < N; n++) {
+        packer2.discardN(10, unpacker2, gen2);
+        uint64_t v = packer2(unpacker2, gen2);
+        res2.push_back(v);
+        v = packer2(unpacker2, gen2);
+        res2.push_back(v);
+        packer2.discardN(10, unpacker2, gen2);        
+    }
+
+    ASSERT_EQ(res1, res2);
+}
+
+/// \todo: this is not unit test, it looks like integration one
+TYPED_TEST(IntDistributionDiscardTest, LEtoLE) { 
+    using BitsUnpackType = typename TypeParam::first_type;
+    using BitsPackType = typename TypeParam::second_type;
+    auto gen1 = std::make_shared<MT19937Wrapper>();
+    UniformIntDistributionRough dist(16);
+    BitsRepackT<BitsUnpackType, BitsPackType> repack1(gen1, 16, true, true);
+    std::vector<uint64_t> res1;
+    const size_t N = 1000;
+    for(size_t n = 0; n < N; n++) {
+        //sample and store
+        uint64_t v = dist(repack1);
+        res1.push_back(v);
+        //discard 
+        for(size_t k = 0; k < 10; k++)
+            dist(repack1);
+    }
+
+    auto gen2 = std::make_shared<MT19937Wrapper>();
+    BitsRepackT<BitsUnpackType, BitsPackType> repack2(gen2, 16, true, true);
+    std::vector<uint64_t> res2;
+    for(size_t n = 0; n < N; n++) {
+        uint64_t v = dist(repack2);
+        dist.discardN(10, repack2);
+        res2.push_back(v);
+    }
+
+    ASSERT_EQ(res1, res2);
+}

@@ -19,11 +19,15 @@ class StateArchive {
         StateArchive(const std::string path, size_t state_size) : path_(path), state_size_(state_size) 
         {
             m.lock();
-            f.open(path_, std::ios::out | std::ios::app); //create file if it is not exists
-            flock = boost::interprocess::file_lock(path.c_str());
+            f.open(path_, std::ios::out | std::ios::app); //create file if it is not exists            
             f.close();
             f.open(path_, std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
-            header_elements_ = std::move(loadHeader());            
+            flock = boost::interprocess::file_lock(path.c_str());
+            header_elements_ = std::move(loadHeader());
+            // check file consistency            
+            for(auto h : header_elements_) {
+                loadState(h);
+            }
         }
         ~StateArchive() {
             f.flush(); 
@@ -119,6 +123,13 @@ class StateArchive {
             f.seekg(pos, std::ios::end);
             return f.good();
         }
+        bool writeState(const std::vector<char>& state) {             
+            assert(state.size() == state_size_);
+            f.write(reinterpret_cast<const char*>(state.data()), state_size_);
+            uint64_t check_sum = checksum(state);
+            f.write(reinterpret_cast<char*>(&check_sum), sizeof(check_sum));
+            return f.good();
+        }
         std::vector<HeaderElement> loadHeader() {
             assert(f.is_open());
             uint32_t n_elements;
@@ -134,17 +145,10 @@ class StateArchive {
             }
             return elements;
         }
-        bool writeState(const std::vector<char>& state) {             
-            assert(state.size() == state_size_);
-            f.write(reinterpret_cast<const char*>(state.data()), state_size_);
-            uint64_t check_sum = checksum(state);
-            f.write(reinterpret_cast<char*>(&check_sum), sizeof(check_sum));
-            return f.good();
-        }
         bool writeHeader(const std::vector<HeaderElement>& elements_) {
             uint32_t n_elements = elements_.size();
             f.write(reinterpret_cast<const char*>(header_elements_.data()), n_elements*sizeof(HeaderElement));
-            f.write(reinterpret_cast<const char*>(&n_elements), sizeof(n_elements));
+            f.write(reinterpret_cast<const char*>(&n_elements), sizeof(n_elements));            
             return f.good();
         }
 

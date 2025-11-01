@@ -20,10 +20,11 @@ public:
     UniformIntDistributionRough(uint64_t max_value) : max_value_(max_value) {}
     uint64_t operator()(RandomBitGenerator &rng) override {
         assert(max_value_ <= rng.max());
-        size_t noutcomes = rng.max() + 1;
+        size_t noutcomes = rng.max() + 1; // from 0 to rng.max() inclusively
         size_t nbins = max_value_ + 1;
         size_t counter = noutcomes / nbins;
-        return rng() % (max_value_ + 1);
+        auto v = rng();
+        return v % (max_value_ + 1);
     }
     uint64_t max() const override {
         return max_value_;

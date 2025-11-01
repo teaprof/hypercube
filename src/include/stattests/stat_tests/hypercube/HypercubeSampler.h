@@ -39,7 +39,6 @@ public:
                 skip = problem_.stride - problem_.dim;
                 for(size_t n = 0; n < skip; n++)
                     int_distribution_.discard(rng);
-                //int_distribution_.discard(skip, rng); // this is much slower then sequental call of discard(rng)
             }
             //update multi_index: add to the end new values and shift
             for (size_t n = skip; n < problem_.stride; n++) {
@@ -96,7 +95,6 @@ public:
 protected:
     const HypercubeProblem problem_;
     UniformIntDistributionRough int_distribution_;
-    //std::deque<uint64_t> multi_index_;    
     static constexpr uint64_t EMPTY_VALUE = std::numeric_limits<uint64_t>::max();
     uint64_t multi_index_{EMPTY_VALUE};
     uint64_t n_cells_total_;

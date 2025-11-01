@@ -20,7 +20,7 @@ class RngWithFastForward : public RandomBitAdaptor {
     }
 
     void discardN(uint64_t count) override  {        
-        uint64_t required_counter = rng()->counter + count;        
+        uint64_t required_counter = rng()->counter + count;
         {
             StateArchive arch(filename_, rng()->stateSize());
             auto state_descr = arch.getProxyState(required_counter);

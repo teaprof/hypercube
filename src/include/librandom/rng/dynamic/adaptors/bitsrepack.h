@@ -124,6 +124,10 @@ public:
     void discardN(uint64_t N) override {
         bits_packer.discardN(N, bits_unpacker, *rng());
     }
+    void discard() override {
+        discardN(1);
+    }
+
     uint64_t max() const override {
         return bits_packer.max();
     }
@@ -209,10 +213,16 @@ public:
         return res;
     }
     void discardN(uint64_t N, RandomBitGenerator& rng) {
+        /*while(N > 0) {
+            int drop = N < 10? N: 10;
+            pop_front_little_endian(rng, drop);
+            N -= drop;
+        }
+        return;*/
         if(buf_len_ == 0) {
             refill(rng);
         }
-        if(N < buf_len_) {
+        if(N <= buf_len_) {
             buf_ >>= N;
             buf_len_ -= N;
             return;

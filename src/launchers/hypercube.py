@@ -214,10 +214,20 @@ class HypercubeJob:
         
     def run(self):
         test = StatTest()
-        points_per_thread = int(1e+9)
+
+        # Calculate the number of threads which is proportional to the number of cells
+        #max_threads = 72
+        #max_cells = 120*1024**3/8
+        #threads_per_cell = max_threads/max_cells
+        #nthreads_1 = max(1, int(self.problem.n_cells_total*threads_per_cell))
+        #nthreads_1 = min(nthreads_1, max_threads)
+
+        # Calculate the number of threads which is proportional to the number of samples
+        points_per_thread = int(5e+9)        
         # perform rounding up division
         nthreads = (self.problem.Npoints + points_per_thread - 1) // points_per_thread
         nthreads = min(nthreads, 20)
+
         res = test.runSubtask(self.rng, self.bitsRepack, self.problem, self.subtask, nthreads)
         return res
 

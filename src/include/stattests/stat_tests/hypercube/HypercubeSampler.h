@@ -51,13 +51,22 @@ public:
         return multi_index_;
     }
     void initializeProbabilities(const RandomBitGenerator& rng) override {
-        for(size_t n = 0; n < problem_.m_intervals_per_dim; n++)
-            probabilities_.push_back(int_distribution_.getProbability(n, rng));
+        probabilities_.clear();
+        if(problem_.dim > 1) {
+            probabilities_.reserve(problem_.m_intervals_per_dim);
+            for(size_t n = 0; n < problem_.m_intervals_per_dim; n++)
+                probabilities_.push_back(int_distribution_.getProbability(n, rng));
+        }
     }
-    double getProbability(size_t value) const override {        
-        assert(probabilities_.size() == problem_.m_intervals_per_dim);
+    double getProbability(const RandomBitGenerator& rng, size_t linear_index) const override { 
+        const auto& multiindex = ind2sub(linear_index);
         double res = 1;
-        const auto& multiindex = ind2sub(value);
+        if(probabilities_.size() == 0) {
+            for(const auto& v : multiindex) 
+                res *= int_distribution_.getProbability(v, rng);
+            return res;
+        }
+        assert(probabilities_.size() == problem_.m_intervals_per_dim);
         for(const auto& v : multiindex) 
             res *= probabilities_[v];
         return res;

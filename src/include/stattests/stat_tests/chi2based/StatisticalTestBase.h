@@ -1,6 +1,7 @@
 #ifndef STATISTICAL_TEST_BASE_
 #define STATISTICAL_TEST_BASE_
 
+#include <app/progress/tictoc.h>
 #include <stattests/arrays/Histogram.h>
 #include <librandom/rng/dynamic/generators/RandomBitGenerator.h>
 #include <boost/math/distributions/chi_squared.hpp>
@@ -86,7 +87,7 @@ public:
     virtual uint64_t getNumberOfRngCalls(uint64_t numberOfSampleCalls) const = 0;
     
     virtual void initializeProbabilities(const RandomBitGenerator &rng) = 0;
-    virtual double getProbability(size_t value) const = 0;
+    virtual double getProbability(const RandomBitGenerator& rng, size_t linear_index) const = 0;
 };
 
 template <class Histogram> 
@@ -105,7 +106,8 @@ public:
         data.allocate(data_size);
         std::vector<std::thread> threads;
         size_t prev_thread_start = 0;
-        //std::cout<<"problem.N = "<<problem.N<<std::endl;        
+        //std::cout<<"problem.N = "<<problem.N<<std::endl; 
+        tic();
         for (size_t thread_id = 0; thread_id < n_threads; thread_id++) {
             // Chi2BasedTest::runThread<RandomNumberWrapperT,
             // MultiindexGeneratorT>(problem, subtask, rng, sampler, subtask.n_threads, thread_id);
@@ -120,8 +122,9 @@ public:
         }
         for (auto &it : threads)
             it.join();
-        std::cout<<"Sampling is finished. Collecting results ..."<<std::endl;
+        std::cout<<"Sampling is finished in "<<toc()<<" secs. Collecting results ..."<<std::endl;
         SubtaskResults res = getResults(problem, subtask, sampler, rng);
+        std::cout<<"Collecting is finished"<<std::endl;
         res.parameters_ok = problem.checkRNGSufficiency(*rng);
         // data.clear()
         // data.shrink_to_fit();
@@ -216,7 +219,7 @@ private:
         /*std::cout<<(*rng)()<<std::endl;
         std::cout<<(*rng)()<<std::endl;*/
         for (size_t n = 0; n < thread_end - thread_start; n++) {
-            size_t idx = (*sampler)(*rng);            
+            size_t idx = (*sampler)(*rng);
             //std::cout<<thread_start + n <<" -> "<<idx<<std::endl;
             increment(subtask, idx);
         }

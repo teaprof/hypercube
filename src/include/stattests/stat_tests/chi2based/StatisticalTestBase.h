@@ -43,7 +43,7 @@ struct StatiscticalTestResults {
     double chi2cdf() const {
         boost::math::chi_squared_distribution dist(dof);
         //return boost::math::cdf(dist, chi2());
-        return boost::math::cdf(dist, chi2_precise);
+        return boost::math::cdf(dist, chi2_precise); // TODO: handle boost::wrapexcept<std::domain_error>: what():  Error in function boost::math::cdf(const chi_squared_distribution<double>&, double): Chi Square parameter was -nan, but must be > 0 !
     }
 };
 
@@ -183,7 +183,9 @@ private:
         sampler.initializeProbabilities(*rng);
         for(size_t idx = 0; idx < problem.n_cells_total; idx++) {
             if(idx % subtask.Ntasks == subtask.cur_task) {
-                double expected = sampler.getProbability(idx);
+                double expected = sampler.getProbability(*rng, idx);
+                if(expected <= 0)
+                    throw std::runtime_error("expected value should be greater than 0"); /// TODO: how should we estimate the rng in this case? should we ignore such cells and decrease dof?
                 expected*=problem.N;
                 double delta = (data[idx] - expected)*(data[idx] - expected)/expected;
                 chi2 += delta;

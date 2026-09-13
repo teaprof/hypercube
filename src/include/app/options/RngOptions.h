@@ -21,15 +21,16 @@ std::optional<T> to_std_optional(boost::optional<T> v) {
     return std::nullopt;
 }
 
-class RNGOptions : public program_options_heavy::OptionsGroup {
+class RNGOptions : public program_options_heavy::HeavyOptionsGroup {
     public:
 
-        RNGOptions() : OptionsGroup("RNG options") {
+        RNGOptions() : HeavyOptionsGroup("RNG options") {
             namespace po = boost::program_options;
-            addPartialVisible("name", po::value<std::string>(&name)->default_value("mt19937"), "rng name");
+            addPartial("name", std::ref(name), "rng name")->valueSemantics().setDefaultValue("mt19937");
+            //addPartial("name", po::value<std::string>(&name)->default_value("mt19937"), "rng name");
             //addPartialVisible("number", po::value<uint16_t>(&number)->default_value(0), "rng number");
-            addPartialVisible("seed", po::value(&seed), "seed (if not set the default value for selected generator is used)");
-            addPartialVisible("offset", po::value<uint64_t>(&offset)->default_value(0), "how many samples should be skipped");
+            addPartial("seed", std::ref(seed), "seed (if not set the default value for selected generator is used)");
+            addPartial("offset", std::ref(offset), "how many samples should be skipped")->valueSemantics().setDefaultValue(0);
         }            
         void validate() override {
             if(name != "mt19937") {
@@ -40,25 +41,30 @@ class RNGOptions : public program_options_heavy::OptionsGroup {
             //nothing to do
         }
         RandomNumberGeneratorDescription description() {
-            return {number, to_std_optional(seed), offset};
+            return {number, seed, offset};
         }
         std::string name; // rng name
         size_t number{0}; // rng number (i.e. uniq ID)
-        boost::optional<size_t> seed;
+        std::optional<size_t> seed;
         size_t offset{0};
 };
 
-class BitsRepackOptions : public program_options_heavy::OptionsGroup {
+class BitsRepackOptions : public program_options_heavy::HeavyOptionsGroup {
     //todo: move begin() and end() to separate class (here and in HypercubeOptions)
-        std::vector<bool> src_little_endian, dst_little_endian;
-        std::vector<uint16_t> dst_sample_bits;
+        //std::vector<bool> src_little_endian, dst_little_endian;
+        //std::vector<uint16_t> dst_sample_bits;
+        bool src_little_endian, dst_little_endian;
+        uint16_t dst_sample_bits;
+        std::shared_ptr<OptionWithValue<bool>> src_little_endian_option;
+        std::shared_ptr<OptionWithValue<bool>> dst_little_endian_option;
+        std::shared_ptr<OptionWithValue<uint16_t>> dst_sample_bits_option;
     public:        
         using cartesian_product_t = CartesianProduct2<std::vector<bool>, std::vector<bool>, std::vector<uint16_t>>;        
-        BitsRepackOptions() : OptionsGroup("Bits repack options") {
+        BitsRepackOptions() : HeavyOptionsGroup("Bits repack options") {
             namespace po = boost::program_options;
-            addPartialVisible("srcLittleEndian", po::value(&src_little_endian), "is source little endian? (default is true)");
-            addPartialVisible("dstLittleEndian", po::value(&dst_little_endian), "is dest little endian? (default is true)");
-            addPartialVisible("dstSampleBits", po::value(&dst_sample_bits), "dst bits per sample (default - use selected RNG native sample size)");
+            src_little_endian_option = addPartial("srcLittleEndian", std::ref(src_little_endian), "is source little endian? (default is true)");
+            dst_little_endian_option = addPartial("dstLittleEndian", std::ref(dst_little_endian), "is dest little endian? (default is true)");
+            dst_sample_bits_option = addPartial("dstSampleBits", std::ref(dst_sample_bits), "dst bits per sample (default - use selected RNG native sample size)");
         }
         void update(const boost::program_options::variables_map& vm) override {
             options_combinations_.setSubspace<0>(src_little_endian);

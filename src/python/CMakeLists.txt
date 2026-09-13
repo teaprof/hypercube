@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-find_package(SWIG COMPONENTS python)
+find_package(SWIG COMPONENTS python) #install: sudo apt install swig4.1; sudo ln -s /usr/bin/swig4.1 /usr/bin/swig4.0
 include(UseSWIG)
 
 find_package(Python COMPONENTS Development)

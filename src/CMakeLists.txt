@@ -13,7 +13,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 find_package(GTest REQUIRED)
 enable_testing()
 
-find_package(benchmark REQUIRED)
+find_package(benchmark REQUIRED) #install: sudo apt install libbenchmark-dev
 
 include_directories(include)
 include_directories()

@@ -18,13 +18,13 @@
 
 #include<memory>
 
-class GatherOptions : public program_options_heavy::ProgramOptionsParser {
+class GatherOptions : public program_options_heavy::HeavyOptionsGroups {
     public:
-    GatherOptions() : ProgramOptionsParser() {
+    GatherOptions() : HeavyOptionsGroups() {
         io_options = std::make_shared<GatherIOOptions>();
         addGroup(io_options);
     }
-    GatherOptions(std::shared_ptr<IOOptions> io_opts) : ProgramOptionsParser() {
+    GatherOptions(std::shared_ptr<IOOptions> io_opts) : HeavyOptionsGroups() {
         io_options = std::make_shared<GatherIOOptions>();
         io_options->subtasksResultsFileName = io_opts->subtasksFileName;
         io_options->tasksResultsFileName = io_opts->tasksResultsFileName;

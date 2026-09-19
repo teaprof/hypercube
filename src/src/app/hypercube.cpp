@@ -8,31 +8,31 @@
 
 #include<memory>
 
-class MyProgramOptions : public program_options_heavy::SubcommandsParser {
+class MyProgramOptions : public program_options_heavy::ParserWithSubcommands {
     public:
-    MyProgramOptions(int argc, const char* argv[]) : SubcommandsParser(argc, argv) {
+    MyProgramOptions(int argc, const char* argv[]) : ParserWithSubcommands(argc, argv) {
         single_run_options = std::make_shared<SingleRunOptions>();
         gather_options = std::make_shared<GatherOptions>();
         task_generator_options = std::make_shared<TaskGeneratorOptions>();
-        help_options = std::make_shared<program_options_heavy::HelpSubcommand>();
+        help_options = std::make_shared<program_options_heavy::HelpOptions>();
         program_description="Hypercube statistical test for random number generators.";
-        push_back("generate", task_generator_options);
-        push_back("run", single_run_options->manual_single_run_options); // run subtasks and gather
-        push_back("subtask", single_run_options->batched_run_options); // run subtasks and gather
-        push_back("gather", gather_options); // gather only
-        push_back("default", help_options);
-        this->setDefaultSubcommand("default", true);
+        pushBack("generate", task_generator_options);
+        pushBack("run", single_run_options->manual_single_run_options); // run subtasks and gather
+        pushBack("subtask", single_run_options->batched_run_options); // run subtasks and gather
+        pushBack("gather", gather_options); // gather only
+        setFreeOptionsGroup(help_options);
+        //this->setDefaultSubcommand("help", true);
 
         (*this)["run"]->program_description="run manually specified task";
         (*this)["subtask"]->program_description="run the specified subtasks from subtask json file";
         (*this)["gather"]->program_description="gather results of the finished subtasks and update final statistics";
         (*this)["generate"]->program_description="generate subtasks";
-        //(*this)["default"]->program_description="--help - produce this help";
+        (*this)["help"]->program_description="--help - produce this help";
     }
     std::shared_ptr<SingleRunOptions> single_run_options;
     std::shared_ptr<GatherOptions> gather_options;
     std::shared_ptr<TaskGeneratorOptions> task_generator_options;
-    std::shared_ptr<program_options_heavy::HelpSubcommand> help_options;
+    std::shared_ptr<program_options_heavy::HelpOptions> help_options;
 };
 
 class MyApplication {
@@ -93,17 +93,17 @@ int main(int argc, const char* argv[]) {
             std::cout<<"    "<<argv[n]<<std::endl;
         }*/
         MyApplication app(argc, argv);
-        if(argc==1 || app.options().help_options->help_options->needHelp()) {
-            program_options_heavy::printers::ProgramSubcommandsPrinter printer;
-            auto dom = printer.print(app.options());
+        if(argc==1 || app.options().help_options->needHelp()) {
+            program_options_heavy::printers::ProgramSubcommandsFormatter formatter;
+            auto dom = formatter.print(app.options());
 
-            program_options_heavy::printers::PrettyPrinter pp;
-            dom->accept(pp);
+            program_options_heavy::printers::PrettyPrinter printer;
+            dom->accept(printer);
     
             return 0;
         }
         app.init();
-        app.    run();
+        app.run();
         app.done();
         std::cout<<"Success"<<std::endl;
         return 0;

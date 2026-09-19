@@ -53,8 +53,10 @@ class BitsRepackOptions : public program_options_heavy::HeavyOptionsGroup {
     //todo: move begin() and end() to separate class (here and in HypercubeOptions)
         //std::vector<bool> src_little_endian, dst_little_endian;
         //std::vector<uint16_t> dst_sample_bits;
-        bool src_little_endian, dst_little_endian;
+        bool src_little_endian, dst_little_endian;        
         uint16_t dst_sample_bits;
+        std::vector<bool> src_little_endian_v_, dst_little_endian_v_;
+        std::vector<uint16_t> dst_sample_bits_v_;
         std::shared_ptr<OptionWithValue<bool>> src_little_endian_option;
         std::shared_ptr<OptionWithValue<bool>> dst_little_endian_option;
         std::shared_ptr<OptionWithValue<uint16_t>> dst_sample_bits_option;
@@ -67,9 +69,10 @@ class BitsRepackOptions : public program_options_heavy::HeavyOptionsGroup {
             dst_sample_bits_option = addPartial("dstSampleBits", std::ref(dst_sample_bits), "dst bits per sample (default - use selected RNG native sample size)");
         }
         void update(const boost::program_options::variables_map& vm) override {
-            options_combinations_.setSubspace<0>(src_little_endian);
-            options_combinations_.setSubspace<1>(dst_little_endian);
-            options_combinations_.setSubspace<2>(dst_sample_bits);
+            // TODO: initialize src_little_endian_v_, dst_little_endian_v_, dst_sample_bits_v_
+            options_combinations_.setSubspace<0>(src_little_endian_v_);
+            options_combinations_.setSubspace<1>(dst_little_endian_v_);
+            options_combinations_.setSubspace<2>(dst_sample_bits_v_);
         }                
         size_t nCombinations() const {
             return options_combinations_.spaceSize();
@@ -84,7 +87,7 @@ class BitsRepackOptions : public program_options_heavy::HeavyOptionsGroup {
             return std::nullopt;
         }
         bool useRepack() const {
-            return !src_little_endian.empty() || !dst_little_endian.empty() || !dst_sample_bits.empty();
+            return !src_little_endian_v_.empty() || !dst_little_endian_v_.empty() || !dst_sample_bits_v_.empty();
         }
 
         decltype(auto) begin() const {

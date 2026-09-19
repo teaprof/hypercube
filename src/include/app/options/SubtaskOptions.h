@@ -4,12 +4,12 @@
 #include <ProgramOptionsHeavy.h>
 #include <stattests/stat_tests/chi2based/StatisticalTestBase.h>
 
-class SubtaskOptions : public program_options_heavy::OptionsGroup {
+class SubtaskOptions : public program_options_heavy::HeavyOptionsGroup {
     public:
-        SubtaskOptions() : OptionsGroup("Subtask options") {
-            namespace po = boost::program_options;
-            addPartialVisible("nsubtasks", po::value<size_t>(&nSubtasks)->default_value(1), "total count of subtasks");
-            addPartialVisible("subtask", po::value<size_t>(&curSubtask)->default_value(0), "number of the current subtask");
+        SubtaskOptions() : HeavyOptionsGroup("Subtask options") {
+            namespace po = boost::program_options;            
+            addPartial("nsubtasks", std::ref(nSubtasks), "total count of subtasks")->valueSemantics().setDefaultValue(1);
+            addPartial("subtask", std::ref(curSubtask), "number of the current subtask")->valueSemantics().setDefaultValue(0);
         }        
         SubtaskParameters subtask() {
             SubtaskParameters subtask{.Ntasks=nSubtasks, .cur_task=curSubtask};

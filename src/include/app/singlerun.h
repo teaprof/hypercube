@@ -22,9 +22,9 @@
 #include<memory>
 
 
-class ManualRunOptions : public program_options_heavy::ProgramOptionsParser {
+class ManualRunOptions : public program_options_heavy::HeavyOptionsGroups {
 public:
-    ManualRunOptions() : ProgramOptionsParser() {
+    ManualRunOptions() : HeavyOptionsGroups() {
         rng_options = std::make_shared<RNGOptions>();
         bits_repack_options = std::make_shared<BitsRepackOptions>();
         //sampling_options = std::make_shared<SamplingOptions>();
@@ -46,9 +46,9 @@ public:
     std::shared_ptr<RNGArchiveOptions> archive_options;
 };
 
-class BatchedRunOptions : public program_options_heavy::ProgramOptionsParser {
+class BatchedRunOptions : public program_options_heavy::HeavyOptionsGroups {
 public:
-    BatchedRunOptions() : ProgramOptionsParser() {
+    BatchedRunOptions() : HeavyOptionsGroups() {
         meta_data_options = std::make_shared<MetaDataOptions>();
         addGroup(meta_data_options);
     }
@@ -91,13 +91,14 @@ class SingleRun {   // maybe rename to Runner
         }
 
         void initSubtasks() {
-            if(options_->batched_run_options->activated) {
+            // TODO: uncomment this
+            /*if(options_->batched_run_options->activated) {
                 assert(!options_->manual_single_run_options->activated);
                 tasks_ = loadFromDB();
             } else {
                 assert(options_->manual_single_run_options->activated);
                 tasks_ = loadFromOptions();
-            };
+            };*/
             std::cout<<"The following tasks have been created:\n";
             for(auto it : tasks_) {                
                 std::cout<<it<<std::endl;
@@ -147,7 +148,8 @@ class SingleRun {   // maybe rename to Runner
 
         std::vector<SubtaskRecord> loadFromDB() {
             std::vector<SubtaskRecord> res;
-            assert(options_->batched_run_options->activated);
+            // TODO: uncomment this
+            //assert(options_->batched_run_options->activated);
             auto meta_data_options = options_->batched_run_options->meta_data_options;
             if(meta_data_options->taskId || meta_data_options->runall) {
                 SubtaskDB subtaskDB;
@@ -172,7 +174,8 @@ class SingleRun {   // maybe rename to Runner
         }
         std::vector<SubtaskRecord> loadFromOptions() {
             std::vector<SubtaskRecord> res;
-            assert(options_->manual_single_run_options->activated);            
+            // TODO: uncomment this
+            // assert(options_->manual_single_run_options->activated);
             for(auto problem : *options_->manual_single_run_options->hypercube_options) {
                 for(auto bits_repack_description : *options_->manual_single_run_options->bits_repack_options) {
                     SubtaskRecord subtask;

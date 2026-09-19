@@ -5,12 +5,12 @@
 #include <stattests/stat_tests/rng.h>
 #include <functional>
 
-class RNGArchiveOptions : public program_options_heavy::OptionsGroup {
+class RNGArchiveOptions : public program_options_heavy::HeavyOptionsGroup {
     public:
 
-        RNGArchiveOptions() : OptionsGroup("RNG archive options") {
+        RNGArchiveOptions() : HeavyOptionsGroup("RNG archive options") {
             namespace po = boost::program_options;
-            addPartialVisible("rngarchive", po::value(&filename)->default_value("rng.bin"), "rng archive name");
+            addPartial("rngarchive", std::ref(filename), "rng archive name")->valueSemantics().setDefaultValue("rng.bin");
         }            
         void validate() override {
         }

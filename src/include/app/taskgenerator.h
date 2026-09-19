@@ -13,9 +13,9 @@
 
 #include<memory>
 
-class TaskGeneratorOptions : public program_options_heavy::ProgramOptionsParser {
+class TaskGeneratorOptions : public program_options_heavy::HeavyOptionsGroups {
     public:
-    TaskGeneratorOptions() : ProgramOptionsParser() {
+    TaskGeneratorOptions() : HeavyOptionsGroups() {
         output_options = std::make_shared<GeneratorOutputOptions>();
         hypercube_options = std::make_shared<HypercubeOptions>();
         runtime_options = std::make_shared<RuntimeOptions>();

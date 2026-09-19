@@ -3,7 +3,7 @@ target_link_libraries(unit_tests GTest::gtest_main Boost::program_options)
 target_include_directories(unit_tests PUBLIC GTEST_INCLUDE_DIRS)
 
 add_executable(hypercube_test hypercube_test.cpp)
-target_link_libraries(hypercube_test GTest::gtest_main)
+target_link_libraries(hypercube_test GTest::gtest_main tearng)
 target_include_directories(hypercube_test PUBLIC GTEST_INCLUDE_DIRS)
 
 gtest_discover_tests(hypercube_test)

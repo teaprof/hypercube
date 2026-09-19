@@ -3,13 +3,13 @@
 #include <ProgramOptionsHeavy.h>
 #include <boost/optional.hpp>
 
-class MetaDataOptions : public program_options_heavy::OptionsGroup {
+class MetaDataOptions : public program_options_heavy::HeavyOptionsGroup {
     public:
-        MetaDataOptions() : OptionsGroup("Metadata options") {
+        MetaDataOptions() : HeavyOptionsGroup("Metadata options") {
             namespace po = boost::program_options;
-            addPartialVisible("id", po::value(&taskId), "load task with taskId from input file");
-            addPartialVisible("all,a", po::bool_switch(&runall), "run all files from the specified file");
-            addPartialVisible("gather", po::bool_switch(&gather), "gather results [default]");
+            addPartial("id", std::ref(taskId), "load task with taskId from input file");
+            addPartial("all,a", std::ref(runall), "run all files from the specified file");
+            addPartial("gather", std::ref(gather), "gather results [default]");
         }   
         void update(const boost::program_options::variables_map& vm) override {
             if(!taskId && !runall) {
@@ -37,7 +37,7 @@ class MetaDataOptions : public program_options_heavy::OptionsGroup {
         bool isGatherMode() {
             return gather;
         }
-    boost::optional<uint64_t> taskId;
+    std::optional<uint64_t> taskId;
     bool gather;   
     bool runall;
 };

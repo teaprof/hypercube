@@ -29,6 +29,13 @@ class MyProgramOptions : public program_options_heavy::ParserWithSubcommands {
         (*this)["generate"]->program_description="generate subtasks";
         (*this)["help"]->program_description="--help - produce this help";
     }
+    bool parse(int argc, const char* argv[]) override {
+        if(argc == 1) {
+            help_options->setNeedHelp(true);
+            return true;
+        }
+        return ParserWithSubcommands::parse(argc, argv);
+    }
     std::shared_ptr<SingleRunOptions> single_run_options;
     std::shared_ptr<GatherOptions> gather_options;
     std::shared_ptr<TaskGeneratorOptions> task_generator_options;
@@ -79,6 +86,15 @@ class MyApplication {
                 gatherer->done();
             }
         }
+        void printHelp() {
+            // TODO: move to another class (upward in class hierarchy)
+            program_options_heavy::printers::ProgramSubcommandsFormatter formatter;
+            //auto top_level_options = options();
+            auto dom = formatter.print(options());
+
+            program_options_heavy::printers::PrettyPrinter printer;
+            dom->accept(printer);        
+        }
     private:
         MyProgramOptions options_;
         std::optional<SingleRun> single_run;
@@ -93,13 +109,8 @@ int main(int argc, const char* argv[]) {
             std::cout<<"    "<<argv[n]<<std::endl;
         }*/
         MyApplication app(argc, argv);
-        if(argc==1 || app.options().help_options->needHelp()) {
-            program_options_heavy::printers::ProgramSubcommandsFormatter formatter;
-            auto dom = formatter.print(app.options());
-
-            program_options_heavy::printers::PrettyPrinter printer;
-            dom->accept(printer);
-    
+        if(app.options().help_options->needHelp()) {
+            app.printHelp();
             return 0;
         }
         app.init();

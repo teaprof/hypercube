@@ -14,13 +14,14 @@ class MyProgramOptions : public program_options_heavy::ParserWithSubcommands {
         single_run_options = std::make_shared<SingleRunOptions>();
         gather_options = std::make_shared<GatherOptions>();
         task_generator_options = std::make_shared<TaskGeneratorOptions>();
-        help_options = std::make_shared<program_options_heavy::HelpOptions>();
+        auto flags = static_cast<program_options_heavy::CommonOptions::CommonOptionsFlags>(program_options_heavy::CommonOptions::HelpEnabled | program_options_heavy::CommonOptions::AutoCompletionEnabled);
+        common_options = std::make_shared<program_options_heavy::CommonOptions>(flags);
         program_description="Hypercube statistical test for random number generators.";
         pushBack("generate", task_generator_options);
         pushBack("run", single_run_options->manual_single_run_options); // run subtasks and gather
         pushBack("subtask", single_run_options->batched_run_options); // run subtasks and gather
         pushBack("gather", gather_options); // gather only
-        setFreeOptionsGroup(help_options);
+        setFreeOptionsGroup(common_options);        
         //this->setDefaultSubcommand("help", true);
 
         (*this)["run"]->program_description="run manually specified task";
@@ -31,7 +32,7 @@ class MyProgramOptions : public program_options_heavy::ParserWithSubcommands {
     }
     bool parse(int argc, const char* argv[]) override {
         if(argc == 1) {
-            help_options->setNeedHelp(true);
+            common_options->setNeedHelp(true);
             return true;
         }
         return ParserWithSubcommands::parse(argc, argv);
@@ -39,7 +40,7 @@ class MyProgramOptions : public program_options_heavy::ParserWithSubcommands {
     std::shared_ptr<SingleRunOptions> single_run_options;
     std::shared_ptr<GatherOptions> gather_options;
     std::shared_ptr<TaskGeneratorOptions> task_generator_options;
-    std::shared_ptr<program_options_heavy::HelpOptions> help_options;
+    std::shared_ptr<program_options_heavy::CommonOptions> common_options;
 };
 
 class MyApplication {
@@ -89,11 +90,15 @@ class MyApplication {
         void printHelp() {
             // TODO: move to another class (upward in class hierarchy)
             program_options_heavy::printers::ProgramSubcommandsFormatter formatter;
-            //auto top_level_options = options();
             auto dom = formatter.print(options());
 
             program_options_heavy::printers::PrettyPrinter printer;
             dom->accept(printer);        
+        }
+        void autoCompletion() {
+            // TODO: move to another class (upward in class hierarchy)
+            auto args = options_.common_options->getAutoCompletionArgs(options_.storage);
+            options_.autoCompletion(args);
         }
     private:
         MyProgramOptions options_;
@@ -109,8 +114,13 @@ int main(int argc, const char* argv[]) {
             std::cout<<"    "<<argv[n]<<std::endl;
         }*/
         MyApplication app(argc, argv);
-        if(app.options().help_options->needHelp()) {
+        //app.options().printOptions();
+        if(app.options().common_options->needHelp()) {
             app.printHelp();
+            return 0;
+        }
+        if(app.options().common_options->autoCompletionMode()) {
+            app.autoCompletion();
             return 0;
         }
         app.init();

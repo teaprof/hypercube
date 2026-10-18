@@ -5,10 +5,10 @@ add_library(tearng
 )
 
 add_executable(hypercube ./app/hypercube.cpp)
-target_link_libraries(hypercube tearng Boost::program_options Boost::json)
+target_link_libraries(hypercube tearng Boost::program_options Boost::json Boost::log)
 
 add_executable(taskgenerator ./app/taskgenerator.cpp)
-target_link_libraries(taskgenerator tearng Boost::program_options Boost::json)
+target_link_libraries(taskgenerator tearng Boost::program_options Boost::json Boost::log)
 
 add_executable(rewind ./app/rewind.cpp)
 

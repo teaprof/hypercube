@@ -1,5 +1,5 @@
 add_executable(unit_tests arithmetics_test.cpp circularbuffer_test.cpp bitsrepack_test.cpp cartesian_product_test.cpp)
-target_link_libraries(unit_tests GTest::gtest_main Boost::program_options)
+target_link_libraries(unit_tests GTest::gtest_main Boost::program_options Boost::log)
 target_include_directories(unit_tests PUBLIC GTEST_INCLUDE_DIRS)
 
 add_executable(hypercube_test hypercube_test.cpp)

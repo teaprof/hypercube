@@ -13,6 +13,8 @@
 //#include <boost/endian.hpp>
 #include <cstdint>
 
+using program_options_heavy::ValueEasy;
+
 template<class T>
 std::optional<T> to_std_optional(boost::optional<T> v) {
     if(v) {

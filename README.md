@@ -6,3 +6,6 @@ Hypercube test for randomness
 ```
 apt install cmake clang libgtest-dev libbenchmark-dev swig
 ```
+
+What is next todo:
+- [ ] redesign OptionsEasy and OptionsHeavy
